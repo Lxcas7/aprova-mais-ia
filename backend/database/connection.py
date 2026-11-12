@@ -87,6 +87,19 @@ def init_db() -> None:
             detalhe TEXT DEFAULT '',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            senha_hash TEXT NOT NULL,
+            carreira_foco TEXT DEFAULT 'Policial',
+            escolaridade TEXT DEFAULT 'Superior',
+            uf_interesse TEXT DEFAULT 'Nacional',
+            horas_estudo_dia INTEGER DEFAULT 4,
+            plano TEXT DEFAULT 'Gratuito',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
         """
     )
     conn.commit()

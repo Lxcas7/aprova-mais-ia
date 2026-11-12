@@ -1,5 +1,5 @@
 /**
- * Aprova+ IA — Controlador Principal da Aplicação Frontend (SPA Modular)
+ * Aprova+ IA — Controlador Principal da Aplicação Frontend (SPA Modular com Sistema de Usuário)
  */
 window.AprovaApp = {
   state: {
@@ -13,19 +13,25 @@ window.AprovaApp = {
   },
 
   async init() {
+    window.AprovaComponents.renderHeaderUserWidget();
     await window.AprovaAPI.checkHealth();
     await this.carregarConcursos();
-    await this.atualizarTelemetriaTopo();
+    await this.atualizarIndicadoresUsuario();
 
-    // Fecha modal ao clicar fora da janela ou pressionar ESC
-    const modal = document.getElementById('concurso-modal');
-    if (modal) {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) window.AprovaComponents.closeConcursoModal();
-      });
-    }
+    // Fecha modais ao clicar fora da janela ou pressionar ESC
+    ['concurso-modal', 'auth-modal'].forEach(modalId => {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) modal.classList.remove('open');
+        });
+      }
+    });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') window.AprovaComponents.closeConcursoModal();
+      if (e.key === 'Escape') {
+        window.AprovaComponents.closeConcursoModal();
+        window.AprovaComponents.closeAuthModal();
+      }
     });
   },
 
@@ -59,11 +65,11 @@ window.AprovaApp = {
       window.AprovaComponents.renderIAAssistant();
     } else if (viewName === 'premium') {
       window.AprovaComponents.renderPremiumView();
-    } else if (viewName === 'canvas') {
-      window.AprovaComponents.renderDashboardMvp();
+    } else if (viewName === 'conta') {
+      window.AprovaComponents.renderUserDashboard();
     }
 
-    this.atualizarTelemetriaTopo();
+    this.atualizarIndicadoresUsuario();
   },
 
   setStatusFilter(novoStatus) {
@@ -91,7 +97,6 @@ window.AprovaApp = {
     this.state.escolaridade = document.getElementById('filter-escolaridade')?.value || 'todos';
     this.state.uf = document.getElementById('filter-uf')?.value || 'todas';
     this.carregarConcursos();
-    this.atualizarTelemetriaTopo();
   },
 
   limparFiltros() {
@@ -127,7 +132,6 @@ window.AprovaApp = {
     const resumo = resp.resumo || {};
     const lista = resp.concursos || [];
 
-    // Atualiza contadores nos KPIs do Hero e nas pílulas de status
     const setTxt = (id, val) => {
       const el = document.getElementById(id);
       if (el && val !== undefined) el.textContent = val;
@@ -140,6 +144,7 @@ window.AprovaApp = {
     setTxt('pill-count-previsto', resumo.previstos);
     setTxt('pill-count-encerrado', resumo.encerrados);
     setTxt('count-salvos-badge', resumo.salvos);
+    setTxt('top-salvos-count', resumo.salvos);
 
     if (lista.length === 0) {
       grid.innerHTML = `
@@ -147,7 +152,7 @@ window.AprovaApp = {
           <h3 style="font-size:1.15rem; font-weight:800; margin-bottom:6px;">Nenhum concurso encontrado com estes filtros</h3>
           <p style="color:#64748b; margin-bottom:14px;">Experimente limpar os filtros ou buscar por todos os status.</p>
           <div>
-            <button class="btn btn-primary" onclick="window.AprovaApp.limparFiltros()">🔄 Mostrar Todos os 13 Concursos</button>
+            <button class="btn btn-primary" onclick="window.AprovaApp.limparFiltros()">🔄 Mostrar Todos os Concursos</button>
           </div>
         </div>
       `;
@@ -164,6 +169,7 @@ window.AprovaApp = {
       res.salvo ? '#f59e0b' : '#64748b'
     );
     this.carregarConcursos();
+    this.atualizarIndicadoresUsuario();
   },
 
   irParaMateriaisDoConcurso(concursoId) {
@@ -173,21 +179,27 @@ window.AprovaApp = {
     window.AprovaUtils.showToast('📚 Exibindo materiais filtrados para este concurso!', '#2563eb');
   },
 
-  async atualizarTelemetriaTopo() {
-    const dash = await window.AprovaAPI.obterDashboardMvp();
-    const t = dash.telemetria || {};
+  async atualizarIndicadoresUsuario() {
+    const [concResp, matResp] = await Promise.all([
+      window.AprovaAPI.listarConcursos(),
+      window.AprovaAPI.listarMateriais('todos', 'todas')
+    ]);
+    const resumo = concResp.resumo || {};
     const setTxt = (id, val) => {
       const el = document.getElementById(id);
       if (el && val !== undefined) el.textContent = val;
     };
-    setTxt('top-tel-buscas', t.buscas || 0);
-    setTxt('top-tel-materiais', t.materiais_acessados || 0);
-    setTxt('top-tel-ia', t.consultas_ia || 0);
-    setTxt('top-tel-leads', t.leads_premium || 0);
+    setTxt('top-salvos-count', resumo.salvos || 0);
+    setTxt('top-estudados-count', `${matResp.estudados || 0}/${matResp.total || 34}`);
+    setTxt('top-progresso-pct', `${matResp.progresso_pct || 0}%`);
+  },
+
+  // Alias para compatibilidade com chamadas nos componentes
+  atualizarTelemetriaTopo() {
+    return this.atualizarIndicadoresUsuario();
   }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
   window.AprovaApp.init();
 });
-

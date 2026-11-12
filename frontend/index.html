@@ -10,23 +10,22 @@
 </head>
 <body>
 
-  <!-- Barra Superior de Status da API (FastAPI + SQLite) e Telemetria do MVP -->
+  <!-- Barra Superior do Concurseiro -->
   <div class="top-status-bar">
     <div class="top-status-inner">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <span id="api-conn-badge" class="api-status-badge">🔄 Verificando Backend FastAPI...</span>
-        <span style="color:#cbd5e1;">Arquitetura Full-Stack Separada (Frontend + Backend FastAPI + SQLite)</span>
+        <span id="api-conn-badge" class="api-status-badge">🟢 Aprova+ IA Online</span>
+        <span style="color:#cbd5e1;">Monitoramento Inteligente de Editais, Rumores da Internet e Provas</span>
       </div>
       <div class="telemetry-pills">
-        <span>🔍 Buscas: <strong id="top-tel-buscas">5</strong></span>
-        <span>📚 Materiais Baixados/Estudados: <strong id="top-tel-materiais">6</strong></span>
-        <span>🤖 Consultas IA: <strong id="top-tel-ia">3</strong></span>
-        <span>✨ Leads PRO (Smoke Test): <strong id="top-tel-leads">3</strong></span>
+        <span>⭐ Concursos Salvos: <strong id="top-salvos-count">3</strong></span>
+        <span>✅ Materiais Estudados: <strong id="top-estudados-count">6/34</strong></span>
+        <span>📊 Seu Progresso: <strong id="top-progresso-pct">18%</strong></span>
       </div>
     </div>
   </div>
 
-  <!-- Cabeçalho e Menu Principal -->
+  <!-- Cabeçalho, Navegação Principal e Área de Login / Usuário -->
   <header class="app-header">
     <div class="nav-container">
       <div class="brand" onclick="window.AprovaApp.switchView('explorar')">
@@ -51,12 +50,15 @@
           🤖 Copiloto & Match IA
         </button>
         <button class="nav-btn nav-premium" data-view="premium" onclick="window.AprovaApp.switchView('premium')">
-          ✨ Plano Premium (Fase 2)
+          ✨ Plano PRO
         </button>
-        <button class="nav-btn" data-view="canvas" onclick="window.AprovaApp.switchView('canvas')">
-          📊 Canvas & Métricas MVP
+        <button class="nav-btn" data-view="conta" onclick="window.AprovaApp.switchView('conta')">
+          👤 Minha Conta
         </button>
       </nav>
+
+      <!-- Área Dinâmica de Login / Perfil do Usuário Logado -->
+      <div id="header-user-area"></div>
     </div>
   </header>
 
@@ -65,7 +67,7 @@
     <div class="hero-container">
       <div class="hero-grid">
         <div>
-          <span class="hero-kicker">🚀 MVP FUNCIONAL COMPLETO • CONCURSEIROS</span>
+          <span class="hero-kicker">🚀 PLATAFORMA INTELIGENTE PARA CONCURSEIROS</span>
           <h1 class="hero-title">
             Todos os Concursos <span class="grad">Ativos, Previstos na Web e Passados</span> com o Material Certo.
           </h1>
@@ -141,7 +143,7 @@
     </div>
   </section>
 
-  <!-- Conteúdo Principal (6 Views Modulares) -->
+  <!-- Conteúdo Principal (6 Views do Concurseiro) -->
   <main class="main-container">
 
     <!-- VIEW 1: EXPLORAR CONCURSOS (ATIVOS, PREVISTOS NA INTERNET E ENCERRADOS) -->
@@ -195,7 +197,7 @@
             Materiais de Estudo Relacionados a Cada Concurso Específico
           </h2>
           <p style="font-size:0.88rem; color:#475569;">
-            Baixe Editais Verticalizados por IA, Apostilas PDF focadas na banca, Cadernos de Questões e Provas Passadas com Gabarito. Marque o que já estudou para salvar no banco SQLite.
+            Baixe Editais Verticalizados por IA, Apostilas PDF focadas na banca, Cadernos de Questões e Provas Passadas com Gabarito. Marque o que já estudou para acompanhar sua evolução.
           </p>
         </div>
       </div>
@@ -218,36 +220,36 @@
       <div id="ia-assistant-container"></div>
     </section>
 
-    <!-- VIEW 5: PLANO PREMIUM (FASE 2 — TESTE DE FUMAÇA / SMOKE TEST) -->
+    <!-- VIEW 5: PLANO PREMIUM (APROVA+ PRO) -->
     <section id="view-premium" class="view-pane">
       <div class="section-banner">
         <div>
-          <span class="badge badge-purple" style="margin-bottom:6px;">✨ MONETIZAÇÃO FUTURA (FASE 2 DO PROJETO)</span>
+          <span class="badge badge-purple" style="margin-bottom:6px;">✨ ACELERE SUA APROVAÇÃO</span>
           <h2 style="font-size:1.45rem; font-weight:800; color:#0f172a;">
-            Plano Aprova+ PRO — Validação por Teste de Fumaça (Smoke Test)
+            Plano Aprova+ PRO — Alertas em Tempo Real & IA Avançada
           </h2>
           <p style="font-size:0.88rem; color:#475569;">
-            Conforme planejado no Canvas e no MVP, a busca e os materiais base são gratuitos para gerar tração massiva. Aqui validamos a demanda real do Plano Premium antes de construir o gateway de pagamento.
+            A busca de concursos e os materiais base são 100% gratuitos. Conheça os recursos avançados do Aprova+ PRO e garanta seu desconto VIP de pré-lançamento.
           </p>
         </div>
       </div>
       <div id="premium-smoke-container"></div>
     </section>
 
-    <!-- VIEW 6: CANVAS CORRIGIDO & MÉTRICAS DO MVP -->
-    <section id="view-canvas" class="view-pane">
+    <!-- VIEW 6: MINHA CONTA & PAINEL DE ESTUDOS DO USUÁRIO -->
+    <section id="view-conta" class="view-pane">
       <div class="section-banner">
         <div>
-          <span class="badge badge-aberto" style="margin-bottom:6px;">📊 PAINEL DOS FUNDADORES & BANCA AVALIADORA</span>
+          <span class="badge badge-aberto" style="margin-bottom:6px;">👤 ÁREA DO CONCURSEIRO</span>
           <h2 style="font-size:1.45rem; font-weight:800; color:#0f172a;">
-            Business Model Canvas Corrigido & Telemetria Real do MVP (SQLite)
+            Minha Conta, Preferências & Caderno de Estudos
           </h2>
           <p style="font-size:0.88rem; color:#475569;">
-            Acompanhe em tempo real os indicadores de validação das hipóteses (H1 a H4), os leads capturados no Smoke Test e visualize o Canvas oficial corrigido.
+            Gerencie seus dados pessoais, sua carreira foco, seus concursos salvos e o histórico de apostilas e provas que você já concluiu.
           </p>
         </div>
       </div>
-      <div id="mvp-dashboard-container"></div>
+      <div id="user-dashboard-container"></div>
     </section>
 
   </main>
@@ -260,12 +262,20 @@
     </div>
   </div>
 
+  <!-- Modal de Login e Cadastro de Usuário -->
+  <div id="auth-modal" class="modal-overlay">
+    <div class="modal-window" style="max-width: 540px;">
+      <button class="modal-close-btn" onclick="window.AprovaComponents.closeAuthModal()" title="Fechar">✕</button>
+      <div id="auth-modal-body"></div>
+    </div>
+  </div>
+
   <!-- Container de Notificações Toast -->
   <div id="toast-container"></div>
 
   <!-- Rodapé -->
   <footer class="app-footer">
-    <strong>Aprova+ IA (MVP Full-Stack)</strong> • Plataforma Centralizada de Concursos Ativos, Previstos na Internet e Históricos com Materiais Direcionados • Arquitetura Separada <code>frontend/</code> + <code>backend/</code> (FastAPI + SQLite)
+    <strong>Aprova+ IA</strong> • Plataforma Centralizada de Concursos Ativos, Previstos na Internet e Históricos com Materiais Direcionados
   </footer>
 
   <!-- Scripts Modulares do Frontend -->
@@ -278,8 +288,7 @@
   <script src="js/components/materiaisHub.js"></script>
   <script src="js/components/iaAssistant.js"></script>
   <script src="js/components/smokeTestPremium.js"></script>
-  <script src="js/components/dashboardMvp.js"></script>
+  <script src="js/components/userAccount.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
-

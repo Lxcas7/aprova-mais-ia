@@ -1,5 +1,5 @@
 /**
- * Aprova+ IA — REST API Client
+ * Aprova+ IA — REST API Client + Gerenciador de Autenticação e Sessão de Usuário
  * - Em ambiente local com servidor Python (127.0.0.1:8000): consome a API FastAPI + SQLite3 real.
  * - No GitHub Pages (github.io) ou modo estático: utiliza motor em memória com persistência em localStorage e gerador Blob para download real de apostilas.
  */
@@ -11,8 +11,16 @@
 
   let backendOnline = false;
 
-  // Estado persistido no navegador para uso no GitHub Pages / Modo Estático
-  const STORAGE_KEY = 'aprova_mais_mvp_state_v1';
+  const STORAGE_KEY = 'aprova_mais_mvp_state_v2';
+  const USER_SESSION_KEY = 'aprova_mais_user_session_v1';
+
+  function gerarIniciais(nome) {
+    const partes = (nome || 'Usuário').trim().split(/\s+/).filter(Boolean);
+    if (!partes.length) return 'U';
+    if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+    return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+  }
+
   function getLocalState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -21,12 +29,21 @@
     const initial = {
       concursos: JSON.parse(JSON.stringify(window.AprovaFallback.concursos)),
       rumores: JSON.parse(JSON.stringify(window.AprovaFallback.rumores)),
-      telemetria: { buscas: 5, materiais_acessados: 6, radar_views: 4, consultas_ia: 3, leads_premium: 3, total_interacoes: 21 },
-      leads: [
-        { nome: "Mariana Souza", contato: "mariana.concursos@email.com", carreira_foco: "Bancária (Caixa / BB)", recurso_favorito: "Alertas WhatsApp de Rumores e Editais", faixa_preco: "R$ 29,90/mês" },
-        { nome: "Rafael Oliveira", contato: "(11) 98765-4321", carreira_foco: "Policial (PF / PRF)", recurso_favorito: "Cronograma Adaptativo por IA", faixa_preco: "R$ 29,90/mês" },
-        { nome: "Camila Ferreira", contato: "camila.tribunais@email.com", carreira_foco: "Tribunais (TSE / TJ)", recurso_favorito: "Corretor de Discursivas IA (Padrão Banca)", faixa_preco: "R$ 39,90/mês" }
-      ]
+      usuarios: [
+        {
+          id: 1,
+          nome: 'Carlos Lucas',
+          email: 'carlos@aprovamais.com.br',
+          senha: '123456',
+          carreira_foco: 'Policial',
+          escolaridade: 'Superior',
+          uf_interesse: 'Nacional',
+          horas_estudo_dia: 4,
+          plano: 'Gratuito',
+          iniciais: 'CL'
+        }
+      ],
+      leads: []
     };
     saveLocalState(initial);
     return initial;
@@ -47,7 +64,16 @@
       headers: { 'Content-Type': 'application/json' },
       ...options
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      let errMsg = `HTTP ${res.status}`;
+      try {
+        const errJson = await res.json();
+        if (errJson.detail) errMsg = errJson.detail;
+      } catch (_) {}
+      const error = new Error(errMsg);
+      error.isApiError = true;
+      throw error;
+    }
     backendOnline = true;
     updateStatusBadge(true);
     return await res.json();
@@ -58,13 +84,13 @@
     if (!badge) return;
     if (isOnline) {
       badge.className = 'api-status-badge';
-      badge.innerHTML = '🟢 Backend FastAPI + SQLite Conectado';
+      badge.innerHTML = '🟢 Aprova+ IA Online (Servidor FastAPI + SQLite)';
     } else if (isGitHubPages) {
       badge.className = 'api-status-badge';
-      badge.innerHTML = '🟢 GitHub Pages Online (Persistência Local Ativa)';
+      badge.innerHTML = '🟢 Aprova+ IA Online (Nuvem GitHub Pages)';
     } else {
-      badge.className = 'api-status-badge offline';
-      badge.innerHTML = '🟡 Modo Local (Rode iniciar_mvp.bat para API Python + SQLite)';
+      badge.className = 'api-status-badge';
+      badge.innerHTML = '🟢 Aprova+ IA Ativo (Modo Local)';
     }
   }
 
@@ -77,6 +103,137 @@
       return backendOnline;
     },
 
+    // ==================== AUTENTICAÇÃO E SESSÃO DO USUÁRIO ====================
+    obterUsuarioAtual() {
+      try {
+        const raw = localStorage.getItem(USER_SESSION_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return null;
+    },
+
+    salvarSessaoUsuario(usuario) {
+      try {
+        if (!usuario.iniciais) usuario.iniciais = gerarIniciais(usuario.nome);
+        localStorage.setItem(USER_SESSION_KEY, JSON.stringify(usuario));
+      } catch (e) {}
+      return usuario;
+    },
+
+    logoutUsuario() {
+      try {
+        localStorage.removeItem(USER_SESSION_KEY);
+      } catch (e) {}
+    },
+
+    async loginUsuario(email, senha) {
+      try {
+        const resp = await request('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, senha })
+        });
+        this.salvarSessaoUsuario(resp.usuario);
+        return resp;
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        const emailLimpo = (email || '').trim().toLowerCase();
+        const user = (st.usuarios || []).find(
+          u => u.email.toLowerCase() === emailLimpo && u.senha === senha
+        );
+        if (!user) {
+          throw new Error('E-mail ou senha incorretos. Use a conta demo ou crie sua conta gratuita!');
+        }
+        const { senha: _, ...userSemSenha } = user;
+        userSemSenha.iniciais = gerarIniciais(userSemSenha.nome);
+        this.salvarSessaoUsuario(userSemSenha);
+        return {
+          sucesso: true,
+          mensagem: `Bem-vindo de volta, ${userSemSenha.nome}!`,
+          usuario: userSemSenha
+        };
+      }
+    },
+
+    async registrarUsuario(payload) {
+      try {
+        const resp = await request('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        this.salvarSessaoUsuario(resp.usuario);
+        return resp;
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        st.usuarios = st.usuarios || [];
+        const emailLimpo = (payload.email || '').trim().toLowerCase();
+        if (st.usuarios.some(u => u.email.toLowerCase() === emailLimpo)) {
+          throw new Error('Este e-mail já está cadastrado na plataforma.');
+        }
+        const novo = {
+          id: Date.now(),
+          nome: payload.nome.trim(),
+          email: emailLimpo,
+          senha: payload.senha,
+          carreira_foco: payload.carreira_foco || 'Policial',
+          escolaridade: payload.escolaridade || 'Superior',
+          uf_interesse: payload.uf_interesse || 'Nacional',
+          horas_estudo_dia: parseInt(payload.horas_estudo_dia || 4, 10),
+          plano: 'Gratuito',
+          iniciais: gerarIniciais(payload.nome)
+        };
+        st.usuarios.push(novo);
+        saveLocalState(st);
+        const { senha: _, ...userSemSenha } = novo;
+        this.salvarSessaoUsuario(userSemSenha);
+        return {
+          sucesso: true,
+          mensagem: `Conta criada com sucesso! Bem-vindo(a), ${novo.nome}!`,
+          usuario: userSemSenha
+        };
+      }
+    },
+
+    async atualizarPerfilUsuario(payload) {
+      const atual = this.obterUsuarioAtual();
+      if (!atual) throw new Error('Faça login para atualizar seu perfil.');
+
+      try {
+        const resp = await request(`/auth/usuarios/${atual.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload)
+        });
+        this.salvarSessaoUsuario(resp.usuario);
+        return resp;
+      } catch (e) {
+        const st = getLocalState();
+        st.usuarios = st.usuarios || [];
+        const idx = st.usuarios.findIndex(u => u.id === atual.id || u.email === atual.email);
+        const atualizado = {
+          ...atual,
+          nome: payload.nome.trim(),
+          carreira_foco: payload.carreira_foco,
+          escolaridade: payload.escolaridade,
+          uf_interesse: payload.uf_interesse,
+          horas_estudo_dia: parseInt(payload.horas_estudo_dia || 4, 10),
+          plano: payload.plano || atual.plano || 'Gratuito',
+          iniciais: gerarIniciais(payload.nome)
+        };
+        if (idx >= 0) {
+          st.usuarios[idx] = { ...st.usuarios[idx], ...atualizado };
+          saveLocalState(st);
+        }
+        this.salvarSessaoUsuario(atualizado);
+        return {
+          sucesso: true,
+          mensagem: 'Perfil e metas de estudo atualizados com sucesso!',
+          usuario: atualizado
+        };
+      }
+    },
+
+    // ==================== CONCURSOS, MATERIAIS, RADAR E IA ====================
     async checkHealth() {
       try {
         return await request('/health');
@@ -100,10 +257,6 @@
       } catch (e) {
         updateStatusBadge(false);
         const st = getLocalState();
-        if (params.q || (params.area && params.area !== 'todas') || (params.status && params.status !== 'todos')) {
-          st.telemetria.buscas += 1;
-          saveLocalState(st);
-        }
         const list = st.concursos.filter(c => {
           if (params.apenas_salvos && !c.salvo) return false;
           if (params.status && params.status !== 'todos' && c.status !== params.status) return false;
@@ -184,7 +337,6 @@
             }
           });
         });
-        st.telemetria.materiais_acessados += 1;
         saveLocalState(st);
         return { id: materialId, estudado: novo };
       }
@@ -193,12 +345,11 @@
     baixarMaterial(materialId) {
       if (backendOnline && !isGitHubPages) {
         window.open(`${API_BASE}/materiais/${materialId}/download`, '_blank');
-        window.AprovaUtils.showToast('📥 Gerando apostila/guia verticalizado via Backend FastAPI...', '#2563eb');
-        setTimeout(() => window.AprovaApp.atualizarTelemetriaTopo(), 700);
+        window.AprovaUtils.showToast('📥 Gerando apostila/guia verticalizado...', '#2563eb');
+        setTimeout(() => window.AprovaApp.atualizarIndicadoresUsuario(), 700);
         return;
       }
 
-      // Geração instantânea de arquivo no navegador (GitHub Pages / Modo Estático)
       const st = getLocalState();
       let matEncontrado = null;
       let concEncontrado = null;
@@ -212,8 +363,6 @@
       });
 
       if (!matEncontrado || !concEncontrado) return;
-      st.telemetria.materiais_acessados += 1;
-      saveLocalState(st);
 
       const disciplinasTxt = (concEncontrado.disciplinas || [])
         .map((d, i) => `  ${i + 1}. ${d.nome} — Questões: ${d.questoes} | Peso: ${d.peso} | Prioridade IA: ${d.prioridade}`)
@@ -221,7 +370,7 @@
 
       const conteudo = [
         '================================================================================',
-        'APROVA+ IA — CENTRAL INTELIGENTE DE CONCURSOS PÚBLICOS (MATERIAL OFICIAL DO MVP)',
+        'APROVA+ IA — CENTRAL INTELIGENTE DE CONCURSOS PÚBLICOS',
         '================================================================================',
         '',
         `MATERIAL: ${matEncontrado.titulo}`,
@@ -265,7 +414,7 @@
       URL.revokeObjectURL(url);
 
       window.AprovaUtils.showToast(`📥 Guia "${matEncontrado.titulo}" baixado com sucesso!`, '#2563eb');
-      window.AprovaApp.atualizarTelemetriaTopo();
+      window.AprovaApp.atualizarIndicadoresUsuario();
     },
 
     async listarRumores() {
@@ -273,8 +422,6 @@
         return await request('/radar');
       } catch (e) {
         const st = getLocalState();
-        st.telemetria.radar_views += 1;
-        saveLocalState(st);
         return { total: st.rumores.length, rumores: st.rumores };
       }
     },
@@ -300,14 +447,13 @@
           orgao_sigla: payload.orgao_sigla.toUpperCase(),
           titulo_noticia: payload.titulo_noticia,
           fonte_portal: payload.fonte_portal,
-          data_captura: 'Enviado agora (Cocriação)',
+          data_captura: 'Enviado agora pela comunidade',
           estagio_maturidade: estagio,
           confianca_ia: confianca,
-          analise_ia: `Notícia submetida pela comunidade e classificada automaticamente pelo motor NLP como "${estagio}" (${confianca}% de confiança).`,
+          analise_ia: `Notícia classificada automaticamente pelo motor NLP como "${estagio}" (${confianca}% de confiança).`,
           votos_comunidade: 1
         };
         st.rumores.unshift(novo);
-        st.telemetria.radar_views += 1;
         saveLocalState(st);
         return { ...novo, mensagem: 'Rumor registrado!' };
       }
@@ -330,8 +476,6 @@
         return await request('/ia/chat', { method: 'POST', body: JSON.stringify({ mensagem }) });
       } catch (e) {
         const st = getLocalState();
-        st.telemetria.consultas_ia += 1;
-        saveLocalState(st);
         const q = mensagem.toLowerCase();
         for (const c of st.concursos) {
           if (q.includes(c.sigla.toLowerCase()) || q.includes(c.titulo.toLowerCase().split(' ')[0])) {
@@ -353,8 +497,6 @@
         return await request('/ia/match-perfil', { method: 'POST', body: JSON.stringify(payload) });
       } catch (e) {
         const st = getLocalState();
-        st.telemetria.consultas_ia += 1;
-        saveLocalState(st);
         const horasSem = (payload.horas_por_dia || 4) * 6;
         const candidatos = st.concursos
           .filter(c => c.status !== 'encerrado')
@@ -403,33 +545,24 @@
       }
     },
 
-    async obterDashboardMvp() {
-      try {
-        return await request('/mvp/dashboard');
-      } catch (e) {
-        const st = getLocalState();
-        const contagemRecursos = {};
-        st.leads.forEach(l => {
-          contagemRecursos[l.recurso_favorito] = (contagemRecursos[l.recurso_favorito] || 0) + 1;
-        });
-        const pref = Object.entries(contagemRecursos).map(([recurso_favorito, qtd]) => ({ recurso_favorito, qtd }));
-        return {
-          telemetria: st.telemetria,
-          leads_cadastrados: st.leads,
-          preferencia_recursos_premium: pref,
-          disposicao_pagamento: [{ faixa_preco: 'R$ 29,90/mês', qtd: st.leads.length }]
-        };
-      }
-    },
-
     async cadastrarLeadPremium(payload) {
       try {
-        return await request('/mvp/leads-premium', { method: 'POST', body: JSON.stringify(payload) });
+        const res = await request('/mvp/leads-premium', { method: 'POST', body: JSON.stringify(payload) });
+        const user = this.obterUsuarioAtual();
+        if (user) {
+          user.plano = 'Lista VIP PRO';
+          this.salvarSessaoUsuario(user);
+        }
+        return res;
       } catch (e) {
         const st = getLocalState();
         st.leads.unshift(payload);
-        st.telemetria.leads_premium += 1;
         saveLocalState(st);
+        const user = this.obterUsuarioAtual();
+        if (user) {
+          user.plano = 'Lista VIP PRO';
+          this.salvarSessaoUsuario(user);
+        }
         return {
           id: st.leads.length,
           sucesso: true,

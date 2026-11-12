@@ -106,6 +106,20 @@ window.AprovaComponents.renderIAAssistant = function () {
     </div>
   `;
 
+  // Sincroniza automaticamente com as preferências do usuário logado, se houver
+  const user = window.AprovaAPI.obterUsuarioAtual();
+  if (user) {
+    if (document.getElementById('ia-escolaridade') && user.escolaridade) {
+      document.getElementById('ia-escolaridade').value = user.escolaridade;
+    }
+    if (document.getElementById('ia-area') && user.carreira_foco) {
+      document.getElementById('ia-area').value = user.carreira_foco;
+    }
+    if (document.getElementById('ia-horas') && user.horas_estudo_dia) {
+      document.getElementById('ia-horas').value = String(user.horas_estudo_dia);
+    }
+  }
+
   // Executa um cálculo inicial padrão para já mostrar resultado rico na tela
   window.AprovaComponents.executarMatchIA();
 };

@@ -19,6 +19,7 @@ from backend.routes.materiais_routes import router as materiais_router
 from backend.routes.radar_routes import router as radar_router
 from backend.routes.ia_routes import router as ia_router
 from backend.routes.mvp_routes import router as mvp_router
+from backend.routes.auth_routes import router as auth_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -51,6 +52,7 @@ def healthcheck():
 
 
 # Register API Routers
+app.include_router(auth_router)
 app.include_router(concursos_router)
 app.include_router(materiais_router)
 app.include_router(radar_router)

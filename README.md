@@ -42,19 +42,18 @@ aprova-mais-ia/
 │   ├── models/
 │   │   └── schemas.py               # Schemas Pydantic para validação de entrada/saída
 │   ├── routes/
+│   │   ├── auth_routes.py           # POST /api/auth/register, POST /api/auth/login, PUT perfil
 │   │   ├── concursos_routes.py      # GET /api/concursos, GET /api/concursos/{id}, POST favorito
 │   │   ├── materiais_routes.py      # GET /api/materiais, POST estudado, GET download de guia
 │   │   ├── radar_routes.py          # GET /api/radar, POST novo rumor, POST voto comunitário
 │   │   ├── ia_routes.py             # POST /api/ia/chat, POST /api/ia/match-perfil
-│   │   └── mvp_routes.py            # GET /api/mvp/dashboard, POST /api/mvp/leads-premium
+│   │   └── mvp_routes.py            # POST /api/mvp/leads-premium
 │   └── services/
 │       ├── ia_engine.py             # Motor de IA (Chat NLP, Match de Perfil e Classificador de Rumores)
 │       └── pdf_generator.py         # Gerador dinâmico de Apostilas / Guias Verticalizados para download
 │
 └── frontend/                        # FRONTEND MODULAR (HTML5 + CSS3 + JavaScript SPA)
-    ├── index.html                   # Shell principal da aplicação (6 abas modulares)
-    ├── assets/img/
-    │   └── canvas_corrigido.png     # Imagem oficial do Business Model Canvas corrigido
+    ├── index.html                   # Shell principal da aplicação (6 abas + Modal de Login/Cadastro)
     ├── css/
     │   ├── variables.css            # Design System, cores, sombras e tipografia
     │   ├── layout.css               # Navbar, Hero, Grid de filtros e responsividade
@@ -62,7 +61,7 @@ aprova-mais-ia/
     └── js/
         ├── app.js                   # Controlador central de estado, rotas e filtros
         ├── api/
-        │   ├── client.js            # Cliente HTTP integrado ao FastAPI + Persistência Local no GitHub Pages
+        │   ├── client.js            # Cliente HTTP integrado ao FastAPI + Sessão de Usuário + Persistência Local
         │   └── fallbackData.js      # Base estruturada de concursos, materiais e rumores
         ├── components/
         │   ├── concursoCard.js      # Card individual de concurso (Ativo, Previsto IA, Histórico)
@@ -70,8 +69,8 @@ aprova-mais-ia/
         │   ├── radarFeed.js         # Feed do Radar IA (rumores da internet) + formulário de cocriação
         │   ├── materiaisHub.js      # Repositório de materiais filtrado por concurso e categoria
         │   ├── iaAssistant.js       # Simulador de Match de Perfil + Cronograma + Chat IA 24/7
-        │   ├── smokeTestPremium.js  # Teste de Fumaça do Plano Aprova+ PRO (Fase 2)
-        │   └── dashboardMvp.js      # Painel de telemetria em tempo real + Canvas
+        │   ├── smokeTestPremium.js  # Pré-inscrição VIP do Plano Aprova+ PRO
+        │   └── userAccount.js       # Sistema de Login, Cadastro e Painel do Concurseiro (Minha Conta)
         └── utils/
             └── formatters.js        # Utilitários visuais e sistema de notificações Toast
 ```

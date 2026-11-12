@@ -94,3 +94,28 @@ class EventoTelemetriaInput(BaseModel):
     tipo_evento: str  # 'busca', 'filtro', 'material_acesso', 'radar_view', 'chat_ia', 'lead_premium'
     detalhe: Optional[str] = ""
 
+
+class UsuarioRegistroInput(BaseModel):
+    nome: str = Field(..., min_length=2)
+    email: str = Field(..., min_length=5)
+    senha: str = Field(..., min_length=4)
+    carreira_foco: str = "Policial"
+    escolaridade: str = "Superior"
+    uf_interesse: str = "Nacional"
+    horas_estudo_dia: int = 4
+
+
+class UsuarioLoginInput(BaseModel):
+    email: str
+    senha: str
+
+
+class UsuarioAtualizarPerfilInput(BaseModel):
+    nome: str
+    carreira_foco: str
+    escolaridade: str
+    uf_interesse: str
+    horas_estudo_dia: int
+    plano: Optional[str] = "Gratuito"
+
+

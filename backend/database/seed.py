@@ -1,11 +1,28 @@
+import hashlib
 import json
 from backend.database.connection import get_db_connection, init_db
+
+
+def _hash_pw(senha: str) -> str:
+    return hashlib.sha256(senha.encode("utf-8")).hexdigest()
 
 
 def seed_database() -> None:
     init_db()
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # Garante usuário padrão de demonstração na tabela usuarios
+    cur.execute("SELECT COUNT(*) as total FROM usuarios")
+    if cur.fetchone()["total"] == 0:
+        cur.execute(
+            """
+            INSERT INTO usuarios (nome, email, senha_hash, carreira_foco, escolaridade, uf_interesse, horas_estudo_dia, plano)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("Carlos Lucas", "carlos@aprovamais.com.br", _hash_pw("123456"), "Policial", "Superior", "Nacional", 4, "Gratuito")
+        )
+        conn.commit()
 
     cur.execute("SELECT COUNT(*) as total FROM concursos")
     if cur.fetchone()["total"] > 0:
