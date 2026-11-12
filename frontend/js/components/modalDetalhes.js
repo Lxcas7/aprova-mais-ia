@@ -9,51 +9,61 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
   if (!modal || !content) return;
 
   modal.classList.add('open');
-  content.innerHTML = `<div style="padding:32px; text-align:center; color:#64748b;">🔄 Carregando Raio-X da IA e materiais vinculados do banco de dados...</div>`;
+  content.innerHTML = `<div style="padding:32px; text-align:center; color:var(--muted); font-size:0.9375rem;">Carregando Raio-X da IA e materiais vinculados...</div>`;
 
   const c = await window.AprovaAPI.obterConcurso(concursoId);
   if (!c) return;
 
+  const clean = window.AprovaUtils.cleanText;
   const badgeClass = window.AprovaUtils.getStatusBadgeClass(c.status);
   const statusDot = window.AprovaUtils.getStatusDot(c.status);
 
+  const probVal = c.probabilidade_ia || c.prob_ia || 100;
+  const inscrVal = c.inscricoes || c.prazo || 'Consulte o edital';
+  const corteVal = c.nota_corte_historica || c.nota_corte_anterior || 'Referência oficial';
+  const fonteVal = c.fonte_oficial || c.fontes_internet || 'Diário Oficial e Banca';
+
   const disciplinasRows = (c.disciplinas || []).map(d => {
-    const prioColor = d.prioridade === 'Crítica' ? '#dc2626' : (d.prioridade === 'Alta' ? '#d97706' : '#2563eb');
+    const prioColor = d.prioridade === 'Crítica' ? '#8c3d19' : (d.prioridade === 'Alta' ? '#664d03' : '#0b4f6c');
     return `
       <tr>
-        <td><strong>${d.nome}</strong></td>
+        <td><strong>${clean(d.nome)}</strong></td>
         <td>${d.questoes}</td>
-        <td><strong>${d.peso}</strong></td>
-        <td><span style="color:${prioColor}; font-weight:800;">● ${d.prioridade}</span></td>
+        <td><strong>${clean(d.peso)}</strong></td>
+        <td><span style="color:${prioColor}; font-weight:700;">${clean(d.prioridade)}</span></td>
       </tr>
     `;
   }).join('');
 
   const materiaisHtml = (c.materiais || []).map(m => {
     return `
-      <div class="mat-item ${m.estudado ? 'studied' : ''}" id="modal-mat-${m.id}">
+      <div class="mat-item" id="modal-mat-${m.id}">
         <div>
-          <span class="badge badge-purple" style="margin-bottom:4px;">${m.categoria}</span>
-          <div style="font-weight:800; font-size:0.92rem; color:#0f172a;">${m.titulo}</div>
-          <div style="font-size:0.78rem; color:#64748b;">
-            Formato: <strong>${m.formato}</strong> • Extensão: <strong>${m.paginas}</strong> • Acesso: <strong style="color:#15803d;">${m.gratuito ? 'Gratuito no MVP' : 'PRO'}</strong>
+          <div style="font-weight:700; font-size:0.9375rem; color:var(--text); margin-bottom:4px;">
+            ${clean(m.titulo)}
+          </div>
+          <div style="font-size:0.8125rem; color:var(--muted); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <span class="badge badge-purple">${clean(m.categoria)}</span>
+            <span>Extensão: <strong>${clean(m.paginas)}</strong></span>
+            <span>Acesso: <strong style="color:var(--green);">${m.gratuito ? 'Gratuito' : 'PRO'}</strong></span>
           </div>
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
           <button
+            type="button"
             class="btn ${m.estudado ? 'btn-primary' : 'btn-outline'}"
-            style="padding:7px 12px; font-size:0.8rem;"
             onclick="window.AprovaComponents.toggleEstudadoNoModal(${m.id}, '${c.id}')"
           >
-            ${m.estudado ? '✅ Concluído' : '⬜ Marcar Estudado'}
+            ${m.estudado ? window.AprovaUtils.icon('check') : ''}
+            <span>${m.estudado ? 'Concluído' : 'Marcar Estudado'}</span>
           </button>
           <button
             type="button"
             class="btn btn-purple"
-            style="padding:7px 12px; font-size:0.8rem;"
             onclick="window.AprovaAPI.baixarMaterial(${m.id})"
           >
-            📥 Baixar Guia / Material
+            ${window.AprovaUtils.icon('download')}
+            <span>Baixar Guia</span>
           </button>
         </div>
       </div>
@@ -61,48 +71,47 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
   }).join('');
 
   content.innerHTML = `
-    <div style="padding-right:34px;">
-      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
-        <span class="badge ${badgeClass}">${statusDot} ${c.status_label}</span>
-        <span class="badge badge-purple">Área: ${c.area}</span>
-        <span class="badge badge-encerrado">Probabilidade/Índice IA: ${c.probabilidade_ia}%</span>
-      </div>
-      <h2 style="font-size:1.45rem; font-weight:800; color:#0f172a;">${c.sigla} — ${c.titulo}</h2>
-      <p style="font-size:0.88rem; color:#475569; margin-bottom:14px;">
-        Órgão: <strong>${c.orgao}</strong> • Banca: <strong>${c.banca}</strong> • Cargos: <strong>${c.cargos}</strong>
+    <div style="padding-right:42px;">
+      <h2 style="font-size:1.5rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+        ${clean(c.sigla)} · ${clean(c.titulo)}
+      </h2>
+      <p style="font-size:0.9375rem; color:var(--text-secondary); margin-bottom:12px;">
+        Órgão: <strong>${clean(c.orgao)}</strong> · Banca: <strong>${clean(c.banca)}</strong> · Área: <strong>${clean(c.area)}</strong>
       </p>
-    </div>
-
-    <div class="meta-box" style="grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));">
-      <div class="meta-item"><span>Salário Inicial</span><strong style="color:#15803d;">${c.salario}</strong></div>
-      <div class="meta-item"><span>Vagas Totais</span><strong>${c.vagas}</strong></div>
-      <div class="meta-item"><span>Inscrições / Status</span><strong>${c.inscricoes}</strong></div>
-      <div class="meta-item"><span>Prova / Previsão</span><strong>${c.data_prova}</strong></div>
-      <div class="meta-item"><span>Nota de Corte Histórica</span><strong>${c.nota_corte_historica}</strong></div>
-      <div class="meta-item"><span>Fonte Oficial / Radar</span><strong>${c.fonte_oficial}</strong></div>
-    </div>
-
-    <div class="ai-callout" style="margin:16px 0;">
-      <div class="ai-callout-head">
-        <span>🤖 DIAGNÓSTICO DE INTELIGÊNCIA ARTIFICIAL & RADAR WEB</span>
-        <span>Última prova base: ${c.ultima_prova}</span>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px;">
+        <span class="badge ${badgeClass}">${statusDot} <span>${clean(c.status_label)}</span></span>
+        <span class="badge badge-encerrado">Índice IA: ${probVal}%</span>
       </div>
-      <p style="font-size:0.88rem; color:#0f172a; margin-bottom:6px;"><strong>Análise IA:</strong> ${c.resumo_ia}</p>
-      <p style="font-size:0.82rem; color:#475569;"><strong>Rumor / Monitoramento Web:</strong> ${c.tendencia_rumor}</p>
     </div>
 
-    <div style="margin-bottom:20px;">
-      <h3 style="font-size:1rem; font-weight:800; margin-bottom:8px; color:#0f172a;">
-        📊 Matriz de Disciplinas & Pesos Extraída pela IA (Edital Verticalizado)
+    <div class="card-divider-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+      <div class="meta-item"><span>Salário Inicial</span><strong style="color:var(--green);">${clean(c.salario)}</strong></div>
+      <div class="meta-item"><span>Vagas Totais</span><strong>${clean(c.vagas)}</strong></div>
+      <div class="meta-item"><span>Inscrições / Situação</span><strong>${clean(inscrVal)}</strong></div>
+      <div class="meta-item"><span>Prova / Previsão</span><strong>${clean(c.data_prova)}</strong></div>
+      <div class="meta-item"><span>Nota de Corte Histórica</span><strong>${clean(corteVal)}</strong></div>
+      <div class="meta-item"><span>Fontes Monitoradas</span><strong>${clean(fonteVal)}</strong></div>
+    </div>
+
+    <div class="ai-editorial-note" style="margin:16px 0;">
+      <div class="ai-editorial-head">
+        <span>Diagnóstico de Inteligência Artificial e Radar Web</span>
+      </div>
+      <p style="font-size:0.9375rem; color:var(--text); margin-bottom:6px;">${clean(c.resumo_ia)}</p>
+    </div>
+
+    <div style="margin-bottom:24px;">
+      <h3 style="font-size:1.125rem; font-weight:800; margin-bottom:10px; color:var(--text);">
+        Matriz de Disciplinas e Pesos (Edital Verticalizado)
       </h3>
       <div style="overflow-x:auto;">
         <table class="data-table">
           <thead>
             <tr>
               <th>Disciplina / Bloco Temático</th>
-              <th>Qtd. Questões / Itens</th>
+              <th>Qtd. Questões</th>
               <th>Peso na Nota</th>
-              <th>Prioridade Recomendada IA</th>
+              <th>Prioridade IA</th>
             </tr>
           </thead>
           <tbody>
@@ -113,11 +122,11 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
     </div>
 
     <div>
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
-        <h3 style="font-size:1rem; font-weight:800; color:#0f172a;">
-          📚 Materiais de Estudo Relacionados a Este Concurso (${(c.materiais || []).length})
+      <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+        <h3 style="font-size:1.125rem; font-weight:800; color:var(--text);">
+          Materiais de Estudo Relacionados (${(c.materiais || []).length})
         </h3>
-        <span style="font-size:0.78rem; color:#64748b;">Clique em "Baixar Guia / Material" para gerar o arquivo real no servidor Python</span>
+        <span style="font-size:0.875rem; color:var(--muted);">Clique em "Baixar Guia" para obter o material completo</span>
       </div>
       ${materiaisHtml}
     </div>
@@ -132,11 +141,9 @@ window.AprovaComponents.closeConcursoModal = function () {
 window.AprovaComponents.toggleEstudadoNoModal = async function (materialId, concursoId) {
   const res = await window.AprovaAPI.alternarMaterialEstudado(materialId);
   window.AprovaUtils.showToast(
-    res.estudado ? '✅ Material marcado como estudado no SQLite!' : '⬜ Material desmarcado.',
-    res.estudado ? '#22c55e' : '#64748b'
+    res.estudado ? 'Material marcado como concluído no seu caderno.' : 'Material marcado como pendente.'
   );
   await window.AprovaComponents.openConcursoModal(concursoId);
   window.AprovaApp.carregarConcursos();
-  window.AprovaApp.atualizarTelemetriaTopo();
+  window.AprovaApp.atualizarIndicadoresUsuario();
 };
-

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Aprova+ IA | Plataforma Centralizada de Concursos, Radar Web & Materiais</title>
+  <title>Aprova+ IA | Plataforma Centralizada de Concursos, Radar Web e Materiais</title>
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/components.css" />
@@ -13,14 +13,14 @@
   <!-- Barra Superior do Concurseiro -->
   <div class="top-status-bar">
     <div class="top-status-inner">
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <span id="api-conn-badge" class="api-status-badge">🟢 Aprova+ IA Online</span>
-        <span style="color:#cbd5e1;">Monitoramento Inteligente de Editais, Rumores da Internet e Provas</span>
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <span id="api-conn-badge" class="api-status-badge">Aprova+ IA Online</span>
+        <span>Monitoramento Inteligente de Editais, Rumores da Internet e Provas</span>
       </div>
       <div class="telemetry-pills">
-        <span>⭐ Concursos Salvos: <strong id="top-salvos-count">3</strong></span>
-        <span>✅ Materiais Estudados: <strong id="top-estudados-count">6/34</strong></span>
-        <span>📊 Seu Progresso: <strong id="top-progresso-pct">18%</strong></span>
+        <span>Concursos Salvos: <strong id="top-salvos-count">3</strong></span>
+        <span>Materiais Estudados: <strong id="top-estudados-count">6/34</strong></span>
+        <span>Seu Progresso: <strong id="top-progresso-pct">18%</strong></span>
       </div>
     </div>
   </div>
@@ -32,28 +32,28 @@
         <div class="brand-logo">A+</div>
         <div>
           <div class="brand-name">Aprova<span>+ IA</span></div>
-          <span class="brand-tagline">Central de Concursos • Radar da Internet • Materiais</span>
+          <span class="brand-tagline">Central de Concursos · Radar da Internet · Materiais</span>
         </div>
       </div>
 
-      <nav class="nav-menu">
-        <button class="nav-btn active" data-view="explorar" onclick="window.AprovaApp.switchView('explorar')">
-          🎯 Concursos (3 Status)
+      <nav class="nav-menu" aria-label="Navegação Principal">
+        <button type="button" class="nav-btn active" data-view="explorar" onclick="window.AprovaApp.switchView('explorar')">
+          Concursos (3 Status)
         </button>
-        <button class="nav-btn" data-view="radar" onclick="window.AprovaApp.switchView('radar')">
-          📡 Radar IA (Na Internet)
+        <button type="button" class="nav-btn" data-view="radar" onclick="window.AprovaApp.switchView('radar')">
+          Radar IA (Na Internet)
         </button>
-        <button class="nav-btn" data-view="materiais" onclick="window.AprovaApp.switchView('materiais')">
-          📚 Materiais por Concurso
+        <button type="button" class="nav-btn" data-view="materiais" onclick="window.AprovaApp.switchView('materiais')">
+          Materiais por Concurso
         </button>
-        <button class="nav-btn" data-view="ia" onclick="window.AprovaApp.switchView('ia')">
-          🤖 Copiloto & Match IA
+        <button type="button" class="nav-btn" data-view="ia" onclick="window.AprovaApp.switchView('ia')">
+          Copiloto e Match IA
         </button>
-        <button class="nav-btn nav-premium" data-view="premium" onclick="window.AprovaApp.switchView('premium')">
-          ✨ Plano PRO
+        <button type="button" class="nav-btn nav-premium" data-view="premium" onclick="window.AprovaApp.switchView('premium')">
+          Plano PRO
         </button>
-        <button class="nav-btn" data-view="conta" onclick="window.AprovaApp.switchView('conta')">
-          👤 Minha Conta
+        <button type="button" class="nav-btn" data-view="conta" onclick="window.AprovaApp.switchView('conta')">
+          Minha Conta
         </button>
       </nav>
 
@@ -62,36 +62,35 @@
     </div>
   </header>
 
-  <!-- Hero Banner & Filtros Inteligentes -->
+  <!-- Hero Workspace & Filtros Inteligentes -->
   <section class="hero-banner">
     <div class="hero-container">
       <div class="hero-grid">
         <div>
-          <span class="hero-kicker">🚀 PLATAFORMA INTELIGENTE PARA CONCURSEIROS</span>
           <h1 class="hero-title">
-            Todos os Concursos <span class="grad">Ativos, Previstos na Web e Passados</span> com o Material Certo.
+            Concursos Ativos, Previstos na Web e Passados com o Material Certo.
           </h1>
           <p class="hero-desc">
-            Nossa Inteligência Artificial monitora Diários Oficiais, portais e rumores da internet para centralizar editais abertos, prever os próximos concursos e entregar apostilas, editais verticalizados e provas anteriores vinculados a cada certame.
+            Nossa Inteligência Artificial monitora Diários Oficiais, portais e movimentações na internet para centralizar editais abertos, prever os próximos concursos e entregar apostilas, editais verticalizados e provas anteriores vinculados a cada certame.
           </p>
         </div>
 
-        <!-- KPIs Clicáveis para Filtrar Rápido pelos 3 Status -->
-        <div class="hero-kpis">
-          <div class="kpi-box" onclick="window.AprovaApp.setStatusFilter('aberto')" title="Clique para filtrar Concursos Ativos">
-            <span style="font-size:0.74rem; color:#86efac; font-weight:800;">🟢 COM EDITAL ABERTO</span>
-            <span class="kpi-number" id="kpi-abertos-count">5</span>
-            <span class="kpi-sub">9.625 vagas imediatas</span>
+        <!-- Painel Tipográfico Plano para Filtrar Rápido pelos 3 Status -->
+        <div class="hero-ledger">
+          <div class="ledger-item" onclick="window.AprovaApp.setStatusFilter('aberto')" title="Clique para filtrar Concursos Ativos">
+            <span class="ledger-label">Com Edital Aberto</span>
+            <span class="ledger-number" id="kpi-abertos-count">5</span>
+            <span class="ledger-sub">9.625 vagas imediatas</span>
           </div>
-          <div class="kpi-box" onclick="window.AprovaApp.setStatusFilter('previsto')" title="Clique para filtrar Previstos na Internet">
-            <span style="font-size:0.74rem; color:#fcd34d; font-weight:800;">🟡 PREVISTOS (RADAR IA)</span>
-            <span class="kpi-number" id="kpi-previstos-count">4</span>
-            <span class="kpi-sub">Monitorados na internet</span>
+          <div class="ledger-item" onclick="window.AprovaApp.setStatusFilter('previsto')" title="Clique para filtrar Previstos na Internet">
+            <span class="ledger-label">Previstos (Radar IA)</span>
+            <span class="ledger-number" id="kpi-previstos-count">4</span>
+            <span class="ledger-sub">Monitorados na web</span>
           </div>
-          <div class="kpi-box" onclick="window.AprovaApp.setStatusFilter('encerrado')" title="Clique para filtrar Concursos Passados">
-            <span style="font-size:0.74rem; color:#7dd3fc; font-weight:800;">🔵 JÁ ACONTECERAM</span>
-            <span class="kpi-number" id="kpi-encerrados-count">4</span>
-            <span class="kpi-sub">Provas + Notas de Corte</span>
+          <div class="ledger-item" onclick="window.AprovaApp.setStatusFilter('encerrado')" title="Clique para filtrar Concursos Passados">
+            <span class="ledger-label">Já Aconteceram</span>
+            <span class="ledger-number" id="kpi-encerrados-count">4</span>
+            <span class="ledger-sub">Provas e notas de corte</span>
           </div>
         </div>
       </div>
@@ -99,7 +98,7 @@
       <!-- Barra de Pesquisa e Filtros (Exibida na aba Explorar) -->
       <div id="hero-filter-bar" class="filter-bar">
         <div class="field-group">
-          <label>Buscar por Sigla, Órgão, Cargo ou Banca</label>
+          <label for="filter-q">Buscar por Sigla, Órgão, Cargo ou Banca</label>
           <input
             type="text"
             id="filter-q"
@@ -109,19 +108,19 @@
           />
         </div>
         <div class="field-group">
-          <label>Carreira / Área</label>
+          <label for="filter-area">Carreira / Área</label>
           <select id="filter-area" class="field-input" onchange="window.AprovaApp.aplicarFiltrosDaBarra()">
             <option value="todas">Todas as Áreas</option>
             <option value="Policial">Policial (PF, PRF)</option>
             <option value="Bancária">Bancária (Caixa, BB)</option>
             <option value="Tribunais">Tribunais (TSE, TJ-SP)</option>
             <option value="Administrativa">Administrativa (INSS, CNU, Correios)</option>
-            <option value="Fiscal & Controle">Fiscal & Controle (Receita, BACEN, CGU)</option>
+            <option value="Fiscal">Fiscal e Controle (Receita, BACEN, CGU)</option>
             <option value="Ambiental">Ambiental (IBAMA)</option>
           </select>
         </div>
         <div class="field-group">
-          <label>Escolaridade</label>
+          <label for="filter-escolaridade">Escolaridade</label>
           <select id="filter-escolaridade" class="field-input" onchange="window.AprovaApp.aplicarFiltrosDaBarra()">
             <option value="todos">Médio e Superior</option>
             <option value="Médio">Ensino Médio</option>
@@ -129,14 +128,14 @@
           </select>
         </div>
         <div class="field-group">
-          <label>Abrangência / UF</label>
+          <label for="filter-uf">Abrangência / UF</label>
           <select id="filter-uf" class="field-input" onchange="window.AprovaApp.aplicarFiltrosDaBarra()">
-            <option value="todas">Nacional + Estados</option>
+            <option value="todas">Nacional e Estados</option>
             <option value="Nacional">Nacional (Todo o Brasil)</option>
             <option value="SP">São Paulo (SP)</option>
           </select>
         </div>
-        <button class="btn btn-outline" style="height:41px;" onclick="window.AprovaApp.limparFiltros()">
+        <button type="button" class="btn btn-outline" style="height:42px;" onclick="window.AprovaApp.limparFiltros()">
           Limpar
         </button>
       </div>
@@ -148,24 +147,29 @@
 
     <!-- VIEW 1: EXPLORAR CONCURSOS (ATIVOS, PREVISTOS NA INTERNET E ENCERRADOS) -->
     <section id="view-explorar" class="view-pane active">
+      <div style="margin-bottom:14px;">
+        <h2 style="font-size:1.375rem; font-weight:800; color:var(--text);">
+          Painel Central de Concursos e Editais
+        </h2>
+      </div>
       <div class="status-toolbar">
         <div class="status-pills">
-          <button class="status-pill active-todos" data-status="todos" onclick="window.AprovaApp.setStatusFilter('todos')">
-            📋 Todos (<span id="pill-count-todos">13</span>)
+          <button type="button" class="status-pill active-todos" data-status="todos" onclick="window.AprovaApp.setStatusFilter('todos')">
+            <span>Todos (<span id="pill-count-todos">13</span>)</span>
           </button>
-          <button class="status-pill" data-status="aberto" onclick="window.AprovaApp.setStatusFilter('aberto')">
-            🟢 Ativos / Com Edital (<span id="pill-count-aberto">5</span>)
+          <button type="button" class="status-pill" data-status="aberto" onclick="window.AprovaApp.setStatusFilter('aberto')">
+            <span>Ativos / Com Edital (<span id="pill-count-aberto">5</span>)</span>
           </button>
-          <button class="status-pill" data-status="previsto" onclick="window.AprovaApp.setStatusFilter('previsto')">
-            🟡 Previstos na Internet (<span id="pill-count-previsto">4</span>)
+          <button type="button" class="status-pill" data-status="previsto" onclick="window.AprovaApp.setStatusFilter('previsto')">
+            <span>Previstos na Internet (<span id="pill-count-previsto">4</span>)</span>
           </button>
-          <button class="status-pill" data-status="encerrado" onclick="window.AprovaApp.setStatusFilter('encerrado')">
-            🔵 Já Aconteceram / Provas (<span id="pill-count-encerrado">4</span>)
+          <button type="button" class="status-pill" data-status="encerrado" onclick="window.AprovaApp.setStatusFilter('encerrado')">
+            <span>Já Aconteceram / Provas (<span id="pill-count-encerrado">4</span>)</span>
           </button>
         </div>
 
-        <button id="btn-filtro-salvos" class="btn btn-outline" onclick="window.AprovaApp.toggleApenasSalvos()">
-          ⭐ Meus Concursos Salvos (<span id="count-salvos-badge">0</span>)
+        <button type="button" id="btn-filtro-salvos" class="btn btn-outline" onclick="window.AprovaApp.toggleApenasSalvos()">
+          <span>Meus Concursos Salvos (<span id="count-salvos-badge">0</span>)</span>
         </button>
       </div>
 
@@ -176,12 +180,11 @@
     <section id="view-radar" class="view-pane">
       <div class="section-banner">
         <div>
-          <span class="badge badge-previsto" style="margin-bottom:6px;">📡 MONITORAMENTO DE FONTES ABERTAS & BOATOS REAIS</span>
-          <h2 style="font-size:1.45rem; font-weight:800; color:#0f172a;">
+          <h2 style="font-size:1.5rem; font-weight:800; color:var(--text); margin-bottom:6px;">
             Radar IA: O que estão falando na internet sobre novos Concursos
           </h2>
-          <p style="font-size:0.88rem; color:#475569;">
-            Nossa IA rastreia movimentações no Ministério da Gestão (MGI), dispensas de licitação de bancas, entrevistas de presidentes de órgãos e fóruns de concurseiros para separar fatos reais de boatos.
+          <p style="font-size:0.9375rem; color:var(--text-secondary);">
+            Nossa IA rastreia movimentações no Ministério da Gestão (MGI), dispensas de licitação de bancas, entrevistas de dirigentes de órgãos e fóruns de concurseiros para separar fatos reais de boatos.
           </p>
         </div>
       </div>
@@ -192,11 +195,10 @@
     <section id="view-materiais" class="view-pane">
       <div class="section-banner">
         <div>
-          <span class="badge badge-purple" style="margin-bottom:6px;">📚 REPOSITÓRIO DIRECIONADO POR EDITAL</span>
-          <h2 style="font-size:1.45rem; font-weight:800; color:#0f172a;">
+          <h2 style="font-size:1.5rem; font-weight:800; color:var(--text); margin-bottom:6px;">
             Materiais de Estudo Relacionados a Cada Concurso Específico
           </h2>
-          <p style="font-size:0.88rem; color:#475569;">
+          <p style="font-size:0.9375rem; color:var(--text-secondary);">
             Baixe Editais Verticalizados por IA, Apostilas PDF focadas na banca, Cadernos de Questões e Provas Passadas com Gabarito. Marque o que já estudou para acompanhar sua evolução.
           </p>
         </div>
@@ -208,11 +210,10 @@
     <section id="view-ia" class="view-pane">
       <div class="section-banner">
         <div>
-          <span class="badge badge-aberto" style="margin-bottom:6px;">🤖 INTELIGÊNCIA ARTIFICIAL PARA CONCURSEIROS</span>
-          <h2 style="font-size:1.45rem; font-weight:800; color:#0f172a;">
-            Copiloto Aprova+ IA: Match de Perfil & Cronograma Semanal
+          <h2 style="font-size:1.5rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+            Copiloto Aprova+ IA: Match de Perfil e Cronograma Semanal
           </h2>
-          <p style="font-size:0.88rem; color:#475569;">
+          <p style="font-size:0.9375rem; color:var(--text-secondary);">
             Descubra quais concursos (abertos ou previstos) têm maior compatibilidade com seu perfil e receba um plano semanal de horas por disciplina.
           </p>
         </div>
@@ -224,12 +225,11 @@
     <section id="view-premium" class="view-pane">
       <div class="section-banner">
         <div>
-          <span class="badge badge-purple" style="margin-bottom:6px;">✨ ACELERE SUA APROVAÇÃO</span>
-          <h2 style="font-size:1.45rem; font-weight:800; color:#0f172a;">
-            Plano Aprova+ PRO — Alertas em Tempo Real & IA Avançada
+          <h2 style="font-size:1.5rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+            Plano Aprova+ PRO: Alertas em Tempo Real e IA Avançada
           </h2>
-          <p style="font-size:0.88rem; color:#475569;">
-            A busca de concursos e os materiais base são 100% gratuitos. Conheça os recursos avançados do Aprova+ PRO e garanta seu desconto VIP de pré-lançamento.
+          <p style="font-size:0.9375rem; color:var(--text-secondary);">
+            A busca de concursos e os materiais base são gratuitos. Conheça os recursos avançados do Aprova+ PRO e garanta seu desconto VIP de pré-lançamento.
           </p>
         </div>
       </div>
@@ -240,11 +240,10 @@
     <section id="view-conta" class="view-pane">
       <div class="section-banner">
         <div>
-          <span class="badge badge-aberto" style="margin-bottom:6px;">👤 ÁREA DO CONCURSEIRO</span>
-          <h2 style="font-size:1.45rem; font-weight:800; color:#0f172a;">
-            Minha Conta, Preferências & Caderno de Estudos
+          <h2 style="font-size:1.5rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+            Minha Conta, Preferências e Caderno de Estudos
           </h2>
-          <p style="font-size:0.88rem; color:#475569;">
+          <p style="font-size:0.9375rem; color:var(--text-secondary);">
             Gerencie seus dados pessoais, sua carreira foco, seus concursos salvos e o histórico de apostilas e provas que você já concluiu.
           </p>
         </div>
@@ -257,7 +256,7 @@
   <!-- Modal de Detalhes / Raio-X do Concurso e Materiais -->
   <div id="concurso-modal" class="modal-overlay">
     <div class="modal-window">
-      <button class="modal-close-btn" onclick="window.AprovaComponents.closeConcursoModal()" title="Fechar">✕</button>
+      <button type="button" class="modal-close-btn" onclick="window.AprovaComponents.closeConcursoModal()" title="Fechar">✕</button>
       <div id="concurso-modal-body"></div>
     </div>
   </div>
@@ -265,7 +264,7 @@
   <!-- Modal de Login e Cadastro de Usuário -->
   <div id="auth-modal" class="modal-overlay">
     <div class="modal-window" style="max-width: 540px;">
-      <button class="modal-close-btn" onclick="window.AprovaComponents.closeAuthModal()" title="Fechar">✕</button>
+      <button type="button" class="modal-close-btn" onclick="window.AprovaComponents.closeAuthModal()" title="Fechar">✕</button>
       <div id="auth-modal-body"></div>
     </div>
   </div>
@@ -275,7 +274,7 @@
 
   <!-- Rodapé -->
   <footer class="app-footer">
-    <strong>Aprova+ IA</strong> • Plataforma Centralizada de Concursos Ativos, Previstos na Internet e Históricos com Materiais Direcionados
+    <p><strong>Aprova+ IA</strong> · Plataforma Centralizada de Concursos Ativos, Previstos na Internet e Históricos com Materiais Direcionados</p>
   </footer>
 
   <!-- Scripts Modulares do Frontend -->

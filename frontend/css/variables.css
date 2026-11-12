@@ -1,60 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap');
+
 :root {
-  --bg-dark: #0f172a;
-  --bg-darker: #090e1a;
-  --surface: #f8fafc;
+  /* Civic Editorial & Study Workspace Surfaces */
+  --bg: #f6f5f1;
+  --bg-subtle: #eceae3;
+  --bg-dark: #102338;
   --card: #ffffff;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --text: #0f172a;
-  --text-secondary: #334155;
-  --muted: #64748b;
 
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-soft: #dbeafe;
+  /* Ink & Contrast (WCAG AA+ Verified) */
+  --text: #111c24;
+  --text-secondary: #2d3e4e;
+  --muted: #4a5d70;
 
-  --green: #16a34a;
-  --green-soft: #dcfce7;
-  --green-border: #86efac;
+  /* Borders & Dividers */
+  --border: #d8d5cb;
+  --border-strong: #b8b4a8;
 
-  --amber: #d97706;
-  --amber-soft: #fef3c7;
-  --amber-border: #fcd34d;
+  /* Primary Civic Cobalt Action */
+  --primary: #0b4f6c;
+  --primary-hover: #083b52;
+  --primary-soft: #e3f0f5;
 
-  --blue: #0284c7;
-  --blue-soft: #e0f2fe;
-  --blue-border: #7dd3fc;
+  /* Accent Editorial Terracotta / Ochre */
+  --accent: #8c3d19;
+  --accent-hover: #6e2e11;
+  --accent-soft: #faeae3;
+  --accent-border: #e5b8a4;
 
-  --purple: #7c3aed;
-  --purple-hover: #6d28d9;
-  --purple-soft: #f3e8ff;
-  --purple-border: #ddd6fe;
+  /* Semantic Status: Aberto (Forest Emerald) */
+  --green: #0f5132;
+  --green-soft: #d1e7dd;
+  --green-border: #a3cfbb;
 
-  --danger: #dc2626;
-  --danger-soft: #fef2f2;
+  /* Semantic Status: Previsto Radar IA (Warm Ochre) */
+  --amber: #664d03;
+  --amber-soft: #fff3cd;
+  --amber-border: #ffecb5;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  /* Semantic Status: Histórico / Passado (Archive Slate Blue) */
+  --blue: #084298;
+  --blue-soft: #cfe2ff;
+  --blue-border: #9ec5fe;
 
-  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 6px 22px rgba(15, 23, 42, 0.07);
-  --shadow-lg: 0 16px 38px rgba(15, 23, 42, 0.14);
+  /* Neutral Elevation Shadows (Zero colored glow) */
+  --shadow-sm: 0 1px 2px rgba(17, 28, 36, 0.05);
+  --shadow-md: 0 4px 12px rgba(17, 28, 36, 0.06);
+  --shadow-lg: 0 12px 28px rgba(17, 28, 36, 0.10);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+::selection {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
 }
 
 body {
-  background-color: var(--surface);
+  font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--bg);
   color: var(--text);
   line-height: 1.55;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  caret-color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
 
+h1, h2, h3, h4 {
+  color: var(--text);
+  letter-spacing: -0.025em;
+  line-height: 1.22;
+  text-wrap: balance;
+}
+
+p, li {
+  text-wrap: pretty;
+  max-width: 58ch;
+}
+
+a {
+  color: var(--primary);
+  text-underline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}

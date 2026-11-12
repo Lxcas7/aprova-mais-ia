@@ -84,13 +84,13 @@
     if (!badge) return;
     if (isOnline) {
       badge.className = 'api-status-badge';
-      badge.innerHTML = '🟢 Aprova+ IA Online (Servidor FastAPI + SQLite)';
+      badge.innerHTML = 'Aprova+ IA Online (FastAPI + SQLite)';
     } else if (isGitHubPages) {
       badge.className = 'api-status-badge';
-      badge.innerHTML = '🟢 Aprova+ IA Online (Nuvem GitHub Pages)';
+      badge.innerHTML = 'Aprova+ IA Online (Nuvem GitHub Pages)';
     } else {
       badge.className = 'api-status-badge';
-      badge.innerHTML = '🟢 Aprova+ IA Ativo (Modo Local)';
+      badge.innerHTML = 'Aprova+ IA Ativo (Modo Local)';
     }
   }
 

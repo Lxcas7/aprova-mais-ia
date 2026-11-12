@@ -1,5 +1,5 @@
 /**
- * Componente: Plano Premium — Aprova+ PRO (Lista VIP de Lançamento)
+ * Componente: Plano Premium (Aprova+ PRO)
  */
 window.AprovaComponents = window.AprovaComponents || {};
 
@@ -14,61 +14,58 @@ window.AprovaComponents.renderPremiumView = function () {
       <!-- Comparativo Plano Gratuito vs Aprova+ PRO -->
       <div class="concurso-card">
         <div>
-          <span class="badge badge-aberto" style="margin-bottom:8px;">🟢 PLANO GRATUITO (INCLUSO NA SUA CONTA)</span>
-          <h3 style="font-size:1.25rem; font-weight:800; color:#0f172a; margin-bottom:6px;">
-            Acesso Essencial para Concurseiros
+          <h3 style="font-size:1.25rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+            Acesso Essencial Gratuito vs. Aprova+ PRO
           </h3>
-          <p style="font-size:0.85rem; color:#475569; margin-bottom:14px;">
-            Tudo o que você precisa para encontrar editais abertos, acompanhar rumores reais da internet e baixar materiais base gratuitamente:
+          <p style="font-size:0.9375rem; color:var(--text-secondary); margin-bottom:14px;">
+            Tudo o que você precisa para encontrar editais abertos, acompanhar rumores reais da internet e baixar materiais base já está liberado gratuitamente na sua conta:
           </p>
-          <ul style="list-style:none; display:flex; flex-direction:column; gap:9px; font-size:0.86rem; margin-bottom:20px;">
-            <li>✅ <strong>Busca Centralizada em 3 Status:</strong> Concursos Ativos, Previstos na Internet e Históricos.</li>
-            <li>✅ <strong>Radar IA de Rumores Web:</strong> Termômetro de autorização, comissão formada e banca.</li>
-            <li>✅ <strong>Materiais Vinculados por Edital:</strong> Editais verticalizados, apostilas PDF e provas passadas.</li>
-            <li>✅ <strong>Checklist de Estudo na Conta:</strong> Marcação de materiais concluídos e favoritos.</li>
+          <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; font-size:0.9375rem; margin-bottom:20px; padding:0;">
+            <li><strong>Busca Centralizada em 3 Status:</strong> Concursos Ativos, Previstos na Internet e Históricos.</li>
+            <li><strong>Radar IA de Rumores Web:</strong> Termômetro de autorização, comissão formada e banca.</li>
+            <li><strong>Materiais Vinculados por Edital:</strong> Editais verticalizados, apostilas PDF e provas passadas.</li>
+            <li><strong>Checklist de Estudo na Conta:</strong> Marcação de materiais concluídos e favoritos.</li>
           </ul>
 
-          <div style="border-top:1px solid #e2e8f0; padding-top:16px;">
-            <span class="badge badge-purple" style="margin-bottom:8px;">✨ EM BREVE — PLANO APROVA+ PRO</span>
-            <h4 style="font-size:1.1rem; font-weight:800; color:#0f172a; margin-bottom:8px;">
-              Recursos Avançados do Plano Premium:
+          <div style="border-top:1px solid var(--border); padding-top:16px;">
+            <h4 style="font-size:1.125rem; font-weight:800; color:var(--text); margin-bottom:10px;">
+              Recursos Avançados do Plano Aprova+ PRO:
             </h4>
-            <ul style="list-style:none; display:flex; flex-direction:column; gap:8px; font-size:0.85rem; color:#334155;">
-              <li>🚀 <strong>Alertas Instantâneos no WhatsApp & Telegram</strong> no minuto em que sair edital ou rumor quente da sua carreira.</li>
-              <li>✍️ <strong>Corretor de Redação e Discursivas por IA</strong> treinado nos espelhos da Cebraspe, FGV e FCC.</li>
-              <li>📅 <strong>Cronograma Dinâmico Adaptativo</strong> que recalcula suas metas diárias conforme seus acertos em simulados.</li>
-              <li>📊 <strong>Simulador de Nota de Corte Personalizado</strong> com predição de ranking.</li>
+            <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; font-size:0.9375rem; color:var(--text-secondary); padding:0;">
+              <li><strong>Alertas Instantâneos no WhatsApp e Telegram</strong> no minuto em que sair edital ou rumor quente da sua carreira.</li>
+              <li><strong>Corretor de Redação e Discursivas por IA</strong> treinado nos espelhos da Cebraspe, FGV e FCC.</li>
+              <li><strong>Cronograma Dinâmico Adaptativo</strong> que recalcula suas metas diárias conforme seus acertos em simulados.</li>
+              <li><strong>Simulador de Nota de Corte Personalizado</strong> com predição de ranking.</li>
             </ul>
           </div>
         </div>
       </div>
 
       <!-- Formulário de Pré-Inscrição VIP Aprova+ PRO -->
-      <div class="concurso-card" style="border:2px solid #8b5cf6; background:linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);">
+      <div class="concurso-card">
         <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-            <span class="badge badge-purple">✨ PRÉ-LANÇAMENTO EXCLUSIVO</span>
-            <span style="font-size:0.78rem; font-weight:800; color:#6d28d9;">30 Dias Grátis + 50% OFF Vitalício</span>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+            <h3 style="font-size:1.3125rem; font-weight:800; color:var(--text);">
+              Entre na Lista VIP do Aprova+ PRO
+            </h3>
+            <span class="badge badge-aberto">30 Dias Grátis + 50% OFF</span>
           </div>
-          <h3 style="font-size:1.3rem; font-weight:800; color:#0f172a; margin-bottom:6px;">
-            Entre na Lista VIP do Aprova+ PRO
-          </h3>
-          <p style="font-size:0.84rem; color:#475569; margin-bottom:16px;">
-            O Plano PRO está em fase final de desenvolvimento. Reserve sua vaga gratuitamente abaixo para ganhar <strong>30 dias de teste grátis + 50% de desconto vitalício</strong> assim que for liberado!
+          <p style="font-size:0.9375rem; color:var(--text-secondary); margin-bottom:16px;">
+            Reserve sua vaga gratuitamente abaixo para ganhar <strong>30 dias de teste grátis e 50% de desconto vitalício</strong> no lançamento do módulo PRO.
           </p>
 
-          <form onsubmit="window.AprovaComponents.salvarLeadSmokeTest(event)" style="display:flex; flex-direction:column; gap:12px;">
+          <form onsubmit="window.AprovaComponents.salvarLeadSmokeTest(event)" style="display:flex; flex-direction:column; gap:14px;">
             <div class="field-group">
-              <label>Seu Nome Completo</label>
+              <label for="lead-nome">Seu Nome Completo</label>
               <input type="text" id="lead-nome" class="field-input" placeholder="Ex: Carlos Eduardo" value="${user ? user.nome : ''}" required />
             </div>
             <div class="field-group">
-              <label>WhatsApp ou E-mail para Receber o Convite VIP</label>
+              <label for="lead-contato">WhatsApp ou E-mail para Receber o Convite VIP</label>
               <input type="text" id="lead-contato" class="field-input" placeholder="Ex: (11) 99999-8888 ou seu@email.com" value="${user ? user.email : ''}" required />
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
               <div class="field-group">
-                <label>Sua Carreira Foco</label>
+                <label for="lead-carreira">Sua Carreira Foco</label>
                 <select id="lead-carreira" class="field-input">
                   <option value="Policial (PF / PRF / PC)">Policial (PF / PRF / PC)</option>
                   <option value="Bancária (Caixa / BB / BACEN)">Bancária (Caixa / BB / BACEN)</option>
@@ -78,28 +75,28 @@ window.AprovaComponents.renderPremiumView = function () {
                 </select>
               </div>
               <div class="field-group">
-                <label>Plano de Interesse</label>
+                <label for="lead-preco">Plano de Interesse</label>
                 <select id="lead-preco" class="field-input">
-                  <option value="R$ 19,90/mês (Anual)">Anual — R$ 19,90/mês</option>
-                  <option value="R$ 29,90/mês (Mensal)" selected>Mensal — R$ 29,90/mês</option>
+                  <option value="R$ 19,90/mês (Anual)">Anual: R$ 19,90/mês</option>
+                  <option value="R$ 29,90/mês (Mensal)" selected>Mensal: R$ 29,90/mês</option>
                 </select>
               </div>
             </div>
             <div class="field-group">
-              <label>Qual ferramenta PRO você quer usar primeiro?</label>
+              <label for="lead-recurso">Qual ferramenta PRO você quer usar primeiro?</label>
               <select id="lead-recurso" class="field-input">
-                <option value="Alertas WhatsApp de Rumores e Editais">📲 Alertas no WhatsApp sobre Rumores e Abertura de Edital</option>
-                <option value="Cronograma Adaptativo por IA">📅 Cronograma de Estudos Adaptativo por IA</option>
-                <option value="Corretor de Discursivas IA (Padrão Banca)">✍️ Corretor de Redação/Discursivas por IA</option>
-                <option value="Simulados Inéditos Comentados">📝 Gerador de Simulados Inéditos no Estilo da Banca</option>
+                <option value="Alertas WhatsApp de Rumores e Editais">Alertas no WhatsApp sobre Rumores e Abertura de Edital</option>
+                <option value="Cronograma Adaptativo por IA">Cronograma de Estudos Adaptativo por IA</option>
+                <option value="Corretor de Discursivas IA (Padrão Banca)">Corretor de Redação e Discursivas por IA</option>
+                <option value="Simulados Inéditos Comentados">Gerador de Simulados Inéditos no Estilo da Banca</option>
               </select>
             </div>
-            <button type="submit" class="btn btn-purple" style="padding:13px; font-size:0.95rem; margin-top:4px;">
-              🚀 Ativar Minha Reserva na Lista VIP PRO
+            <button type="submit" class="btn btn-purple" style="padding:12px; font-size:0.9375rem; margin-top:4px;">
+              Ativar Minha Reserva na Lista VIP PRO
             </button>
           </form>
 
-          <div id="smoke-test-feedback" style="margin-top:12px;"></div>
+          <div id="smoke-test-feedback" style="margin-top:14px;"></div>
         </div>
       </div>
     </div>
@@ -117,15 +114,15 @@ window.AprovaComponents.salvarLeadSmokeTest = async function (event) {
   };
 
   const res = await window.AprovaAPI.cadastrarLeadPremium(payload);
-  window.AprovaUtils.showToast(`🎉 ${res.mensagem}`, '#7c3aed');
+  window.AprovaUtils.showToast(res.mensagem);
   window.AprovaComponents.renderHeaderUserWidget();
 
   const feedback = document.getElementById('smoke-test-feedback');
   if (feedback) {
     feedback.innerHTML = `
-      <div style="background:#f0fdf4; border:1px solid #86efac; color:#15803d; padding:12px; border-radius:10px; font-size:0.84rem; font-weight:600;">
-        ✅ <strong>Reserva VIP confirmada!</strong> Seu perfil agora possui o selo <em>Lista VIP PRO</em> e você receberá o acesso antecipado com 50% OFF.
-      </div>
+      <p style="color:var(--green); padding-top:10px; border-top:1px solid var(--border); font-size:0.9375rem; font-weight:600;">
+        Reserva VIP confirmada! Seu perfil agora possui o selo Lista VIP PRO com 50% OFF garantido.
+      </p>
     `;
   }
 };
