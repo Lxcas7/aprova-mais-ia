@@ -55,10 +55,11 @@ window.AprovaApp = {
       pane.classList.toggle('active', pane.id === `view-${viewName}`);
     });
 
-    // Mostra a barra de busca global apenas na visão Explorar Concursos
-    const heroFilterBar = document.getElementById('hero-filter-bar');
-    if (heroFilterBar) {
-      heroFilterBar.style.display = viewName === 'explorar' ? 'grid' : 'none';
+    // Exibe o Hero Workspace apenas na visão principal Explorar Concursos,
+    // permitindo que as abas secundárias abram diretamente em seu cabeçalho de ferramenta
+    const heroWorkspace = document.getElementById('hero-workspace');
+    if (heroWorkspace) {
+      heroWorkspace.style.display = viewName === 'explorar' ? 'block' : 'none';
     }
 
     // Carrega dados específicos da aba selecionada
@@ -95,6 +96,11 @@ window.AprovaApp = {
       if (s === novoStatus) {
         pill.classList.add(`active-${s}`);
       }
+    });
+
+    document.querySelectorAll('.ledger-item').forEach(item => {
+      const ls = item.dataset.ledgerStatus;
+      item.classList.toggle('active', ls === novoStatus);
     });
 
     this.carregarConcursos();
@@ -179,7 +185,7 @@ window.AprovaApp = {
 
     const summaryEl = document.getElementById('results-summary-text');
     if (summaryEl) {
-      summaryEl.textContent = `Exibindo ${lista.length} de ${resumo.total || 13} concursos mapeados`;
+      summaryEl.textContent = `${lista.length} de ${resumo.total || 13} editais`;
     }
 
     if (lista.length === 0) {

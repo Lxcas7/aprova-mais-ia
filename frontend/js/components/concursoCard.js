@@ -19,13 +19,6 @@ window.AprovaComponents.renderConcursoCard = function (concurso) {
     ? `<span class="badge badge-previsto">${probVal}% Confiança IA</span>`
     : `<span class="badge badge-cobalt">${estudadosCount}/${materiaisCount} Materiais</span>`;
 
-  const topMateriais = (concurso.materiais || []).slice(0, 2).map(m => `
-    <li class="${m.estudado ? 'is-studied' : ''}">
-      ${m.estudado ? window.AprovaUtils.icon('check') : window.AprovaUtils.icon('book')}
-      <span><strong>${clean(m.categoria)}:</strong> ${clean(m.titulo.length > 52 ? m.titulo.slice(0, 52) + '...' : m.titulo)}</span>
-    </li>
-  `).join('');
-
   return `
     <article class="concurso-card">
       <div>
@@ -82,15 +75,6 @@ window.AprovaComponents.renderConcursoCard = function (concurso) {
             ${clean(concurso.resumo_ia)}
           </p>
         </div>
-
-        <div class="dossier-materials-preview">
-          <div class="dossier-materials-heading">
-            Acervo direcionado (${materiaisCount} guias vinculados):
-          </div>
-          <ul class="dossier-materials-list">
-            ${topMateriais}
-          </ul>
-        </div>
       </div>
 
       <div class="dossier-actions">
@@ -99,7 +83,7 @@ window.AprovaComponents.renderConcursoCard = function (concurso) {
         </button>
         <button type="button" class="btn btn-outline" onclick="window.AprovaApp.irParaMateriaisDoConcurso('${concurso.id}')">
           ${window.AprovaUtils.icon('download')}
-          <span>Apostilas e Provas</span>
+          <span>Acervo PDF</span>
         </button>
       </div>
     </article>

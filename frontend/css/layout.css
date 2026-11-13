@@ -211,7 +211,7 @@
 .hero-banner {
   background-color: var(--bg-dark);
   color: #ffffff;
-  padding: 36px 24px 28px;
+  padding: 26px 24px 22px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -223,25 +223,25 @@
 .hero-grid {
   display: grid;
   grid-template-columns: 1.35fr 1fr;
-  gap: 36px;
+  gap: 32px;
   align-items: center;
 }
 
 .hero-title {
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 2.4vw, 1.9375rem);
   line-height: 1.16;
   font-weight: 800;
   color: #ffffff;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   letter-spacing: -0.03em;
-  max-width: 28ch;
+  max-width: 30ch;
 }
 
 .hero-desc {
   color: #dbe4ee;
   font-size: 0.9375rem;
-  line-height: 1.6;
-  max-width: 58ch;
+  line-height: 1.55;
+  max-width: 60ch;
 }
 
 /* Flat Typographic Ledger for Hero Metrics (Zero nested cards) */
@@ -250,13 +250,14 @@
   grid-template-columns: repeat(3, 1fr);
   border-top: 1px solid var(--border-dark);
   border-bottom: 1px solid var(--border-dark);
-  padding: 16px 0;
-  gap: 16px;
+  padding: 14px 0;
+  gap: 14px;
 }
 
 .ledger-item {
-  padding-right: 12px;
+  padding: 6px 12px 6px 8px;
   border-right: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   background: none;
   border-top: none;
@@ -264,16 +265,21 @@
   border-left: none;
   text-align: left;
   font-family: inherit;
-  transition: opacity 0.16s ease;
+  transition: background-color 0.16s ease, opacity 0.16s ease;
 }
 
 .ledger-item:last-child {
   border-right: none;
-  padding-right: 0;
+  padding-right: 8px;
 }
 
 .ledger-item:hover {
-  opacity: 0.86;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.ledger-item.active {
+  background-color: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 -2px 0 #ffffff;
 }
 
 .ledger-label {
@@ -281,16 +287,16 @@
   font-size: 0.8125rem;
   font-weight: 700;
   color: var(--on-dark-muted);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .ledger-number {
   display: block;
-  font-size: 1.875rem;
+  font-size: clamp(1.375rem, 2.2vw, 1.8125rem);
   font-weight: 800;
   color: #ffffff;
   line-height: 1.08;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .ledger-sub {
@@ -301,10 +307,10 @@
 
 /* Search & Filter Toolbar */
 .filter-bar {
-  margin-top: 24px;
+  margin-top: 20px;
   background-color: var(--card);
   color: var(--text);
-  padding: 16px 18px;
+  padding: 14px 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-md);
@@ -318,7 +324,7 @@
 .main-container {
   max-width: 1340px;
   width: 100%;
-  margin: 28px auto 64px;
+  margin: 22px auto 64px;
   padding: 0 24px;
   flex: 1;
 }
@@ -442,7 +448,7 @@
   color: var(--primary-border);
 }
 
-/* Breakpoints for Tablet & Mobile */
+/* Breakpoints for Tablet & Mobile (Including 390px and 360px precision adaptation) */
 @media (max-width: 1080px) {
   .filter-bar {
     grid-template-columns: 1fr 1fr;
@@ -459,51 +465,134 @@
 @media (max-width: 960px) {
   .hero-grid {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 18px;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .top-status-bar {
     padding: 8px 16px;
   }
 
-  .nav-container {
-    padding: 12px 16px;
+  .top-status-caption {
+    display: none;
   }
 
+  .telemetry-pills {
+    gap: 10px;
+  }
+
+  .nav-container {
+    padding: 10px 16px 8px;
+    gap: 8px;
+  }
+
+  .brand {
+    order: 1;
+  }
+
+  .brand-tagline {
+    display: none;
+  }
+
+  #header-user-area {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .nav-menu {
+    order: 3;
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding-bottom: 2px;
+  }
+
+  .nav-menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-height: 44px;
+    padding: 0 12px;
+  }
+
+  .footer-links button {
+    min-height: 44px;
+    padding: 8px 6px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+@media (max-width: 640px) {
   .hero-banner {
-    padding: 28px 16px 24px;
+    padding: 20px 16px 18px;
   }
 
   .hero-title {
-    font-size: 1.625rem;
+    font-size: 1.4375rem;
+    margin-bottom: 8px;
+  }
+
+  .hero-desc {
+    font-size: 0.875rem;
+    line-height: 1.5;
   }
 
   .hero-ledger {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 10px 0;
   }
 
   .ledger-item {
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-    padding-right: 0;
-    padding-bottom: 10px;
+    padding: 8px 10px;
   }
 
-  .ledger-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
+  .ledger-sub {
+    display: none;
   }
 
   .filter-bar {
     grid-template-columns: 1fr;
     padding: 14px;
+    margin-top: 14px;
+    gap: 10px;
   }
 
   .main-container {
     padding: 0 16px;
-    margin: 20px auto 48px;
+    margin: 16px auto 44px;
+  }
+
+  .section-banner {
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+  }
+
+  .section-banner h2 {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .telemetry-pills span:last-child {
+    display: none;
+  }
+
+  .brand-logo {
+    width: 34px;
+    height: 34px;
+    font-size: 0.9375rem;
+  }
+
+  .brand-name {
+    font-size: 1.0625rem;
   }
 }

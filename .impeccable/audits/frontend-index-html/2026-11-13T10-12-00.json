@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-11-13T10:12:00-03:00",
+  "target": "frontend/index.html",
+  "target_slug": "frontend-index-html",
+  "health_score": 98,
+  "rating": "Excellent",
+  "dimensions": {
+    "accessibility": {
+      "score": 19,
+      "max": 20,
+      "findings": [
+        {
+          "severity": "P3",
+          "issue": "Tabelas de disciplinas dentro do modal (.data-table) utilizam <th> sem atributo explícito scope='col'",
+          "location": "frontend/js/components/modalDetalhes.js:116-119",
+          "recommendation": "Adicionar scope='col' aos cabeçalhos <th> caso leitores de tela legados sejam priorizados."
+        }
+      ]
+    },
+    "performance": {
+      "score": 20,
+      "max": 20,
+      "findings": []
+    },
+    "theming": {
+      "score": 20,
+      "max": 20,
+      "findings": []
+    },
+    "responsive": {
+      "score": 20,
+      "max": 20,
+      "findings": []
+    },
+    "anti_patterns": {
+      "score": 19,
+      "max": 20,
+      "findings": [
+        {
+          "severity": "P3",
+          "issue": "Estilos inline pontuais de espaçamento residual em templates de modais secundários",
+          "location": "frontend/js/components/userAccount.js:59",
+          "recommendation": "Opcionalmente migrar paddings pontuais de modal para classes utilitárias em refatorações futuras."
+        }
+      ]
+    }
+  },
+  "AutoDetect": {
+    "ran": true,
+    "total_findings": 0
+  }
+}

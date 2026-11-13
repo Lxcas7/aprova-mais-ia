@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Aprova+ IA · Plataforma Centralizada de Concursos, Radar Web e Materiais</title>
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/layout.css" />
@@ -62,8 +62,8 @@
     </div>
   </header>
 
-  <!-- Hero Workspace & Filtros Inteligentes -->
-  <section class="hero-banner">
+  <!-- Hero Workspace & Filtros Inteligentes (Exibido na visão principal Explorar) -->
+  <section id="hero-workspace" class="hero-banner">
     <div class="hero-container">
       <div class="hero-grid">
         <div>
@@ -77,17 +77,17 @@
 
         <!-- Painel Tipográfico Plano para Filtrar Rápido pelos 3 Status -->
         <div class="hero-ledger" role="group" aria-label="Resumo por horizonte de concurso">
-          <button type="button" class="ledger-item" onclick="window.AprovaApp.setStatusFilter('aberto')" title="Filtrar Concursos com Edital Aberto">
+          <button type="button" class="ledger-item" data-ledger-status="aberto" onclick="window.AprovaApp.setStatusFilter('aberto')" title="Filtrar Concursos com Edital Aberto">
             <span class="ledger-label">Com Edital Aberto</span>
             <span class="ledger-number" id="kpi-abertos-count">5</span>
             <span class="ledger-sub">9.625 vagas imediatas</span>
           </button>
-          <button type="button" class="ledger-item" onclick="window.AprovaApp.setStatusFilter('previsto')" title="Filtrar Concursos Previstos na Internet">
+          <button type="button" class="ledger-item" data-ledger-status="previsto" onclick="window.AprovaApp.setStatusFilter('previsto')" title="Filtrar Concursos Previstos na Internet">
             <span class="ledger-label">Previstos (Radar IA)</span>
             <span class="ledger-number" id="kpi-previstos-count">4</span>
             <span class="ledger-sub">Monitorados na web</span>
           </button>
-          <button type="button" class="ledger-item" onclick="window.AprovaApp.setStatusFilter('encerrado')" title="Filtrar Concursos Passados e Provas">
+          <button type="button" class="ledger-item" data-ledger-status="encerrado" onclick="window.AprovaApp.setStatusFilter('encerrado')" title="Filtrar Concursos Passados e Provas">
             <span class="ledger-label">Já Aconteceram</span>
             <span class="ledger-number" id="kpi-encerrados-count">4</span>
             <span class="ledger-sub">Provas e notas de corte</span>
@@ -147,15 +147,7 @@
   <main class="main-container">
 
     <!-- VIEW 1: EXPLORAR CONCURSOS (ATIVOS, PREVISTOS NA INTERNET E ENCERRADOS) -->
-    <section id="view-explorar" class="view-pane active">
-      <div class="section-banner">
-        <div>
-          <h2>Painel Central de Concursos e Editais</h2>
-          <p>Consulte a ficha técnica, o diagnóstico da banca, a nota de corte de referência e os materiais vinculados a cada certame.</p>
-        </div>
-        <div id="results-summary-text" class="section-meta-Summary">Exibindo 13 de 13 concursos mapeados</div>
-      </div>
-
+    <section id="view-explorar" class="view-pane active" aria-label="Painel Central de Concursos e Editais">
       <div class="status-toolbar">
         <div class="status-pills" role="group" aria-label="Filtrar por status do concurso">
           <button type="button" class="status-pill active-todos" data-status="todos" onclick="window.AprovaApp.setStatusFilter('todos')">
@@ -173,6 +165,7 @@
         </div>
 
         <div class="toolbar-right-controls">
+          <span id="results-summary-text" class="toolbar-results-count">13 de 13 editais</span>
           <div class="sort-control">
             <label for="filter-sort">Ordenar:</label>
             <select id="filter-sort" onchange="window.AprovaApp.setSortOrder(this.value)">

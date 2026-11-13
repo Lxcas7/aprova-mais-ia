@@ -1,0 +1,60 @@
+{
+  "timestamp": "2026-11-13T10:04:30-03:00",
+  "target": "frontend/index.html",
+  "target_slug": "frontend-index-html",
+  "scope": "page",
+  "status": "closed",
+  "ai_slop_verdict": "passed",
+  "ai_slop_signals": [],
+  "priority_issues": [
+    {
+      "rank": 1,
+      "what": "Excesso de empilhamento vertical acima da dobra e duplicação dos controles de status",
+      "why": "Na visão inicial (Explorar), empilhar .top-status-bar + .app-header + .hero-banner + #hero-filter-bar + .section-banner + .status-toolbar consome cerca de 600px no desktop e mais de 1.000px no mobile antes do primeiro dossiê de concurso aparecer. Além disso, o .hero-ledger e os .status-pills executam a mesma filtragem duas vezes em sequência, e o .hero-banner permanece visível mesmo nas abas secundárias (Radar, Materiais, Copiloto, PRO, Conta).",
+      "fix": "Ocultar .hero-banner nas abas secundárias para que abram direto no seu workspace; remover o .section-banner redundante na aba Explorar integrando o contador de resultados direto na .status-toolbar; sincronizar o estado ativo nos itens do .hero-ledger e compactar o padding vertical do hero.",
+      "command": "/impeccable layout",
+      "files": ["frontend/index.html", "frontend/css/layout.css", "frontend/js/app.js"]
+    },
+    {
+      "rank": 2,
+      "what": "Cabeçalho sticky (.app-header) quebrando em múltiplas linhas no mobile (390px e 360px) e alvos de toque abaixo de 44px",
+      "why": "Em larguras de 390px e 360px, o .nav-menu com 6 botões quebra em 3 linhas dentro de um header position: sticky, ocupando ~180px fixos da tela durante a rolagem. Além disso, .btn-sm (34px), .status-pill (36px) e .nav-btn (~36px) ficam abaixo do piso ergonômico de 44px em dispositivos de toque.",
+      "fix": "Em telas <= 768px, manter marca e ações de usuário na primeira linha (ocultando .brand-tagline no mobile) e transformar .nav-menu e .status-pills em trilhos horizontais deslizantes de linha única (overflow-x: auto, flex-wrap: nowrap) com alvos de toque mínimos de 44px em @media (max-width: 768px), (pointer: coarse).",
+      "command": "/impeccable adapt",
+      "files": ["frontend/index.html", "frontend/css/layout.css", "frontend/css/components.css"]
+    },
+    {
+      "rank": 3,
+      "what": "Excesso de densidade vertical dentro de cada .concurso-card e competição entre os dois botões de ação no rodapé do card",
+      "why": "Cada .concurso-card empilha 6 blocos internos (título, subtítulo, 3 badges, grid 2x2, parecer IA completo e lista de 2 materiais truncados) além de dois botões de mesmo peso (1fr 1fr) no rodapé, tornando a leitura de 13 cards repetitiva e diluindo o destaque da ação principal (Raio-X e Materiais).",
+      "fix": "Destilar o interior do .concurso-card: limitar o resumo IA a 2 linhas com line-clamp, substituir a sublista de materiais redundante por um indicador enxuto integrado ao rodapé e dar destaque claro ao CTA primário 'Raio-X e Materiais' sobre a ação secundária.",
+      "command": "/impeccable distill",
+      "files": ["frontend/js/components/concursoCard.js", "frontend/css/components.css"]
+    },
+    {
+      "rank": 4,
+      "what": "Rigidez do grid de cards (minmax 390px) e compressão horizontal em modais e tabelas a 360px",
+      "why": "O .cards-grid usa minmax(390px, 1fr) e colapsa o .card-divider-grid para 1 coluna em <= 420px, alongando excessivamente os cards em telas de 390px e 360px. Nos modais, o padding de 28px + 20px de overlay deixa apenas 264px úteis em telas de 360px.",
+      "fix": "Usar minmax(min(100%, 350px), 1fr) no .cards-grid, manter o .card-divider-grid em 2 colunas compactas até 340px, reduzir paddings de modal e células de tabela (.data-table) no mobile e adicionar suporte a prefers-reduced-motion e estados :active.",
+      "command": "/impeccable polish",
+      "files": ["frontend/css/variables.css", "frontend/css/components.css", "frontend/js/components/modalDetalhes.js"]
+    }
+  ],
+  "minor_observations": [
+    "Em 360px, a .top-status-bar quebra em 4 linhas por causa do .top-status-caption longo.",
+    "O #toast-container possui right: 24px fixo sem limite left em telas de 360px."
+  ],
+  "AutoDetect": {
+    "ran": true,
+    "total_findings": 0,
+    "by_Check": {},
+    "affected_files": []
+  },
+  "re_run": {
+    "previous_snapshot": null,
+    "resolved_since_last": [],
+    "still_open": [],
+    "new_issues": [],
+    "trend": "first_run"
+  }
+}
