@@ -3,17 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Aprova+ IA — Redirecionando para a Plataforma...</title>
+  <title>Aprova+ IA · Plataforma Centralizada de Concursos Públicos</title>
   <meta http-equiv="refresh" content="0; url=./frontend/index.html" />
+  <link rel="stylesheet" href="./frontend/css/variables.css" />
   <script>
     window.location.replace('./frontend/index.html');
   </script>
 </head>
-<body style="font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
-  <div style="text-align: center;">
-    <h2>🚀 Aprova+ IA — Plataforma Centralizada de Concursos</h2>
-    <p>Carregando interface... <a href="./frontend/index.html" style="color: #38bdf8;">Clique aqui se não for redirecionado automaticamente</a>.</p>
-  </div>
+<body style="background-color: var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px;">
+  <main style="max-width: 460px; width: 100%; background-color: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 32px; box-shadow: var(--shadow-md);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div style="width: 36px; height: 36px; border-radius: var(--radius-sm); background-color: var(--primary); color: #ffffff; font-weight: 800; display: flex; align-items: center; justify-content: center;">A+</div>
+      <h1 style="font-size: 1.25rem; font-weight: 800; color: var(--text);">Aprova+ IA</h1>
+    </div>
+    <p style="font-size: 0.9375rem; color: var(--text-secondary); margin-bottom: 16px;">
+      Inicializando o espaço de trabalho de concursos públicos, radar de movimentações e acervo de materiais...
+    </p>
+    <a href="./frontend/index.html" style="font-size: 0.875rem; font-weight: 700; color: var(--primary);">
+      Acessar plataforma diretamente
+    </a>
+  </main>
 </body>
 </html>
-

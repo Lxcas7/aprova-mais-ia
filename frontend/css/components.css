@@ -12,14 +12,27 @@
 }
 
 .field-input {
-  padding: 10px 12px;
+  height: 40px;
+  padding: 8px 12px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   font-family: inherit;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   color: var(--text);
   background-color: #ffffff;
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  width: 100%;
+}
+
+textarea.field-input {
+  height: auto;
+  min-height: 76px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.field-input:hover:not(:disabled) {
+  border-color: var(--text-secondary);
 }
 
 .field-input:focus {
@@ -28,12 +41,40 @@
   outline: none;
 }
 
+.field-input:disabled {
+  background-color: var(--bg-subtle);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-span-2 {
+  grid-column: span 2;
+}
+
+@media (max-width: 600px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .form-span-2 {
+    grid-column: span 1;
+  }
+}
+
+/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: 7px;
+  height: 40px;
+  padding: 0 15px;
   border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 0.875rem;
@@ -43,6 +84,22 @@
   transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
   text-decoration: none;
   line-height: 1.2;
+  white-space: nowrap;
+}
+
+.btn-sm {
+  height: 34px;
+  padding: 0 11px;
+  font-size: 0.8125rem;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-primary {
@@ -50,16 +107,18 @@
   color: #ffffff;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background-color: var(--primary-hover);
 }
 
+.btn-accent,
 .btn-purple {
   background-color: var(--accent);
   color: #ffffff;
 }
 
-.btn-purple:hover {
+.btn-accent:hover:not(:disabled),
+.btn-purple:hover:not(:disabled) {
   background-color: var(--accent-hover);
 }
 
@@ -69,19 +128,21 @@
   color: var(--text);
 }
 
-.btn-outline:hover {
+.btn-outline:hover:not(:disabled) {
   background-color: var(--bg-subtle);
   border-color: var(--text-secondary);
 }
 
-/* Status Filter Pills Row */
+/* Status Filter & Sorting Toolbar (View 1: Explorar) */
 .status-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
-  margin-bottom: 22px;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 .status-pills {
@@ -93,16 +154,17 @@
 .status-pill {
   border: 1px solid var(--border-strong);
   background-color: #ffffff;
-  padding: 9px 16px;
-  border-radius: 999px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   cursor: pointer;
   color: var(--text-secondary);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
 }
 
@@ -135,14 +197,54 @@
   border-color: var(--blue-border);
 }
 
-/* Concursos Cards Grid (Flat internal hierarchy — zero nested cards) */
+.toolbar-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sort-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.sort-control select {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.results-summary-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Concursos Dossier Grid (Flat internal hierarchy — zero nested cards) */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(390px, 1fr));
-  gap: 22px;
+  gap: 20px;
 }
 
-@media (max-width: 460px) {
+@media (max-width: 480px) {
   .cards-grid {
     grid-template-columns: 1fr;
   }
@@ -152,7 +254,7 @@
   background-color: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 24px;
+  padding: 22px 24px;
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
@@ -165,45 +267,90 @@
   border-color: var(--border-strong);
 }
 
+.dossier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.dossier-title {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.28;
+}
+
+.dossier-subtitle {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.dossier-subtitle strong {
+  color: var(--text-secondary);
+}
+
+.dossier-badges {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
 /* Semantic Status Badges (Minimum 13px / 0.8125rem) */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: var(--radius-sm);
   font-size: 0.8125rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.35;
+  border: 1px solid transparent;
 }
 
 .badge-aberto {
   background-color: var(--green-soft);
   color: var(--green);
+  border-color: var(--green-border);
 }
 
 .badge-previsto {
   background-color: var(--amber-soft);
   color: var(--amber);
+  border-color: var(--amber-border);
 }
 
 .badge-encerrado {
   background-color: var(--blue-soft);
   color: var(--blue);
+  border-color: var(--blue-border);
 }
 
+.badge-cobalt,
 .badge-purple {
   background-color: var(--primary-soft);
   color: var(--primary);
+  border-color: var(--primary-border);
 }
 
-/* Flat Divider Sections inside Cards (Replaces nested boxes) */
+.badge-neutral {
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+
+/* Flat Divider Sections inside Dossiers (Replaces nested boxes) */
 .card-divider-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px 16px;
   padding: 14px 0;
-  margin: 14px 0;
+  margin: 12px 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
@@ -217,15 +364,20 @@
 }
 
 .meta-item strong {
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   color: var(--text);
   font-weight: 700;
+  display: block;
+}
+
+.meta-item strong.salary-highlight {
+  color: var(--green);
 }
 
 .ai-editorial-note {
-  padding: 10px 0 14px;
+  padding: 8px 0 14px;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .ai-editorial-head {
@@ -240,19 +392,131 @@
   margin-bottom: 6px;
 }
 
-/* Section Header (Clean typographic header without nested card) */
-.section-banner {
-  padding: 4px 0 20px;
-  margin-bottom: 22px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: 16px;
+.ai-editorial-head .corte-ref {
+  color: var(--muted);
+  font-weight: 600;
 }
 
-/* Radar Thermometer */
+.ai-editorial-body {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.dossier-materials-preview {
+  margin-bottom: 16px;
+}
+
+.dossier-materials-heading {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.dossier-materials-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dossier-materials-list li {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dossier-materials-list li svg {
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.dossier-materials-list li.is-studied svg {
+  color: var(--green);
+}
+
+.dossier-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 420px) {
+  .card-divider-grid,
+  .dossier-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* View 2: Radar IA Intelligence Feed & Sticky Co-creation Panel */
+.radar-feed-ledger {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.radar-entry {
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.radar-entry:last-child {
+  border-bottom: none;
+}
+
+.radar-entry-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.radar-entry-date {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.radar-entry-title {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.32;
+}
+
+.radar-entry-source {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.radar-meter-block {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.radar-meter-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--amber);
+}
+
 .thermometer-bar {
   height: 8px;
   background-color: var(--bg-subtle);
@@ -265,6 +529,371 @@
   height: 100%;
   background-color: var(--primary);
   border-radius: 99px;
+  transition: width 0.22s ease-out;
+}
+
+.thermometer-fill.fill-green {
+  background-color: var(--green);
+}
+
+.thermometer-fill.fill-amber {
+  background-color: #b45309;
+}
+
+.radar-entry-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.radar-submit-sheet {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 84px;
+}
+
+.radar-stages-legend {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+/* View 3: Central de Materiais / Acervo Filter Bar & Document Ledger */
+.acervo-toolbar {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr 0.9fr;
+  gap: 14px;
+  align-items: end;
+}
+
+@media (max-width: 1024px) {
+  .acervo-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .acervo-toolbar {
+    grid-template-columns: 1fr;
+  }
+}
+
+.acervo-ledger-sheet {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.mat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.mat-item:last-child {
+  border-bottom: none;
+}
+
+.mat-item-info {
+  flex: 1;
+  min-width: 240px;
+}
+
+.mat-item-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.35;
+}
+
+.mat-item-meta {
+  display: flex;
+  gap: 8px 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.mat-item-desc {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.mat-item-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* View 4: Copiloto & Match IA Workspace */
+.ia-sheet {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.match-result-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.match-result-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.match-result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.match-schedule-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+
+.schedule-pill {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 0.8125rem;
+  color: var(--text);
+}
+
+.schedule-pill strong {
+  color: var(--primary);
+}
+
+.chat-quick-prompts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.chat-log-window {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.chat-entry {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.chat-entry-user {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.chat-entry-role {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.chat-entry-user .chat-entry-role {
+  color: var(--primary);
+}
+
+.chat-form-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* View 5: Plano PRO Comparative Matrix & Smoke Test Dossier */
+.pro-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pro-feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.pro-feature-list li svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--green);
+}
+
+.pro-feature-list.pro-tier li svg {
+  color: var(--accent);
+}
+
+/* View 6: Minha Conta Flat Telemetry Ledger (Replaces 4 generic KPI cards) */
+.account-ledger-bar {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 20px;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.account-ledger-cell {
+  border-right: 1px solid var(--border);
+  padding-right: 16px;
+}
+
+.account-ledger-cell:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+.account-user-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.account-avatar-lg {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-sm);
+  background-color: var(--primary);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.0625rem;
+  flex-shrink: 0;
+}
+
+.account-metric-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.account-metric-value {
+  display: block;
+  font-size: 1.625rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.15;
+  margin-bottom: 2px;
+}
+
+.account-metric-sub {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 960px) {
+  .account-ledger-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .account-ledger-cell:nth-child(2) {
+    border-right: none;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .account-ledger-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .account-ledger-cell {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding-right: 0;
+    padding-bottom: 14px;
+  }
+
+  .account-ledger-cell:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+/* Empty States */
+.empty-state-sheet {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 36px 24px;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
+.empty-state-sheet h3 {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.empty-state-sheet p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 auto 16px;
 }
 
 /* Modal */
@@ -303,12 +932,14 @@
   width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   background-color: #ffffff;
-  font-size: 0.9375rem;
-  font-weight: 700;
   color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: background-color 0.16s ease;
 }
 
 .modal-close-btn:hover {
@@ -324,7 +955,7 @@
 
 .data-table th,
 .data-table td {
-  padding: 12px 14px;
+  padding: 11px 14px;
   border-bottom: 1px solid var(--border);
   text-align: left;
 }
@@ -336,22 +967,7 @@
   font-size: 0.8125rem;
 }
 
-/* Material Item Row (Flat hairline row — never triggers nested-card detector) */
-.mat-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.mat-item:last-child {
-  border-bottom: none;
-}
-
-/* Toast Notification (Zero thick side-border) */
+/* Toast Notification */
 #toast-container {
   position: fixed;
   bottom: 24px;
@@ -375,6 +991,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

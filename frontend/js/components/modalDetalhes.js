@@ -9,7 +9,7 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
   if (!modal || !content) return;
 
   modal.classList.add('open');
-  content.innerHTML = `<div style="padding:32px; text-align:center; color:var(--muted); font-size:0.9375rem;">Carregando Raio-X da IA e materiais vinculados...</div>`;
+  content.innerHTML = `<div class="empty-state-sheet" style="border:none;">Carregando dossiê técnico e acervo vinculado...</div>`;
 
   const c = await window.AprovaAPI.obterConcurso(concursoId);
   if (!c) return;
@@ -24,13 +24,15 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
   const fonteVal = c.fonte_oficial || c.fontes_internet || 'Diário Oficial e Banca';
 
   const disciplinasRows = (c.disciplinas || []).map(d => {
-    const prioColor = d.prioridade === 'Crítica' ? '#8c3d19' : (d.prioridade === 'Alta' ? '#664d03' : '#0b4f6c');
+    const prioBadge = d.prioridade === 'Crítica'
+      ? 'badge-previsto'
+      : (d.prioridade === 'Alta' ? 'badge-cobalt' : 'badge-neutral');
     return `
       <tr>
         <td><strong>${clean(d.nome)}</strong></td>
         <td>${d.questoes}</td>
         <td><strong>${clean(d.peso)}</strong></td>
-        <td><span style="color:${prioColor}; font-weight:700;">${clean(d.prioridade)}</span></td>
+        <td><span class="badge ${prioBadge}">${clean(d.prioridade)}</span></td>
       </tr>
     `;
   }).join('');
@@ -38,20 +40,22 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
   const materiaisHtml = (c.materiais || []).map(m => {
     return `
       <div class="mat-item" id="modal-mat-${m.id}">
-        <div>
-          <div style="font-weight:700; font-size:0.9375rem; color:var(--text); margin-bottom:4px;">
+        <div class="mat-item-info">
+          <div class="mat-item-title">
             ${clean(m.titulo)}
           </div>
-          <div style="font-size:0.8125rem; color:var(--muted); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <span class="badge badge-purple">${clean(m.categoria)}</span>
+          <div class="mat-item-meta">
+            <span class="badge badge-cobalt">${clean(m.categoria)}</span>
+            <span>Disciplina: <strong>${clean(m.disciplina || 'Geral')}</strong></span>
             <span>Extensão: <strong>${clean(m.paginas)}</strong></span>
             <span>Acesso: <strong style="color:var(--green);">${m.gratuito ? 'Gratuito' : 'PRO'}</strong></span>
           </div>
+          ${m.resumo_conteudo ? `<p class="mat-item-desc">${clean(m.resumo_conteudo)}</p>` : ''}
         </div>
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <div class="mat-item-actions">
           <button
             type="button"
-            class="btn ${m.estudado ? 'btn-primary' : 'btn-outline'}"
+            class="btn ${m.estudado ? 'btn-primary' : 'btn-outline'} btn-sm"
             onclick="window.AprovaComponents.toggleEstudadoNoModal(${m.id}, '${c.id}')"
           >
             ${m.estudado ? window.AprovaUtils.icon('check') : ''}
@@ -59,7 +63,7 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
           </button>
           <button
             type="button"
-            class="btn btn-purple"
+            class="btn btn-accent btn-sm"
             onclick="window.AprovaAPI.baixarMaterial(${m.id})"
           >
             ${window.AprovaUtils.icon('download')}
@@ -71,37 +75,38 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
   }).join('');
 
   content.innerHTML = `
-    <div style="padding-right:42px;">
-      <h2 style="font-size:1.5rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+    <div style="padding-right:44px;">
+      <h2 style="font-size:1.4375rem; font-weight:800; color:var(--text); margin-bottom:6px;">
         ${clean(c.sigla)} · ${clean(c.titulo)}
       </h2>
-      <p style="font-size:0.9375rem; color:var(--text-secondary); margin-bottom:12px;">
-        Órgão: <strong>${clean(c.orgao)}</strong> · Banca: <strong>${clean(c.banca)}</strong> · Área: <strong>${clean(c.area)}</strong>
+      <p class="dossier-subtitle" style="font-size:0.875rem;">
+        Órgão: <strong>${clean(c.orgao)}</strong> · Banca: <strong>${clean(c.banca)}</strong> · Área: <strong>${clean(c.area)}</strong> · UF: <strong>${clean(c.uf)}</strong>
       </p>
-      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px;">
+      <div class="dossier-badges" style="margin-bottom:14px;">
         <span class="badge ${badgeClass}">${statusDot} <span>${clean(c.status_label)}</span></span>
         <span class="badge badge-encerrado">Índice IA: ${probVal}%</span>
+        <span class="badge badge-neutral">Último edital: ${clean(c.ultimo_concurso_ano || 'Consulte histórico')}</span>
       </div>
     </div>
 
-    <div class="card-divider-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-      <div class="meta-item"><span>Salário Inicial</span><strong style="color:var(--green);">${clean(c.salario)}</strong></div>
-      <div class="meta-item"><span>Vagas Totais</span><strong>${clean(c.vagas)}</strong></div>
+    <div class="card-divider-grid" style="grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));">
+      <div class="meta-item"><span>Salário Inicial</span><strong class="salary-highlight">${clean(c.salario)}</strong></div>
+      <div class="meta-item"><span>Vagas e Nível</span><strong>${clean(c.vagas)} (${clean(c.escolaridade)})</strong></div>
       <div class="meta-item"><span>Inscrições / Situação</span><strong>${clean(inscrVal)}</strong></div>
       <div class="meta-item"><span>Prova / Previsão</span><strong>${clean(c.data_prova)}</strong></div>
       <div class="meta-item"><span>Nota de Corte Histórica</span><strong>${clean(corteVal)}</strong></div>
       <div class="meta-item"><span>Fontes Monitoradas</span><strong>${clean(fonteVal)}</strong></div>
     </div>
 
-    <div class="ai-editorial-note" style="margin:16px 0;">
+    <div class="ai-editorial-note">
       <div class="ai-editorial-head">
-        <span>Diagnóstico de Inteligência Artificial e Radar Web</span>
+        <span>Parecer de Inteligência Artificial e Estratégia de Prova</span>
       </div>
-      <p style="font-size:0.9375rem; color:var(--text); margin-bottom:6px;">${clean(c.resumo_ia)}</p>
+      <p class="ai-editorial-body" style="color:var(--text);">${clean(c.resumo_ia)}</p>
     </div>
 
     <div style="margin-bottom:24px;">
-      <h3 style="font-size:1.125rem; font-weight:800; margin-bottom:10px; color:var(--text);">
+      <h3 style="font-size:1.0625rem; font-weight:800; margin-bottom:10px; color:var(--text);">
         Matriz de Disciplinas e Pesos (Edital Verticalizado)
       </h3>
       <div style="overflow-x:auto;">
@@ -109,7 +114,7 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
           <thead>
             <tr>
               <th>Disciplina / Bloco Temático</th>
-              <th>Qtd. Questões</th>
+              <th>Itens / Questões</th>
               <th>Peso na Nota</th>
               <th>Prioridade IA</th>
             </tr>
@@ -122,13 +127,15 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
     </div>
 
     <div>
-      <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-        <h3 style="font-size:1.125rem; font-weight:800; color:var(--text);">
-          Materiais de Estudo Relacionados (${(c.materiais || []).length})
+      <div class="match-result-head" style="margin-bottom:8px;">
+        <h3 style="font-size:1.0625rem; font-weight:800; color:var(--text);">
+          Acervo de Estudo Vinculado (${(c.materiais || []).length} guias disponíveis)
         </h3>
-        <span style="font-size:0.875rem; color:var(--muted);">Clique em "Baixar Guia" para obter o material completo</span>
+        <span style="font-size:0.8125rem; color:var(--muted);">Clique em "Baixar Guia" para emitir o roteiro verticalizado</span>
       </div>
-      ${materiaisHtml}
+      <div>
+        ${materiaisHtml}
+      </div>
     </div>
   `;
 };

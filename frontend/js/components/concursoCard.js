@@ -1,7 +1,6 @@
 /**
- * Componente: Card de Concurso (Ativo, Previsto pela IA na Internet ou Histórico/Encerrado)
- * Segue estritamente o sistema visual Impeccable: hierarquia tipográfica plana (sem cards aninhados),
- * sem eyebrow acima do título, contrastes AA+ e texto mínimo >= 13px.
+ * Componente: Dossiê de Concurso (Ativo, Previsto pela IA na Internet ou Histórico/Encerrado)
+ * Hierarquia tipográfica plana (sem cards aninhados), contrastes WCAG AA+ e classes semânticas.
  */
 window.AprovaComponents = window.AprovaComponents || {};
 
@@ -16,28 +15,27 @@ window.AprovaComponents.renderConcursoCard = function (concurso) {
   const inscrVal = concurso.inscricoes || concurso.prazo || 'Consulte o edital';
   const corteVal = concurso.nota_corte_historica || concurso.nota_corte_anterior || 'Referência oficial';
 
-  const probBadge = concurso.status === 'previsto'
+  const secondaryBadge = concurso.status === 'previsto'
     ? `<span class="badge badge-previsto">${probVal}% Confiança IA</span>`
-    : `<span class="badge badge-purple">${estudadosCount}/${materiaisCount} Materiais</span>`;
+    : `<span class="badge badge-cobalt">${estudadosCount}/${materiaisCount} Materiais</span>`;
 
   const topMateriais = (concurso.materiais || []).slice(0, 2).map(m => `
-    <li style="font-size:0.875rem; color:var(--text-secondary); padding:3px 0; list-style:none; display:flex; align-items:center; gap:8px;">
+    <li class="${m.estudado ? 'is-studied' : ''}">
       ${m.estudado ? window.AprovaUtils.icon('check') : window.AprovaUtils.icon('book')}
-      <span><strong>${clean(m.categoria)}:</strong> ${clean(m.titulo.length > 48 ? m.titulo.slice(0, 48) + '...' : m.titulo)}</span>
+      <span><strong>${clean(m.categoria)}:</strong> ${clean(m.titulo.length > 52 ? m.titulo.slice(0, 52) + '...' : m.titulo)}</span>
     </li>
   `).join('');
 
   return `
     <article class="concurso-card">
       <div>
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:6px;">
-          <h3 style="font-size:1.125rem; font-weight:800; color:var(--text);">
+        <div class="dossier-header">
+          <h3 class="dossier-title">
             ${clean(concurso.sigla)} · ${clean(concurso.titulo)}
           </h3>
           <button
             type="button"
-            class="btn btn-outline"
-            style="padding:6px 10px; font-size:0.8125rem; flex-shrink:0;"
+            class="btn ${concurso.salvo ? 'btn-primary' : 'btn-outline'} btn-sm"
             onclick="window.AprovaApp.toggleFavorito('${concurso.id}')"
             title="${concurso.salvo ? 'Remover dos salvos' : 'Salvar concurso no caderno'}"
           >
@@ -46,19 +44,20 @@ window.AprovaComponents.renderConcursoCard = function (concurso) {
           </button>
         </div>
 
-        <p style="font-size:0.875rem; color:var(--muted); margin-bottom:12px;">
-          ${clean(concurso.orgao)} · Banca: <strong>${clean(concurso.banca)}</strong> · Abrangência: <strong>${clean(concurso.uf)}</strong>
+        <p class="dossier-subtitle">
+          ${clean(concurso.orgao)} · Banca: <strong>${clean(concurso.banca)}</strong> · UF: <strong>${clean(concurso.uf)}</strong>
         </p>
 
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+        <div class="dossier-badges">
           <span class="badge ${badgeClass}">${statusDot} <span>${clean(concurso.status_label)}</span></span>
-          ${probBadge}
+          ${secondaryBadge}
+          <span class="badge badge-neutral">${clean(concurso.area)}</span>
         </div>
 
         <div class="card-divider-grid">
           <div class="meta-item">
             <span>Remuneração Inicial</span>
-            <strong style="color:var(--green);">${clean(concurso.salario)}</strong>
+            <strong class="salary-highlight">${clean(concurso.salario)}</strong>
           </div>
           <div class="meta-item">
             <span>Vagas e Escolaridade</span>
@@ -69,7 +68,7 @@ window.AprovaComponents.renderConcursoCard = function (concurso) {
             <strong>${clean(inscrVal)}</strong>
           </div>
           <div class="meta-item">
-            <span>Data da Prova / Previsão</span>
+            <span>Prova / Previsão</span>
             <strong>${clean(concurso.data_prova)}</strong>
           </div>
         </div>
@@ -77,24 +76,24 @@ window.AprovaComponents.renderConcursoCard = function (concurso) {
         <div class="ai-editorial-note">
           <div class="ai-editorial-head">
             <span>Diagnóstico Aprova+ IA</span>
-            <span style="color:var(--muted); font-weight:600;">Corte ref.: ${clean(corteVal)}</span>
+            <span class="corte-ref">Corte ref.: ${clean(corteVal)}</span>
           </div>
-          <p style="color:var(--text-secondary); font-size:0.875rem; line-height:1.5;">
+          <p class="ai-editorial-body">
             ${clean(concurso.resumo_ia)}
           </p>
         </div>
 
-        <div style="margin-bottom:16px;">
-          <div style="font-size:0.8125rem; font-weight:700; color:var(--text); margin-bottom:6px;">
-            Materiais direcionados (${materiaisCount} disponíveis):
+        <div class="dossier-materials-preview">
+          <div class="dossier-materials-heading">
+            Acervo direcionado (${materiaisCount} guias vinculados):
           </div>
-          <ul style="margin:0; padding:0;">
+          <ul class="dossier-materials-list">
             ${topMateriais}
           </ul>
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; padding-top:14px; border-top:1px solid var(--border);">
+      <div class="dossier-actions">
         <button type="button" class="btn btn-primary" onclick="window.AprovaComponents.openConcursoModal('${concurso.id}')">
           <span>Raio-X e Materiais (${materiaisCount})</span>
         </button>

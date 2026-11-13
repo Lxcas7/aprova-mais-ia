@@ -1,5 +1,5 @@
 /**
- * Componente: Radar IA de Concursos Previstos (O que estão falando na internet) + Submissão Colaborativa
+ * Componente: Radar IA de Concursos Previstos (Layout Assimétrico: Ledger de Despachos + Painel de Cocriação)
  */
 window.AprovaComponents = window.AprovaComponents || {};
 
@@ -7,90 +7,109 @@ window.AprovaComponents.renderRadar = async function () {
   const container = document.getElementById('radar-feed-container');
   if (!container) return;
 
-  container.innerHTML = `<div style="padding:24px; color:var(--muted); font-size:0.9375rem;">Consultando motor de NLP e rumores da internet...</div>`;
+  container.innerHTML = `<div class="empty-state-sheet">Consultando motor de classificação e sinais de pré-edital...</div>`;
   const data = await window.AprovaAPI.listarRumores();
   const rumores = data.rumores || [];
   const clean = window.AprovaUtils.cleanText;
 
-  const cardsHtml = rumores.map(r => `
-    <article class="concurso-card">
-      <div>
-        <h3 style="font-size:1.125rem; font-weight:800; color:var(--text); margin-bottom:8px;">
+  const entriesHtml = rumores.map(r => {
+    const fillClass = r.confianca_ia >= 85 ? 'fill-green' : 'fill-amber';
+    return `
+      <article class="radar-entry">
+        <div class="radar-entry-top">
+          <div class="dossier-badges">
+            <span class="badge badge-previsto">${clean(r.orgao_sigla)} · ${clean(r.estagio_maturidade)}</span>
+            <span class="badge badge-neutral">Índice IA: ${r.confianca_ia}%</span>
+          </div>
+          <span class="radar-entry-date">${clean(r.data_captura)}</span>
+        </div>
+
+        <h3 class="radar-entry-title">
           "${clean(r.titulo_noticia)}"
         </h3>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-          <span class="badge badge-previsto">${clean(r.orgao_sigla)} · ${clean(r.estagio_maturidade)}</span>
-          <span style="font-size:0.8125rem; color:var(--muted); font-weight:600;">${clean(r.data_captura)}</span>
-        </div>
-
-        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:12px;">
-          <strong>Fontes rastreadas pela IA:</strong> ${clean(r.fonte_portal)}
+        <p class="radar-entry-source">
+          <strong>Fontes rastreadas:</strong> ${clean(r.fonte_portal)}
         </p>
 
-        <div style="padding:12px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:12px;">
-          <div style="display:flex; justify-content:space-between; font-size:0.8125rem; font-weight:700; color:var(--amber);">
-            <span>Termômetro de Confiança IA</span>
-            <span>${r.confianca_ia}% de probabilidade de edital</span>
+        <div class="radar-meter-block">
+          <div class="radar-meter-head">
+            <span>Termômetro de Maturidade de Edital</span>
+            <span>${r.confianca_ia}% de probabilidade estimada</span>
           </div>
           <div class="thermometer-bar">
-            <div class="thermometer-fill" style="width:${r.confianca_ia}%;"></div>
+            <div class="thermometer-fill ${fillClass}" style="width:${r.confianca_ia}%;"></div>
           </div>
-          <p style="font-size:0.875rem; color:var(--text-secondary); margin-top:6px;">
-            <strong>Parecer da IA:</strong> ${clean(r.analise_ia)}
+          <p class="ai-editorial-body">
+            <strong>Parecer Técnico IA:</strong> ${clean(r.analise_ia)}
           </p>
         </div>
-      </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; padding-top:8px;">
-        <button type="button" class="btn btn-outline" onclick="window.AprovaComponents.votarRumor(${r.id})">
-          <span>Confirmar Rumor (${r.votos_comunidade} concurseiros)</span>
-        </button>
-        ${r.concurso_id && r.concurso_id !== 'geral' ? `
-          <button type="button" class="btn btn-primary" onclick="window.AprovaComponents.openConcursoModal('${r.concurso_id}')">
-            <span>Estudar Pré-Edital Agora</span>
+        <div class="radar-entry-actions">
+          <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.votarRumor(${r.id})">
+            ${window.AprovaUtils.icon('upvote')}
+            <span>Confirmar Relevância (${r.votos_comunidade} validações)</span>
           </button>
-        ` : `<span class="badge badge-purple">Monitoramento Ativo</span>`}
-      </div>
-    </article>
-  `).join('');
+          ${r.concurso_id && r.concurso_id !== 'geral' ? `
+            <button type="button" class="btn btn-primary btn-sm" onclick="window.AprovaComponents.openConcursoModal('${r.concurso_id}')">
+              <span>Abrir Dossiê e Materiais Pré-Edital</span>
+            </button>
+          ` : `<span class="badge badge-cobalt">Monitoramento Comunitário Ativo</span>`}
+        </div>
+      </article>
+    `;
+  }).join('');
 
   container.innerHTML = `
-    <div class="cards-grid" style="margin-bottom:24px;">
-      ${cardsHtml}
-    </div>
+    <div class="split-workspace-radar">
+      <!-- Coluna 1: Ledger de Sinais e Movimentações -->
+      <div class="radar-feed-ledger">
+        ${entriesHtml}
+      </div>
 
-    <div class="concurso-card">
-      <h3 style="font-size:1.125rem; font-weight:800; margin-bottom:6px; color:var(--text);">
-        Cocriação com Concurseiros: Viu alguma notícia ou movimentação na internet?
-      </h3>
-      <p style="font-size:0.9375rem; color:var(--text-secondary); margin-bottom:16px;">
-        Envie a notícia abaixo. Nossa IA classifica automaticamente o estágio de maturidade (Dispensa de Licitação, Comissão Formada, Pedido no MGI ou Boato) e calcula o índice de confiança.
-      </p>
-      <form onsubmit="window.AprovaComponents.submeterRumor(event)" style="display:grid; grid-template-columns:1fr 2fr 1.5fr auto; gap:12px; align-items:end;">
-        <div class="field-group">
-          <label for="rumor-sigla">Sigla do Órgão</label>
-          <input type="text" id="rumor-sigla" class="field-input" placeholder="Ex: MPU, TRF-1, BNDES" required />
+      <!-- Coluna 2: Painel de Submissão e Classificação NLP -->
+      <aside class="radar-submit-sheet">
+        <h3 style="font-size:1.125rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+          Submeter Movimentação à IA
+        </h3>
+        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:16px;">
+          Identificou portaria no DOU, processo no SEI/MGI ou nota de comissão organizadora? Envie os dados abaixo para classificação automática de maturidade.
+        </p>
+
+        <form onsubmit="window.AprovaComponents.submeterRumor(event)" style="display:flex; flex-direction:column; gap:12px;">
+          <div class="field-group">
+            <label for="rumor-sigla">Sigla do Órgão ou Certame</label>
+            <input type="text" id="rumor-sigla" class="field-input" placeholder="Ex: MPU, TRF-1, BNDES, SEFAZ" required />
+          </div>
+          <div class="field-group">
+            <label for="rumor-noticia">Resumo da Movimentação / Notícia</label>
+            <textarea id="rumor-noticia" class="field-input" placeholder="Ex: Comissão organizadora formada e termo de dispensa de licitação com a banca Cebraspe em assinatura" required></textarea>
+          </div>
+          <div class="field-group">
+            <label for="rumor-fonte">Fonte Documental / Portal / Processo</label>
+            <input type="text" id="rumor-fonte" class="field-input" placeholder="Ex: Diário Oficial da União / Processo SEI / Portal" required />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">
+            ${window.AprovaUtils.icon('radar')}
+            <span>Classificar e Publicar no Radar</span>
+          </button>
+        </form>
+
+        <div class="radar-stages-legend">
+          <div style="font-weight:700; color:var(--text);">Régua de Classificação NLP:</div>
+          <div><strong>88%–95% (Banca em Contratação):</strong> Dispensa de licitação ou contrato vigente.</div>
+          <div><strong>80%–87% (Comissão / Autorizado):</strong> Portaria publicada ou comissão instituída.</div>
+          <div><strong>70%–79% (Pedido no MGI):</strong> Nota técnica ou solicitação formal em análise.</div>
+          <div><strong>55%–69% (Rumor Inicial):</strong> Declaração institucional em verificação.</div>
         </div>
-        <div class="field-group">
-          <label for="rumor-noticia">O que estão falando na internet / Notícia</label>
-          <input type="text" id="rumor-noticia" class="field-input" placeholder="Ex: Comissão formada e contrato com banca Cebraspe em assinatura" required />
-        </div>
-        <div class="field-group">
-          <label for="rumor-fonte">Fonte / Portal / Fórum</label>
-          <input type="text" id="rumor-fonte" class="field-input" placeholder="Ex: DOU / Folha Dirigida / Fórum" required />
-        </div>
-        <button type="submit" class="btn btn-primary" style="height:42px;">
-          Classificar com IA
-        </button>
-      </form>
+      </aside>
     </div>
   `;
 };
 
 window.AprovaComponents.votarRumor = async function (rumorId) {
   await window.AprovaAPI.votarRumor(rumorId);
-  window.AprovaUtils.showToast('Voto de relevância computado no Radar IA.');
+  window.AprovaUtils.showToast('Validação comunitária registrada no Radar IA.');
   window.AprovaComponents.renderRadar();
 };
 
@@ -103,7 +122,7 @@ window.AprovaComponents.submeterRumor = async function (event) {
   };
   const res = await window.AprovaAPI.enviarRumor(payload);
   window.AprovaUtils.showToast(
-    `IA classificou rumor de ${res.orgao_sigla}: ${res.estagio_maturidade} (${res.confianca_ia}% confiança).`
+    `Movimentação de ${res.orgao_sigla || payload.orgao_sigla.toUpperCase()} classificada: ${res.estagio_maturidade} (${res.confianca_ia}% confiança).`
   );
   window.AprovaComponents.renderRadar();
 };

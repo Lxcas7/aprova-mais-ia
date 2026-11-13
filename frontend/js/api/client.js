@@ -11,7 +11,7 @@
 
   let backendOnline = false;
 
-  const STORAGE_KEY = 'aprova_mais_mvp_state_v2';
+  const STORAGE_KEY = 'aprova_mais_mvp_state_v3';
   const USER_SESSION_KEY = 'aprova_mais_user_session_v1';
 
   function gerarIniciais(nome) {
@@ -24,7 +24,12 @@
   function getLocalState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.concursos) && parsed.concursos.length >= 13) {
+          return parsed;
+        }
+      }
     } catch (e) {}
     const initial = {
       concursos: JSON.parse(JSON.stringify(window.AprovaFallback.concursos)),
@@ -84,13 +89,13 @@
     if (!badge) return;
     if (isOnline) {
       badge.className = 'api-status-badge';
-      badge.innerHTML = 'Aprova+ IA Online (FastAPI + SQLite)';
+      badge.textContent = 'Aprova+ IA Online · FastAPI + SQLite';
     } else if (isGitHubPages) {
       badge.className = 'api-status-badge';
-      badge.innerHTML = 'Aprova+ IA Online (Nuvem GitHub Pages)';
+      badge.textContent = 'Aprova+ IA Online · Modo Estático';
     } else {
       badge.className = 'api-status-badge';
-      badge.innerHTML = 'Aprova+ IA Ativo (Modo Local)';
+      badge.textContent = 'Aprova+ IA Ativo · Base Local';
     }
   }
 
@@ -142,14 +147,14 @@
           u => u.email.toLowerCase() === emailLimpo && u.senha === senha
         );
         if (!user) {
-          throw new Error('E-mail ou senha incorretos. Use a conta demo ou crie sua conta gratuita!');
+          throw new Error('E-mail ou senha incorretos. Utilize a conta de demonstração ou crie uma conta gratuita.');
         }
         const { senha: _, ...userSemSenha } = user;
         userSemSenha.iniciais = gerarIniciais(userSemSenha.nome);
         this.salvarSessaoUsuario(userSemSenha);
         return {
           sucesso: true,
-          mensagem: `Bem-vindo de volta, ${userSemSenha.nome}!`,
+          mensagem: `Sessão iniciada: ${userSemSenha.nome}.`,
           usuario: userSemSenha
         };
       }
@@ -189,7 +194,7 @@
         this.salvarSessaoUsuario(userSemSenha);
         return {
           sucesso: true,
-          mensagem: `Conta criada com sucesso! Bem-vindo(a), ${novo.nome}!`,
+          mensagem: `Conta criada com sucesso para ${novo.nome}.`,
           usuario: userSemSenha
         };
       }
@@ -227,7 +232,7 @@
         this.salvarSessaoUsuario(atualizado);
         return {
           sucesso: true,
-          mensagem: 'Perfil e metas de estudo atualizados com sucesso!',
+          mensagem: 'Parâmetros de perfil e estudo atualizados.',
           usuario: atualizado
         };
       }
@@ -260,10 +265,10 @@
         const list = st.concursos.filter(c => {
           if (params.apenas_salvos && !c.salvo) return false;
           if (params.status && params.status !== 'todos' && c.status !== params.status) return false;
-          if (params.area && params.area !== 'todas' && c.area !== params.area) return false;
-          if (params.escolaridade && params.escolaridade !== 'todos' && !c.escolaridade.includes(params.escolaridade)) return false;
-          if (params.uf && params.uf !== 'todas' && c.uf !== params.uf) return false;
-          if (params.q && !`${c.sigla} ${c.titulo} ${c.orgao} ${c.banca} ${c.cargos}`.toLowerCase().includes(params.q.toLowerCase())) return false;
+          if (params.area && params.area !== 'todas' && c.area.toLowerCase() !== params.area.toLowerCase()) return false;
+          if (params.escolaridade && params.escolaridade !== 'todos' && !c.escolaridade.toLowerCase().includes(params.escolaridade.toLowerCase())) return false;
+          if (params.uf && params.uf !== 'todas' && c.uf.toLowerCase() !== params.uf.toLowerCase()) return false;
+          if (params.q && !`${c.sigla} ${c.titulo} ${c.orgao} ${c.banca} ${c.area} ${c.resumo_ia}`.toLowerCase().includes(params.q.toLowerCase())) return false;
           return true;
         });
         const all = st.concursos;
@@ -274,7 +279,7 @@
             previstos: all.filter(x => x.status === 'previsto').length,
             encerrados: all.filter(x => x.status === 'encerrado').length,
             salvos: all.filter(x => x.salvo).length,
-            vagas_abertas: 9625
+            vagas_abertas: all.filter(x => x.status === 'aberto').reduce((acc, x) => acc + (x.vagas_num || 0), 0)
           },
           concursos: list
         };
@@ -313,13 +318,25 @@
           if (concursoId === 'todos' || c.id === concursoId) {
             c.materiais.forEach(m => {
               if (categoria === 'todas' || m.categoria === categoria) {
-                mats.push({ ...m, concurso_id: c.id, concurso_titulo: c.titulo, concurso_sigla: c.sigla, concurso_banca: c.banca });
+                mats.push({
+                  ...m,
+                  concurso_id: c.id,
+                  concurso_titulo: c.titulo,
+                  concurso_sigla: c.sigla,
+                  concurso_status: c.status,
+                  concurso_banca: c.banca
+                });
               }
             });
           }
         });
         const est = mats.filter(x => x.estudado).length;
-        return { total: mats.length, estudados: est, progresso_pct: mats.length ? Math.round((est / mats.length) * 100) : 0, materiais: mats };
+        return {
+          total: mats.length,
+          estudados: est,
+          progresso_pct: mats.length ? Math.round((est / mats.length) * 100) : 0,
+          materiais: mats
+        };
       }
     },
 
@@ -345,7 +362,7 @@
     baixarMaterial(materialId) {
       if (backendOnline && !isGitHubPages) {
         window.open(`${API_BASE}/materiais/${materialId}/download`, '_blank');
-        window.AprovaUtils.showToast('📥 Gerando apostila/guia verticalizado...', '#2563eb');
+        window.AprovaUtils.showToast('Emitindo guia de estudo verticalizado para download.');
         setTimeout(() => window.AprovaApp.atualizarIndicadoresUsuario(), 700);
         return;
       }
@@ -365,16 +382,16 @@
       if (!matEncontrado || !concEncontrado) return;
 
       const disciplinasTxt = (concEncontrado.disciplinas || [])
-        .map((d, i) => `  ${i + 1}. ${d.nome} — Questões: ${d.questoes} | Peso: ${d.peso} | Prioridade IA: ${d.prioridade}`)
+        .map((d, i) => `  [ ] ${i + 1}. ${d.nome} — Questões: ${d.questoes} | Peso: ${d.peso} | Prioridade IA: ${d.prioridade}`)
         .join('\n');
 
       const conteudo = [
         '================================================================================',
-        'APROVA+ IA — CENTRAL INTELIGENTE DE CONCURSOS PÚBLICOS',
+        'APROVA+ IA — CENTRAL DE CONCURSOS PÚBLICOS E MATERIAIS DIRECIONADOS',
         '================================================================================',
         '',
         `MATERIAL: ${matEncontrado.titulo}`,
-        `CATEGORIA: ${matEncontrado.categoria} (${matEncontrado.formato} • ${matEncontrado.paginas})`,
+        `CATEGORIA: ${matEncontrado.categoria} (${matEncontrado.disciplina || 'Geral'} · ${matEncontrado.paginas})`,
         `CONCURSO VINCULADO: ${concEncontrado.sigla} — ${concEncontrado.titulo}`,
         `ÓRGÃO: ${concEncontrado.orgao}`,
         `BANCA ORGANIZADORA: ${concEncontrado.banca}`,
@@ -382,12 +399,12 @@
         `STATUS ATUAL: ${concEncontrado.status_label}`,
         '',
         '--------------------------------------------------------------------------------',
-        '1. DIAGNÓSTICO DE INTELIGÊNCIA ARTIFICIAL (APROVA+ IA)',
+        '1. DIAGNÓSTICO E DIRECIONAMENTO APROVA+ IA',
         '--------------------------------------------------------------------------------',
         concEncontrado.resumo_ia,
         '',
-        `Movimentação / Radar Web: ${concEncontrado.tendencia_rumor}`,
-        `Nota de Corte de Referência: ${concEncontrado.nota_corte_historica}`,
+        `Fontes Monitoradas: ${concEncontrado.fontes_internet || 'Diário Oficial e Banca'}`,
+        `Nota de Corte de Referência (${concEncontrado.ultimo_concurso_ano || 'Último Edital'}): ${concEncontrado.nota_corte_anterior || 'Consulte edital'}`,
         '',
         '--------------------------------------------------------------------------------',
         '2. MATRIZ DE DISCIPLINAS VERTICALIZADAS POR PRIORIDADE',
@@ -395,11 +412,11 @@
         disciplinasTxt,
         '',
         '--------------------------------------------------------------------------------',
-        '3. CHECKLIST DE ESTUDO RECOMENDADO PELA IA',
+        '3. ROTEIRO DE ESTUDO RECOMENDADO',
         '--------------------------------------------------------------------------------',
-        '[ ] Passo 1: Ler a teoria direcionada das disciplinas de Prioridade CRÍTICA.',
-        `[ ] Passo 2: Resolver 50 questões recentes da banca ${concEncontrado.banca}.`,
-        '[ ] Passo 3: Revisar os erros através de Mapas Mentais e marcar como Estudado na plataforma.',
+        '[ ] Passo 1: Estudar a teoria direcionada das disciplinas de Prioridade Crítica e Alta.',
+        `[ ] Passo 2: Resolver no mínimo 50 questões recentes da banca ${concEncontrado.banca}.`,
+        '[ ] Passo 3: Revisar os erros e marcar o material como Concluído na plataforma.',
         '================================================================================'
       ].join('\n');
 
@@ -413,7 +430,7 @@
       a.remove();
       URL.revokeObjectURL(url);
 
-      window.AprovaUtils.showToast(`📥 Guia "${matEncontrado.titulo}" baixado com sucesso!`, '#2563eb');
+      window.AprovaUtils.showToast(`Guia "${matEncontrado.titulo}" baixado com sucesso.`);
       window.AprovaApp.atualizarIndicadoresUsuario();
     },
 
@@ -437,9 +454,12 @@
         if (txt.includes('banca') || txt.includes('dispensa') || txt.includes('contrato')) {
           confianca = 91;
           estagio = 'Banca em Contratação / Edital Iminente';
-        } else if (txt.includes('comissão') || txt.includes('autorizado') || txt.includes('portaria')) {
+        } else if (txt.includes('comissão') || txt.includes('comissao') || txt.includes('autorizado') || txt.includes('portaria')) {
           confianca = 84;
           estagio = 'Comissão Formada / Autorizado';
+        } else if (txt.includes('pedido') || txt.includes('mgi') || txt.includes('vagas')) {
+          confianca = 74;
+          estagio = 'Solicitação Enviada ao Ministério';
         }
         const novo = {
           id: Date.now(),
@@ -447,7 +467,7 @@
           orgao_sigla: payload.orgao_sigla.toUpperCase(),
           titulo_noticia: payload.titulo_noticia,
           fonte_portal: payload.fonte_portal,
-          data_captura: 'Enviado agora pela comunidade',
+          data_captura: 'Enviado agora (Cocriação)',
           estagio_maturidade: estagio,
           confianca_ia: confianca,
           analise_ia: `Notícia classificada automaticamente pelo motor NLP como "${estagio}" (${confianca}% de confiança).`,
@@ -455,7 +475,7 @@
         };
         st.rumores.unshift(novo);
         saveLocalState(st);
-        return { ...novo, mensagem: 'Rumor registrado!' };
+        return { ...novo, mensagem: 'Movimentação classificada e registrada no Radar.' };
       }
     },
 
@@ -478,15 +498,24 @@
         const st = getLocalState();
         const q = mensagem.toLowerCase();
         for (const c of st.concursos) {
-          if (q.includes(c.sigla.toLowerCase()) || q.includes(c.titulo.toLowerCase().split(' ')[0])) {
+          if (q.includes(c.sigla.toLowerCase()) || q.includes(c.id.split('-')[0]) || q.includes(c.titulo.toLowerCase().split(' ')[0])) {
+            const topDisc = (c.disciplinas || []).slice(0, 3).map(d => `<strong>${d.nome}</strong> (${d.peso})`).join(', ');
             return {
-              resposta: `🤖 <strong>Diagnóstico Aprova+ IA para ${c.sigla} (${c.titulo}):</strong><br>• <strong>Status:</strong> ${c.status_label} (${c.probabilidade_ia}% índice IA)<br>• <strong>Banca:</strong> ${c.banca} | <strong>Remuneração:</strong> ${c.salario}<br>• <strong>Análise IA:</strong> ${c.resumo_ia}<br>• <strong>Materiais vinculados:</strong> ${c.materiais.length} materiais gratuitos prontos para download.`,
+              resposta: `<strong>Raio-X Técnico · ${c.sigla} (${c.titulo}):</strong><br>• <strong>Status:</strong> ${c.status_label} (Índice IA: ${c.prob_ia || 100}%)<br>• <strong>Banca:</strong> ${c.banca} · <strong>Remuneração:</strong> ${c.salario}<br>• <strong>Corte anterior (${c.ultimo_concurso_ano}):</strong> ${c.nota_corte_anterior}<br>• <strong>Parecer IA:</strong> ${c.resumo_ia}<br>• <strong>Disciplinas nucleares:</strong> ${topDisc}.<br>• <strong>Acervo vinculado:</strong> ${c.materiais.length} guias disponíveis para estudo imediato.`,
               concurso_sugerido: c.id
             };
           }
         }
+        if (q.includes('médio') || q.includes('medio')) {
+          const medios = st.concursos.filter(c => c.escolaridade.includes('Médio'));
+          const lista = medios.map(c => `• <strong>[${c.sigla}] ${c.titulo}</strong> · ${c.salario} (${c.banca})`).join('<br>');
+          return {
+            resposta: `<strong>Concursos compatíveis com Ensino Médio (${medios.length} mapeados):</strong><br>${lista}<br><br><strong>Recomendação técnica:</strong> Para edital aberto imediato, priorize <strong>Caixa Econômica Federal</strong> ou <strong>Correios</strong>. Para preparação antecipada de pré-edital, priorize <strong>Banco do Brasil (92% IA)</strong> ou <strong>INSS (88% IA)</strong>.`,
+            concurso_sugerido: 'caixa-2026'
+          };
+        }
         return {
-          resposta: `🤖 <strong>Copiloto Aprova+ IA:</strong> Monitoramos atualmente <strong>5 concursos com edital aberto</strong> (PF, Caixa, TSE, Correios, IBAMA — 9.625 vagas), <strong>4 previstos na internet</strong> (Banco do Brasil 92%, INSS 88%, PRF 79%, Receita Federal 71%) e <strong>4 históricos com provas passadas</strong> (CNU, TJ-SP, BACEN, CGU). Sobre qual deles você quer ver a matriz de disciplinas e materiais?`,
+          resposta: `<strong>Síntese da Base Aprova+ IA:</strong> Monitoramos <strong>5 concursos com edital aberto</strong> (PF, Caixa, TSE, Correios, IBAMA · 9.625 vagas), <strong>4 previstos por movimentações na internet</strong> (Banco do Brasil 92%, INSS 88%, PRF 79%, Receita Federal 71%) e <strong>4 históricos com provas comentadas</strong> (CNU, TJ-SP, BACEN, CGU). Informe a sigla de um órgão (ex.: PF, Caixa, INSS, BB, RFB) para consultar a matriz de disciplinas e o acervo.`,
           concurso_sugerido: 'pf-2026'
         };
       }
@@ -499,17 +528,25 @@
         const st = getLocalState();
         const horasSem = (payload.horas_por_dia || 4) * 6;
         const candidatos = st.concursos
-          .filter(c => c.status !== 'encerrado')
+          .filter(c => {
+            if (payload.escolaridade === 'Médio' && !c.escolaridade.includes('Médio')) return false;
+            if (payload.foco_status && payload.foco_status !== 'todos' && c.status !== payload.foco_status) return false;
+            return true;
+          })
           .map(c => {
-            let score = 65;
+            let score = 62;
             const motivos = [];
-            if (c.area.toLowerCase().includes((payload.area_interesse || '').toLowerCase())) {
+            if (c.area.toLowerCase() === (payload.area_interesse || '').toLowerCase()) {
               score += 22;
               motivos.push(`Carreira ${c.area} alinhada ao seu objetivo`);
             }
-            if (payload.escolaridade === 'Superior' || c.escolaridade.includes('Médio')) {
-              score += 10;
+            if (c.escolaridade.includes(payload.escolaridade || 'Superior')) {
+              score += 12;
               motivos.push(`Compatível com escolaridade (${c.escolaridade})`);
+            }
+            if ((payload.horas_por_dia || 4) >= 4 && c.salario_max >= 10000) {
+              score += 8;
+              motivos.push('Carga horária compatível com edital de alta complexidade');
             }
             return {
               id: c.id,
@@ -521,17 +558,20 @@
               salario: c.salario,
               vagas: c.vagas,
               match_score: Math.min(score, 98),
-              motivos: motivos.length ? motivos : ['Excelente oportunidade mapeada pela IA'],
-              plano_semanal: (c.disciplinas || []).map(d => ({
-                disciplina: d.nome,
-                prioridade: d.prioridade,
-                peso: d.peso,
-                horas_semana: `${Math.max(2, Math.round(horasSem / (c.disciplinas.length || 3)))}h/sem`
-              }))
+              motivos: motivos.length ? motivos : ['Oportunidade compatível com os parâmetros informados'],
+              plano_semanal: (c.disciplinas || []).map((d, idx) => {
+                const fatia = Math.round(horasSem * (idx === 0 ? 0.30 : (idx === 1 ? 0.25 : 0.15)) * 10) / 10;
+                return {
+                  disciplina: d.nome,
+                  prioridade: d.prioridade,
+                  peso: d.peso,
+                  horas_semana: `${fatia}h/sem`
+                };
+              })
             };
           })
           .sort((a, b) => b.match_score - a.match_score)
-          .slice(0, 3);
+          .slice(0, 4);
 
         return {
           perfil_analisado: {
@@ -566,7 +606,7 @@
         return {
           id: st.leads.length,
           sucesso: true,
-          mensagem: `Parabéns, ${payload.nome}! Você entrou na Lista VIP do Aprova+ PRO com 50% OFF no lançamento.`
+          mensagem: `Reserva VIP confirmada para ${payload.nome}. Prioridade registrada: ${payload.recurso_favorito}.`
         };
       }
     }

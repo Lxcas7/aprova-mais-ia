@@ -6,4 +6,6 @@ venv/
 env/
 .DS_Store
 Thumbs.db
+.impeccable/config.local.json
+
 

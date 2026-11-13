@@ -4,24 +4,30 @@
   /* Civic Editorial & Study Workspace Surfaces */
   --bg: #f6f5f1;
   --bg-subtle: #eceae3;
+  --bg-muted: #e3e0d6;
   --bg-dark: #102338;
+  --bg-dark-elevated: #162f4a;
   --card: #ffffff;
 
   /* Ink & Contrast (WCAG AA+ Verified) */
   --text: #111c24;
   --text-secondary: #2d3e4e;
   --muted: #4a5d70;
+  --on-dark: #f1f5f9;
+  --on-dark-muted: #cbd5e1;
 
-  /* Borders & Dividers */
+  /* Borders & Hairlines */
   --border: #d8d5cb;
   --border-strong: #b8b4a8;
+  --border-dark: rgba(255, 255, 255, 0.16);
 
   /* Primary Civic Cobalt Action */
   --primary: #0b4f6c;
   --primary-hover: #083b52;
   --primary-soft: #e3f0f5;
+  --primary-border: #b5d5e2;
 
-  /* Accent Editorial Terracotta / Ochre */
+  /* Secondary Editorial Accent (Terracotta / Ochre) */
   --accent: #8c3d19;
   --accent-hover: #6e2e11;
   --accent-soft: #faeae3;
@@ -42,30 +48,63 @@
   --blue-soft: #cfe2ff;
   --blue-border: #9ec5fe;
 
-  /* Neutral Elevation Shadows (Zero colored glow) */
+  /* Neutral Elevation Shadows (Offset + soft blur, zero colored glow) */
   --shadow-sm: 0 1px 2px rgba(17, 28, 36, 0.05);
   --shadow-md: 0 4px 12px rgba(17, 28, 36, 0.06);
-  --shadow-lg: 0 12px 28px rgba(17, 28, 36, 0.10);
+  --shadow-lg: 0 12px 28px rgba(17, 28, 36, 0.11);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  /* Architectural Radius Scale (Crisp editorial geometry, never puffy) */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+
+  /* Consistent Spacing Scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 44px;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
 ::selection {
-  background: var(--primary);
+  background-color: var(--primary);
   color: #ffffff;
 }
 
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  scrollbar-color: var(--border-strong) var(--bg);
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 
 body {
@@ -79,18 +118,23 @@ body {
   caret-color: var(--primary);
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   color: var(--text);
   letter-spacing: -0.025em;
   line-height: 1.22;
   text-wrap: balance;
 }
 
-p, li {
+p,
+li {
   text-wrap: pretty;
-  max-width: 58ch;
+  max-width: 65ch;
 }
 
 a {

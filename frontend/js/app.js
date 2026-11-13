@@ -9,7 +9,8 @@ window.AprovaApp = {
     escolaridade: 'todos',
     uf: 'todas',
     q: '',
-    apenas_salvos: false
+    apenas_salvos: false,
+    sortBy: 'padrao'
   },
 
   async init() {
@@ -40,7 +41,13 @@ window.AprovaApp = {
 
     // Atualiza botões da barra de navegação
     document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.view === viewName);
+      const isCurrent = btn.dataset.view === viewName;
+      btn.classList.toggle('active', isCurrent);
+      if (isCurrent) {
+        btn.setAttribute('aria-current', 'page');
+      } else {
+        btn.removeAttribute('aria-current');
+      }
     });
 
     // Exibe apenas a seção ativa
@@ -75,6 +82,8 @@ window.AprovaApp = {
   setStatusFilter(novoStatus) {
     this.state.status = novoStatus;
     this.state.apenas_salvos = false;
+    const btnSalvos = document.getElementById('btn-filtro-salvos');
+    if (btnSalvos) btnSalvos.className = 'btn btn-outline btn-sm';
 
     if (this.state.currentView !== 'explorar') {
       this.switchView('explorar');
@@ -88,6 +97,11 @@ window.AprovaApp = {
       }
     });
 
+    this.carregarConcursos();
+  },
+
+  setSortOrder(novoSort) {
+    this.state.sortBy = novoSort || 'padrao';
     this.carregarConcursos();
   },
 
@@ -106,11 +120,13 @@ window.AprovaApp = {
     this.state.uf = 'todas';
     this.state.q = '';
     this.state.apenas_salvos = false;
+    this.state.sortBy = 'padrao';
 
     if (document.getElementById('filter-q')) document.getElementById('filter-q').value = '';
     if (document.getElementById('filter-area')) document.getElementById('filter-area').value = 'todas';
     if (document.getElementById('filter-escolaridade')) document.getElementById('filter-escolaridade').value = 'todos';
     if (document.getElementById('filter-uf')) document.getElementById('filter-uf').value = 'todas';
+    if (document.getElementById('filter-sort')) document.getElementById('filter-sort').value = 'padrao';
 
     this.setStatusFilter('todos');
   },
@@ -119,9 +135,24 @@ window.AprovaApp = {
     this.state.apenas_salvos = !this.state.apenas_salvos;
     const btn = document.getElementById('btn-filtro-salvos');
     if (btn) {
-      btn.className = this.state.apenas_salvos ? 'btn btn-primary' : 'btn btn-outline';
+      btn.className = this.state.apenas_salvos ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
     }
     this.carregarConcursos();
+  },
+
+  ordenarLista(lista) {
+    const copia = [...lista];
+    const modo = this.state.sortBy;
+    if (modo === 'salario') {
+      return copia.sort((a, b) => (b.salario_max || 0) - (a.salario_max || 0));
+    }
+    if (modo === 'vagas') {
+      return copia.sort((a, b) => (b.vagas_num || 0) - (a.vagas_num || 0));
+    }
+    if (modo === 'probabilidade') {
+      return copia.sort((a, b) => (b.prob_ia || 0) - (a.prob_ia || 0));
+    }
+    return copia;
   },
 
   async carregarConcursos() {
@@ -130,7 +161,7 @@ window.AprovaApp = {
 
     const resp = await window.AprovaAPI.listarConcursos(this.state);
     const resumo = resp.resumo || {};
-    const lista = resp.concursos || [];
+    const lista = this.ordenarLista(resp.concursos || []);
 
     const setTxt = (id, val) => {
       const el = document.getElementById(id);
@@ -146,14 +177,20 @@ window.AprovaApp = {
     setTxt('count-salvos-badge', resumo.salvos);
     setTxt('top-salvos-count', resumo.salvos);
 
+    const summaryEl = document.getElementById('results-summary-text');
+    if (summaryEl) {
+      summaryEl.textContent = `Exibindo ${lista.length} de ${resumo.total || 13} concursos mapeados`;
+    }
+
     if (lista.length === 0) {
       grid.innerHTML = `
-        <div class="concurso-card" style="grid-column: 1 / -1; text-align:center; padding:38px;">
-          <h3 style="font-size:1.15rem; font-weight:800; margin-bottom:6px;">Nenhum concurso encontrado com estes filtros</h3>
-          <p style="color:#64748b; margin-bottom:14px;">Experimente limpar os filtros ou buscar por todos os status.</p>
-          <div>
-            <button class="btn btn-primary" onclick="window.AprovaApp.limparFiltros()">🔄 Mostrar Todos os Concursos</button>
-          </div>
+        <div class="empty-state-sheet">
+          <h3>Nenhum concurso corresponde aos filtros selecionados</h3>
+          <p>Ajuste os parâmetros de busca por área, escolaridade ou abrangência, ou redefina os filtros para visualizar todos os 13 editais mapeados.</p>
+          <button type="button" class="btn btn-primary" onclick="window.AprovaApp.limparFiltros()">
+            ${window.AprovaUtils.icon('reset')}
+            <span>Restaurar Todos os Concursos</span>
+          </button>
         </div>
       `;
       return;
@@ -165,8 +202,7 @@ window.AprovaApp = {
   async toggleFavorito(concursoId) {
     const res = await window.AprovaAPI.alternarFavorito(concursoId);
     window.AprovaUtils.showToast(
-      res.salvo ? '⭐ Concurso salvo no seu caderno!' : '☆ Concurso removido dos salvos.',
-      res.salvo ? '#f59e0b' : '#64748b'
+      res.salvo ? 'Concurso adicionado ao seu caderno de estudos.' : 'Concurso removido dos salvos.'
     );
     this.carregarConcursos();
     this.atualizarIndicadoresUsuario();
@@ -175,8 +211,10 @@ window.AprovaApp = {
   irParaMateriaisDoConcurso(concursoId) {
     window.AprovaComponents.estadoMateriais.concursoId = concursoId;
     window.AprovaComponents.estadoMateriais.categoria = 'todas';
+    window.AprovaComponents.estadoMateriais.statusEstudo = 'todos';
+    window.AprovaComponents.estadoMateriais.busca = '';
     this.switchView('materiais');
-    window.AprovaUtils.showToast('📚 Exibindo materiais filtrados para este concurso!', '#2563eb');
+    window.AprovaUtils.showToast('Exibindo acervo de materiais filtrado para este concurso.');
   },
 
   async atualizarIndicadoresUsuario() {
@@ -194,7 +232,6 @@ window.AprovaApp = {
     setTxt('top-progresso-pct', `${matResp.progresso_pct || 0}%`);
   },
 
-  // Alias para compatibilidade com chamadas nos componentes
   atualizarTelemetriaTopo() {
     return this.atualizarIndicadoresUsuario();
   }

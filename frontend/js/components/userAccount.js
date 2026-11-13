@@ -1,5 +1,6 @@
 /**
  * Componente: Sistema de Autenticação (Login / Cadastro) e Painel do Concurseiro (Minha Conta)
+ * Utiliza Ledger de Telemetria Plano (`.account-ledger-bar`) em vez de cards genéricos repetitivos.
  */
 window.AprovaComponents = window.AprovaComponents || {};
 
@@ -10,12 +11,12 @@ window.AprovaComponents.renderHeaderUserWidget = function () {
   const user = window.AprovaAPI.obterUsuarioAtual();
   if (!user) {
     box.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <button type="button" class="btn btn-outline" style="padding:8px 14px;" onclick="window.AprovaComponents.openAuthModal('login')">
+      <div class="header-user-actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.openAuthModal('login')">
           ${window.AprovaUtils.icon('user')}
           <span>Entrar</span>
         </button>
-        <button type="button" class="btn btn-primary" style="padding:8px 14px;" onclick="window.AprovaComponents.openAuthModal('register')">
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.AprovaComponents.openAuthModal('register')">
           <span>Criar Conta</span>
         </button>
       </div>
@@ -24,25 +25,21 @@ window.AprovaComponents.renderHeaderUserWidget = function () {
   }
 
   box.innerHTML = `
-    <div style="display:flex; align-items:center; gap:10px;">
+    <div class="header-user-actions">
       <button
         type="button"
-        class="btn btn-outline"
+        class="btn btn-outline btn-sm"
         onclick="window.AprovaApp.switchView('conta')"
-        style="padding:6px 12px;"
         title="Abrir Meu Painel de Estudos e Conta"
       >
-        <span style="width:24px; height:24px; border-radius:50%; background-color:var(--primary); color:#ffffff; font-weight:800; font-size:0.8125rem; display:inline-flex; align-items:center; justify-content:center;">
-          ${user.iniciais || 'CL'}
-        </span>
-        <span style="font-weight:700; color:var(--text);">${user.nome}</span>
+        <span class="user-avatar-chip">${user.iniciais || 'CL'}</span>
+        <span>${window.AprovaUtils.cleanText(user.nome)}</span>
       </button>
       <button
         type="button"
-        class="btn btn-outline"
-        style="padding:6px 12px;"
+        class="btn btn-outline btn-sm"
         onclick="window.AprovaComponents.fazerLogout()"
-        title="Sair da conta"
+        title="Encerrar sessão"
       >
         Sair
       </button>
@@ -60,21 +57,21 @@ window.AprovaComponents.openAuthModal = function (modo = 'login') {
   const isLogin = modo === 'login';
   body.innerHTML = `
     <div style="padding-right:36px; margin-bottom:18px;">
-      <h2 style="font-size:1.375rem; font-weight:800; color:var(--text); margin-bottom:6px;">
-        ${isLogin ? 'Entrar na sua Conta Aprova+ IA' : 'Criar sua Conta Gratuita'}
+      <h2 style="font-size:1.3125rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+        ${isLogin ? 'Entrar na sua Conta Aprova+ IA' : 'Criar Conta Gratuita no Aprova+ IA'}
       </h2>
-      <p style="font-size:0.9375rem; color:var(--text-secondary);">
-        Salve seus concursos favoritos, acompanhe os materiais estudados e personalize seu Copiloto IA.
+      <p style="font-size:0.875rem; color:var(--text-secondary);">
+        Sincronize seus concursos salvos, o histórico de apostilas estudadas e os parâmetros do Copiloto IA.
       </p>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; padding-bottom:16px; border-bottom:1px solid var(--border); margin-bottom:18px;">
+    <div class="form-grid-2" style="padding-bottom:16px; border-bottom:1px solid var(--border); margin-bottom:18px;">
       <button
         type="button"
         class="btn ${isLogin ? 'btn-primary' : 'btn-outline'}"
         onclick="window.AprovaComponents.openAuthModal('login')"
       >
-        Já tenho conta (Login)
+        Já possuo conta
       </button>
       <button
         type="button"
@@ -85,41 +82,41 @@ window.AprovaComponents.openAuthModal = function (modo = 'login') {
       </button>
     </div>
 
-    <div id="auth-error-box" style="display:none; color:#8c3d19; padding-bottom:12px; font-size:0.875rem; font-weight:700;"></div>
+    <div id="auth-error-box" style="display:none; color:var(--accent); padding-bottom:12px; font-size:0.875rem; font-weight:700;"></div>
 
     ${isLogin ? `
       <form onsubmit="window.AprovaComponents.submeterLogin(event)" style="display:flex; flex-direction:column; gap:14px;">
         <div class="field-group">
-          <label for="login-email">Seu E-mail</label>
+          <label for="login-email">E-mail Cadastrado</label>
           <input type="email" id="login-email" class="field-input" placeholder="Ex: carlos@aprovamais.com.br" value="carlos@aprovamais.com.br" required />
         </div>
         <div class="field-group">
-          <label for="login-senha">Sua Senha</label>
+          <label for="login-senha">Senha de Acesso</label>
           <input type="password" id="login-senha" class="field-input" placeholder="Digite sua senha" value="123456" required />
         </div>
-        <button type="submit" class="btn btn-primary" style="padding:12px; font-size:0.9375rem; margin-top:4px;">
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top:4px;">
           Entrar na Plataforma
         </button>
       </form>
 
       <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <span style="font-size:0.875rem; color:var(--muted);">Conta demonstração rápida:</span>
-        <button type="button" class="btn btn-purple" onclick="window.AprovaComponents.entrarContaDemo()">
-          Entrar com 1 Clique (Carlos Lucas)
+        <span style="font-size:0.8125rem; color:var(--muted);">Acesso rápido de avaliação:</span>
+        <button type="button" class="btn btn-accent btn-sm" onclick="window.AprovaComponents.entrarContaDemo()">
+          Entrar com Conta Demo (Carlos Lucas)
         </button>
       </div>
     ` : `
-      <form onsubmit="window.AprovaComponents.submeterCadastro(event)" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div class="field-group" style="grid-column: span 2;">
-          <label for="reg-nome">Seu Nome Completo</label>
+      <form onsubmit="window.AprovaComponents.submeterCadastro(event)" class="form-grid-2">
+        <div class="field-group form-span-2">
+          <label for="reg-nome">Nome Completo</label>
           <input type="text" id="reg-nome" class="field-input" placeholder="Ex: Ana Beatriz Silva" required />
         </div>
         <div class="field-group">
-          <label for="reg-email">Seu Melhor E-mail</label>
+          <label for="reg-email">E-mail Principal</label>
           <input type="email" id="reg-email" class="field-input" placeholder="seu@email.com" required />
         </div>
         <div class="field-group">
-          <label for="reg-senha">Crie uma Senha</label>
+          <label for="reg-senha">Senha</label>
           <input type="password" id="reg-senha" class="field-input" placeholder="Mínimo 4 caracteres" minlength="4" required />
         </div>
         <div class="field-group">
@@ -134,7 +131,7 @@ window.AprovaComponents.openAuthModal = function (modo = 'login') {
           </select>
         </div>
         <div class="field-group">
-          <label for="reg-escolaridade">Sua Escolaridade Atual</label>
+          <label for="reg-escolaridade">Escolaridade Atual</label>
           <select id="reg-escolaridade" class="field-input">
             <option value="Superior">Ensino Superior Completo</option>
             <option value="Médio">Ensino Médio Completo</option>
@@ -144,12 +141,12 @@ window.AprovaComponents.openAuthModal = function (modo = 'login') {
           <label for="reg-uf">UF de Interesse</label>
           <select id="reg-uf" class="field-input">
             <option value="Nacional">Nacional (Qualquer Estado)</option>
-            <option value="SP">São Paulo (SP)</option>
             <option value="DF">Distrito Federal (DF)</option>
+            <option value="SP">São Paulo (SP)</option>
           </select>
         </div>
         <div class="field-group">
-          <label for="reg-horas">Meta de Horas de Estudo / Dia</label>
+          <label for="reg-horas">Meta de Horas / Dia</label>
           <select id="reg-horas" class="field-input">
             <option value="2">2 horas/dia</option>
             <option value="3">3 horas/dia</option>
@@ -157,8 +154,8 @@ window.AprovaComponents.openAuthModal = function (modo = 'login') {
             <option value="6">6 horas/dia</option>
           </select>
         </div>
-        <button type="submit" class="btn btn-primary" style="grid-column: span 2; padding:12px; font-size:0.9375rem; margin-top:4px;">
-          Criar Minha Conta e Acessar Painel
+        <button type="submit" class="btn btn-primary form-span-2" style="margin-top:4px;">
+          Criar Conta e Abrir Caderno de Estudos
         </button>
       </form>
     `}
@@ -247,18 +244,14 @@ window.AprovaComponents.renderUserDashboard = async function () {
   const user = window.AprovaAPI.obterUsuarioAtual();
   if (!user) {
     container.innerHTML = `
-      <div class="concurso-card" style="text-align:center; padding:42px 24px; max-width:620px; margin:0 auto;">
-        <h3 style="font-size:1.375rem; font-weight:800; color:var(--text); margin-bottom:10px;">
-          Entre na sua Conta para Acessar seu Painel de Estudos
-        </h3>
-        <p style="font-size:0.9375rem; color:var(--text-secondary); margin:0 auto 22px;">
-          Com uma conta gratuita você salva seus concursos favoritos, acompanha seu progresso em cada apostila e sincroniza suas metas com o Copiloto IA.
-        </p>
-        <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+      <div class="empty-state-sheet" style="max-width:620px; margin:0 auto;">
+        <h3>Identifique-se para Acessar seu Caderno de Estudos</h3>
+        <p>Com uma conta gratuita você salva editais prioritários, registra os materiais concluídos e mantém suas metas calibradas no Copiloto IA.</p>
+        <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
           <button type="button" class="btn btn-primary" onclick="window.AprovaComponents.openAuthModal('login')">
             Entrar na Conta
           </button>
-          <button type="button" class="btn btn-purple" onclick="window.AprovaComponents.openAuthModal('register')">
+          <button type="button" class="btn btn-accent" onclick="window.AprovaComponents.openAuthModal('register')">
             Criar Conta Gratuita
           </button>
           <button type="button" class="btn btn-outline" onclick="window.AprovaComponents.entrarContaDemo()">
@@ -281,150 +274,166 @@ window.AprovaComponents.renderUserDashboard = async function () {
 
   const salvosHtml = salvos.map(c => `
     <div class="mat-item">
-      <div>
-        <div style="font-weight:700; font-size:0.9375rem; color:var(--text); margin-bottom:4px;">
+      <div class="mat-item-info">
+        <div class="mat-item-title">
           ${clean(c.sigla)} · ${clean(c.titulo)}
         </div>
-        <div style="font-size:0.8125rem; color:var(--muted);">
+        <div class="mat-item-meta">
           <span class="badge ${window.AprovaUtils.getStatusBadgeClass(c.status)}">${clean(c.status_label)}</span>
-          <span style="margin-left:8px;">Banca: <strong>${clean(c.banca)}</strong> · Salário: <strong style="color:var(--green);">${clean(c.salario)}</strong></span>
+          <span>Banca: <strong>${clean(c.banca)}</strong></span>
+          <span>Salário: <strong style="color:var(--green);">${clean(c.salario)}</strong></span>
         </div>
       </div>
-      <button type="button" class="btn btn-primary" onclick="window.AprovaComponents.openConcursoModal('${c.id}')">
-        Raio-X e Materiais
-      </button>
+      <div class="mat-item-actions">
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.AprovaComponents.openConcursoModal('${c.id}')">
+          Raio-X e Materiais
+        </button>
+      </div>
     </div>
   `).join('');
 
   const estudadosHtml = estudadosList.map(m => `
     <div class="mat-item">
-      <div>
-        <div style="font-weight:700; font-size:0.9375rem; color:var(--text); margin-bottom:4px;">
+      <div class="mat-item-info">
+        <div class="mat-item-title">
           ${clean(m.titulo)}
         </div>
-        <div style="font-size:0.8125rem; color:var(--muted);">
-          <span class="badge badge-aberto">Concluído · ${clean(m.concurso_sigla || m.concurso_id.toUpperCase())}</span>
-          <span style="margin-left:8px;">Categoria: ${clean(m.categoria)} · ${clean(m.paginas)}</span>
+        <div class="mat-item-meta">
+          <span class="badge badge-aberto">${clean(m.concurso_sigla || m.concurso_id.toUpperCase())}</span>
+          <span class="badge badge-cobalt">${clean(m.categoria)}</span>
+          <span>Extensão: <strong>${clean(m.paginas)}</strong></span>
         </div>
       </div>
-      <button type="button" class="btn btn-outline" onclick="window.AprovaAPI.baixarMaterial(${m.id})">
-        Baixar Novamente
-      </button>
+      <div class="mat-item-actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaAPI.baixarMaterial(${m.id})">
+          ${window.AprovaUtils.icon('download')}
+          <span>Baixar Guia</span>
+        </button>
+      </div>
     </div>
   `).join('');
 
   container.innerHTML = `
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
-      <div class="concurso-card" style="padding:20px;">
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="width:44px; height:44px; border-radius:50%; background-color:var(--primary); color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.0625rem;">
-            ${user.iniciais || 'CL'}
-          </div>
+    <!-- Barra Tipográfica Plana do Candidato (Sem cards KPI repetitivos) -->
+    <div class="account-ledger-bar">
+      <div class="account-ledger-cell">
+        <div class="account-user-identity">
+          <div class="account-avatar-lg">${user.iniciais || 'CL'}</div>
           <div>
             <div style="font-size:1.0625rem; font-weight:800; color:var(--text);">${clean(user.nome)}</div>
-            <div style="font-size:0.8125rem; color:var(--muted);">${clean(user.email)}</div>
-            <span class="badge badge-purple" style="margin-top:4px;">Plano: ${clean(user.plano || 'Gratuito')}</span>
+            <div style="font-size:0.8125rem; color:var(--muted); margin-bottom:4px;">${clean(user.email)}</div>
+            <span class="badge badge-cobalt">Plano: ${clean(user.plano || 'Gratuito')}</span>
           </div>
         </div>
       </div>
 
-      <div class="concurso-card" style="padding:20px;">
-        <span style="font-size:0.8125rem; font-weight:700; color:var(--muted);">Concursos Salvos</span>
-        <strong style="font-size:1.875rem; font-weight:800; color:var(--primary);">${salvos.length}</strong>
-        <span style="font-size:0.8125rem; color:var(--text-secondary);">Monitorados no seu caderno</span>
+      <div class="account-ledger-cell">
+        <span class="account-metric-label">Concursos Salvos</span>
+        <strong class="account-metric-value" style="color:var(--primary);">${salvos.length}</strong>
+        <span class="account-metric-sub">Monitorados no caderno</span>
       </div>
 
-      <div class="concurso-card" style="padding:20px;">
-        <span style="font-size:0.8125rem; font-weight:700; color:var(--muted);">Materiais Concluídos</span>
-        <strong style="font-size:1.875rem; font-weight:800; color:var(--green);">${materiaisResp.estudados}/${materiaisResp.total}</strong>
-        <span style="font-size:0.8125rem; color:var(--text-secondary);">${materiaisResp.progresso_pct}% do acervo estudado</span>
+      <div class="account-ledger-cell">
+        <span class="account-metric-label">Materiais Concluídos</span>
+        <strong class="account-metric-value" style="color:var(--green);">${materiaisResp.estudados}/${materiaisResp.total}</strong>
+        <span class="account-metric-sub">${materiaisResp.progresso_pct}% do acervo estudado</span>
       </div>
 
-      <div class="concurso-card" style="padding:20px;">
-        <span style="font-size:0.8125rem; font-weight:700; color:var(--muted);">Meta de Estudo Semanal</span>
-        <strong style="font-size:1.875rem; font-weight:800; color:var(--accent);">${(user.horas_estudo_dia || 4) * 6}h/sem</strong>
-        <span style="font-size:0.8125rem; color:var(--text-secondary);">Foco: Carreira ${clean(user.carreira_foco)}</span>
+      <div class="account-ledger-cell">
+        <span class="account-metric-label">Carga Semanal Alvo</span>
+        <strong class="account-metric-value" style="color:var(--accent);">${(user.horas_estudo_dia || 4) * 6}h/sem</strong>
+        <span class="account-metric-sub">Foco: Carreira ${clean(user.carreira_foco)}</span>
       </div>
     </div>
 
-    <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:22px; align-items:start;">
-      <div class="concurso-card">
-        <div>
-          <h3 style="font-size:1.1875rem; font-weight:800; color:var(--text); margin-bottom:6px;">
-            Meus Dados e Preferências de Estudo
-          </h3>
-          <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:16px;">
-            Suas preferências abaixo calibram automaticamente o Copiloto e Match IA.
-          </p>
+    <div class="split-workspace-conta">
+      <!-- Coluna 1: Dados e Parâmetros de Calibragem -->
+      <div class="ia-sheet">
+        <h3 style="font-size:1.125rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+          Parâmetros de Estudo e Perfil
+        </h3>
+        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:16px;">
+          Estes parâmetros calibram automaticamente as recomendações do Copiloto e Match IA.
+        </p>
 
-          <form onsubmit="window.AprovaComponents.salvarPerfilUsuario(event)" style="display:flex; flex-direction:column; gap:12px;">
+        <form onsubmit="window.AprovaComponents.salvarPerfilUsuario(event)" style="display:flex; flex-direction:column; gap:12px;">
+          <div class="field-group">
+            <label for="prof-nome">Nome Completo</label>
+            <input type="text" id="prof-nome" class="field-input" value="${user.nome}" required />
+          </div>
+          <div class="field-group">
+            <label for="prof-email-ro">E-mail da Conta</label>
+            <input type="email" id="prof-email-ro" class="field-input" value="${user.email}" disabled />
+          </div>
+          <div class="form-grid-2">
             <div class="field-group">
-              <label for="prof-nome">Nome Completo</label>
-              <input type="text" id="prof-nome" class="field-input" value="${user.nome}" required />
+              <label for="prof-carreira">Carreira Foco</label>
+              <select id="prof-carreira" class="field-input">
+                <option value="Policial" ${user.carreira_foco === 'Policial' ? 'selected' : ''}>Policial (PF, PRF)</option>
+                <option value="Bancária" ${user.carreira_foco === 'Bancária' ? 'selected' : ''}>Bancária (Caixa, BB, BACEN)</option>
+                <option value="Tribunais" ${user.carreira_foco === 'Tribunais' ? 'selected' : ''}>Tribunais (TSE, TJ-SP)</option>
+                <option value="Administrativa" ${user.carreira_foco === 'Administrativa' ? 'selected' : ''}>Administrativa (INSS, CNU)</option>
+                <option value="Fiscal" ${user.carreira_foco === 'Fiscal' ? 'selected' : ''}>Fiscal e Controle (Receita, CGU)</option>
+                <option value="Ambiental" ${user.carreira_foco === 'Ambiental' ? 'selected' : ''}>Ambiental (IBAMA)</option>
+              </select>
             </div>
             <div class="field-group">
-              <label for="prof-email-ro">E-mail da Conta</label>
-              <input type="email" id="prof-email-ro" class="field-input" value="${user.email}" disabled style="background-color:var(--bg-subtle);" />
+              <label for="prof-escolaridade">Escolaridade</label>
+              <select id="prof-escolaridade" class="field-input">
+                <option value="Superior" ${user.escolaridade === 'Superior' ? 'selected' : ''}>Ensino Superior</option>
+                <option value="Médio" ${user.escolaridade === 'Médio' ? 'selected' : ''}>Ensino Médio</option>
+              </select>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-              <div class="field-group">
-                <label for="prof-carreira">Carreira Foco</label>
-                <select id="prof-carreira" class="field-input">
-                  <option value="Policial" ${user.carreira_foco === 'Policial' ? 'selected' : ''}>Policial (PF, PRF)</option>
-                  <option value="Bancária" ${user.carreira_foco === 'Bancária' ? 'selected' : ''}>Bancária (Caixa, BB)</option>
-                  <option value="Tribunais" ${user.carreira_foco === 'Tribunais' ? 'selected' : ''}>Tribunais (TSE, TJ-SP)</option>
-                  <option value="Administrativa" ${user.carreira_foco === 'Administrativa' ? 'selected' : ''}>Administrativa (INSS, CNU)</option>
-                  <option value="Fiscal" ${user.carreira_foco === 'Fiscal' ? 'selected' : ''}>Fiscal e Controle (Receita)</option>
-                  <option value="Ambiental" ${user.carreira_foco === 'Ambiental' ? 'selected' : ''}>Ambiental (IBAMA)</option>
-                </select>
-              </div>
-              <div class="field-group">
-                <label for="prof-escolaridade">Escolaridade</label>
-                <select id="prof-escolaridade" class="field-input">
-                  <option value="Superior" ${user.escolaridade === 'Superior' ? 'selected' : ''}>Ensino Superior</option>
-                  <option value="Médio" ${user.escolaridade === 'Médio' ? 'selected' : ''}>Ensino Médio</option>
-                </select>
-              </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="field-group">
+              <label for="prof-uf">UF de Interesse</label>
+              <select id="prof-uf" class="field-input">
+                <option value="Nacional" ${user.uf_interesse === 'Nacional' ? 'selected' : ''}>Nacional</option>
+                <option value="DF" ${user.uf_interesse === 'DF' ? 'selected' : ''}>Distrito Federal (DF)</option>
+                <option value="SP" ${user.uf_interesse === 'SP' ? 'selected' : ''}>São Paulo (SP)</option>
+              </select>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-              <div class="field-group">
-                <label for="prof-uf">UF de Interesse</label>
-                <select id="prof-uf" class="field-input">
-                  <option value="Nacional" ${user.uf_interesse === 'Nacional' ? 'selected' : ''}>Nacional</option>
-                  <option value="SP" ${user.uf_interesse === 'SP' ? 'selected' : ''}>São Paulo (SP)</option>
-                  <option value="DF" ${user.uf_interesse === 'DF' ? 'selected' : ''}>Distrito Federal (DF)</option>
-                </select>
-              </div>
-              <div class="field-group">
-                <label for="prof-horas">Horas de Estudo / Dia</label>
-                <select id="prof-horas" class="field-input">
-                  <option value="2" ${user.horas_estudo_dia == 2 ? 'selected' : ''}>2 horas/dia</option>
-                  <option value="3" ${user.horas_estudo_dia == 3 ? 'selected' : ''}>3 horas/dia</option>
-                  <option value="4" ${user.horas_estudo_dia == 4 ? 'selected' : ''}>4 horas/dia</option>
-                  <option value="6" ${user.horas_estudo_dia == 6 ? 'selected' : ''}>6 horas/dia</option>
-                </select>
-              </div>
+            <div class="field-group">
+              <label for="prof-horas">Horas de Estudo / Dia</label>
+              <select id="prof-horas" class="field-input">
+                <option value="2" ${user.horas_estudo_dia == 2 ? 'selected' : ''}>2 horas/dia</option>
+                <option value="3" ${user.horas_estudo_dia == 3 ? 'selected' : ''}>3 horas/dia</option>
+                <option value="4" ${user.horas_estudo_dia == 4 ? 'selected' : ''}>4 horas/dia</option>
+                <option value="6" ${user.horas_estudo_dia == 6 ? 'selected' : ''}>6 horas/dia</option>
+              </select>
             </div>
-            <button type="submit" class="btn btn-primary" style="margin-top:6px;">
-              Salvar Preferências no Perfil
-            </button>
-          </form>
-        </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top:4px;">
+            Salvar Alterações no Perfil
+          </button>
+        </form>
       </div>
 
+      <!-- Coluna 2: Caderno Ativo (Concursos Salvos + Materiais Concluídos) -->
       <div style="display:flex; flex-direction:column; gap:20px;">
-        <div class="concurso-card">
-          <h3 style="font-size:1.125rem; font-weight:800; color:var(--text); margin-bottom:10px;">
-            Meus Concursos Salvos (${salvos.length})
-          </h3>
-          ${salvosHtml || `<p style="font-size:0.9375rem; color:var(--muted);">Você ainda não favoritou nenhum concurso. Clique em "Salvar" nos cards da aba Concursos.</p>`}
+        <div class="ia-sheet">
+          <div class="match-result-head" style="margin-bottom:8px;">
+            <h3 style="font-size:1.125rem; font-weight:800; color:var(--text);">
+              Concursos Salvos no Caderno (${salvos.length})
+            </h3>
+            <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaApp.switchView('explorar')">
+              Explorar Editais
+            </button>
+          </div>
+          ${salvosHtml || `<p style="font-size:0.875rem; color:var(--muted); padding:8px 0;">Nenhum concurso salvo no momento. Utilize o botão "Salvar" nos dossiês da aba Concursos para monitorá-los aqui.</p>`}
         </div>
 
-        <div class="concurso-card">
-          <h3 style="font-size:1.125rem; font-weight:800; color:var(--text); margin-bottom:10px;">
-            Meus Materiais Estudados (${estudadosList.length})
-          </h3>
-          ${estudadosHtml || `<p style="font-size:0.9375rem; color:var(--muted);">Nenhum material marcado como concluído ainda. Marque seus PDFs na aba Materiais.</p>`}
+        <div class="ia-sheet">
+          <div class="match-result-head" style="margin-bottom:8px;">
+            <h3 style="font-size:1.125rem; font-weight:800; color:var(--text);">
+              Materiais Concluídos (${estudadosList.length})
+            </h3>
+            <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaApp.switchView('materiais')">
+              Abrir Acervo
+            </button>
+          </div>
+          ${estudadosHtml || `<p style="font-size:0.875rem; color:var(--muted); padding:8px 0;">Nenhum guia marcado como concluído ainda. Marque os materiais estudados no Acervo ou dentro do Raio-X de cada concurso.</p>`}
         </div>
       </div>
     </div>
