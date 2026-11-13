@@ -84,7 +84,10 @@ window.AprovaApp = {
     this.state.status = novoStatus;
     this.state.apenas_salvos = false;
     const btnSalvos = document.getElementById('btn-filtro-salvos');
-    if (btnSalvos) btnSalvos.className = 'btn btn-outline btn-sm';
+    if (btnSalvos) {
+      btnSalvos.className = 'btn btn-outline btn-sm';
+      btnSalvos.setAttribute('aria-pressed', 'false');
+    }
 
     if (this.state.currentView !== 'explorar') {
       this.switchView('explorar');
@@ -93,14 +96,18 @@ window.AprovaApp = {
     document.querySelectorAll('.status-pill').forEach(pill => {
       const s = pill.dataset.status;
       pill.className = 'status-pill';
-      if (s === novoStatus) {
+      const isCurrent = s === novoStatus;
+      if (isCurrent) {
         pill.classList.add(`active-${s}`);
       }
+      pill.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
     });
 
     document.querySelectorAll('.ledger-item').forEach(item => {
       const ls = item.dataset.ledgerStatus;
-      item.classList.toggle('active', ls === novoStatus);
+      const isActive = ls === novoStatus;
+      item.classList.toggle('active', isActive);
+      item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
 
     this.carregarConcursos();
@@ -142,6 +149,7 @@ window.AprovaApp = {
     const btn = document.getElementById('btn-filtro-salvos');
     if (btn) {
       btn.className = this.state.apenas_salvos ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+      btn.setAttribute('aria-pressed', this.state.apenas_salvos ? 'true' : 'false');
     }
     this.carregarConcursos();
   },

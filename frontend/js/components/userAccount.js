@@ -52,23 +52,27 @@ window.AprovaComponents.openAuthModal = function (modo = 'login') {
   const body = document.getElementById('auth-modal-body');
   if (!modal || !body) return;
 
+  if (!modal.classList.contains('open')) {
+    window.AprovaComponents._lastAuthTrigger = document.activeElement;
+  }
   modal.classList.add('open');
 
   const isLogin = modo === 'login';
   body.innerHTML = `
-    <div style="padding-right:36px; margin-bottom:18px;">
-      <h2 style="font-size:1.3125rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+    <div class="modal-header-block">
+      <h2 class="modal-title">
         ${isLogin ? 'Entrar na sua Conta Aprova+ IA' : 'Criar Conta Gratuita no Aprova+ IA'}
       </h2>
-      <p style="font-size:0.875rem; color:var(--text-secondary);">
+      <p class="modal-subtitle">
         Sincronize seus concursos salvos, o histórico de apostilas estudadas e os parâmetros do Copiloto IA.
       </p>
     </div>
 
-    <div class="form-grid-2" style="padding-bottom:16px; border-bottom:1px solid var(--border); margin-bottom:18px;">
+    <div class="form-grid-2 auth-mode-switcher">
       <button
         type="button"
         class="btn ${isLogin ? 'btn-primary' : 'btn-outline'}"
+        aria-pressed="${isLogin ? 'true' : 'false'}"
         onclick="window.AprovaComponents.openAuthModal('login')"
       >
         Já possuo conta
@@ -76,16 +80,17 @@ window.AprovaComponents.openAuthModal = function (modo = 'login') {
       <button
         type="button"
         class="btn ${!isLogin ? 'btn-primary' : 'btn-outline'}"
+        aria-pressed="${!isLogin ? 'true' : 'false'}"
         onclick="window.AprovaComponents.openAuthModal('register')"
       >
         Criar nova conta
       </button>
     </div>
 
-    <div id="auth-error-box" style="display:none; color:var(--accent); padding-bottom:12px; font-size:0.875rem; font-weight:700;"></div>
+    <div id="auth-error-box" class="auth-error-banner" role="alert"></div>
 
     ${isLogin ? `
-      <form onsubmit="window.AprovaComponents.submeterLogin(event)" style="display:flex; flex-direction:column; gap:14px;">
+      <form onsubmit="window.AprovaComponents.submeterLogin(event)" class="form-stack">
         <div class="field-group">
           <label for="login-email">E-mail Cadastrado</label>
           <input type="email" id="login-email" class="field-input" placeholder="Ex: carlos@aprovamais.com.br" value="carlos@aprovamais.com.br" required />
@@ -94,13 +99,13 @@ window.AprovaComponents.openAuthModal = function (modo = 'login') {
           <label for="login-senha">Senha de Acesso</label>
           <input type="password" id="login-senha" class="field-input" placeholder="Digite sua senha" value="123456" required />
         </div>
-        <button type="submit" class="btn btn-primary btn-block" style="margin-top:4px;">
+        <button type="submit" class="btn btn-primary btn-block">
           Entrar na Plataforma
         </button>
       </form>
 
-      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <span style="font-size:0.8125rem; color:var(--muted);">Acesso rápido de avaliação:</span>
+      <div class="auth-demo-bar">
+        <span class="text-caption-muted">Acesso rápido de avaliação:</span>
         <button type="button" class="btn btn-accent btn-sm" onclick="window.AprovaComponents.entrarContaDemo()">
           Entrar com Conta Demo (Carlos Lucas)
         </button>
@@ -154,17 +159,25 @@ window.AprovaComponents.openAuthModal = function (modo = 'login') {
             <option value="6">6 horas/dia</option>
           </select>
         </div>
-        <button type="submit" class="btn btn-primary form-span-2" style="margin-top:4px;">
+        <button type="submit" class="btn btn-primary form-span-2">
           Criar Conta e Abrir Caderno de Estudos
         </button>
       </form>
     `}
   `;
+
+  const firstInput = body.querySelector('input');
+  if (firstInput) firstInput.focus();
 };
 
 window.AprovaComponents.closeAuthModal = function () {
   const modal = document.getElementById('auth-modal');
-  if (modal) modal.classList.remove('open');
+  if (modal && modal.classList.contains('open')) {
+    modal.classList.remove('open');
+    if (window.AprovaComponents._lastAuthTrigger?.focus) {
+      window.AprovaComponents._lastAuthTrigger.focus();
+    }
+  }
 };
 
 window.AprovaComponents.submeterLogin = async function (event) {
@@ -184,7 +197,7 @@ window.AprovaComponents.submeterLogin = async function (event) {
     }
   } catch (err) {
     if (errBox) {
-      errBox.style.display = 'block';
+      errBox.classList.add('visible');
       errBox.textContent = err.message || 'Erro ao realizar login.';
     }
   }
@@ -222,7 +235,7 @@ window.AprovaComponents.submeterCadastro = async function (event) {
     window.AprovaApp.switchView('conta');
   } catch (err) {
     if (errBox) {
-      errBox.style.display = 'block';
+      errBox.classList.add('visible');
       errBox.textContent = err.message || 'Erro ao criar conta.';
     }
   }
@@ -244,10 +257,10 @@ window.AprovaComponents.renderUserDashboard = async function () {
   const user = window.AprovaAPI.obterUsuarioAtual();
   if (!user) {
     container.innerHTML = `
-      <div class="empty-state-sheet" style="max-width:620px; margin:0 auto;">
+      <div class="empty-state-sheet empty-state-narrow">
         <h3>Identifique-se para Acessar seu Caderno de Estudos</h3>
         <p>Com uma conta gratuita você salva editais prioritários, registra os materiais concluídos e mantém suas metas calibradas no Copiloto IA.</p>
-        <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+        <div class="empty-state-actions">
           <button type="button" class="btn btn-primary" onclick="window.AprovaComponents.openAuthModal('login')">
             Entrar na Conta
           </button>
@@ -281,7 +294,7 @@ window.AprovaComponents.renderUserDashboard = async function () {
         <div class="mat-item-meta">
           <span class="badge ${window.AprovaUtils.getStatusBadgeClass(c.status)}">${clean(c.status_label)}</span>
           <span>Banca: <strong>${clean(c.banca)}</strong></span>
-          <span>Salário: <strong style="color:var(--green);">${clean(c.salario)}</strong></span>
+          <span>Salário: <strong class="text-green">${clean(c.salario)}</strong></span>
         </div>
       </div>
       <div class="mat-item-actions">
@@ -320,8 +333,8 @@ window.AprovaComponents.renderUserDashboard = async function () {
         <div class="account-user-identity">
           <div class="account-avatar-lg">${user.iniciais || 'CL'}</div>
           <div>
-            <div style="font-size:1.0625rem; font-weight:800; color:var(--text);">${clean(user.nome)}</div>
-            <div style="font-size:0.8125rem; color:var(--muted); margin-bottom:4px;">${clean(user.email)}</div>
+            <div class="account-user-name">${clean(user.nome)}</div>
+            <div class="account-user-email">${clean(user.email)}</div>
             <span class="badge badge-cobalt">Plano: ${clean(user.plano || 'Gratuito')}</span>
           </div>
         </div>
@@ -329,19 +342,19 @@ window.AprovaComponents.renderUserDashboard = async function () {
 
       <div class="account-ledger-cell">
         <span class="account-metric-label">Concursos Salvos</span>
-        <strong class="account-metric-value" style="color:var(--primary);">${salvos.length}</strong>
+        <strong class="account-metric-value metric-cobalt">${salvos.length}</strong>
         <span class="account-metric-sub">Monitorados no caderno</span>
       </div>
 
       <div class="account-ledger-cell">
         <span class="account-metric-label">Materiais Concluídos</span>
-        <strong class="account-metric-value" style="color:var(--green);">${materiaisResp.estudados}/${materiaisResp.total}</strong>
+        <strong class="account-metric-value metric-green">${materiaisResp.estudados}/${materiaisResp.total}</strong>
         <span class="account-metric-sub">${materiaisResp.progresso_pct}% do acervo estudado</span>
       </div>
 
       <div class="account-ledger-cell">
         <span class="account-metric-label">Carga Semanal Alvo</span>
-        <strong class="account-metric-value" style="color:var(--accent);">${(user.horas_estudo_dia || 4) * 6}h/sem</strong>
+        <strong class="account-metric-value metric-accent">${(user.horas_estudo_dia || 4) * 6}h/sem</strong>
         <span class="account-metric-sub">Foco: Carreira ${clean(user.carreira_foco)}</span>
       </div>
     </div>
@@ -349,14 +362,14 @@ window.AprovaComponents.renderUserDashboard = async function () {
     <div class="split-workspace-conta">
       <!-- Coluna 1: Dados e Parâmetros de Calibragem -->
       <div class="ia-sheet">
-        <h3 style="font-size:1.125rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+        <h3 class="sheet-title-sm">
           Parâmetros de Estudo e Perfil
         </h3>
-        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:16px;">
+        <p class="sheet-desc">
           Estes parâmetros calibram automaticamente as recomendações do Copiloto e Match IA.
         </p>
 
-        <form onsubmit="window.AprovaComponents.salvarPerfilUsuario(event)" style="display:flex; flex-direction:column; gap:12px;">
+        <form onsubmit="window.AprovaComponents.salvarPerfilUsuario(event)" class="form-stack-tight">
           <div class="field-group">
             <label for="prof-nome">Nome Completo</label>
             <input type="text" id="prof-nome" class="field-input" value="${user.nome}" required />
@@ -404,36 +417,36 @@ window.AprovaComponents.renderUserDashboard = async function () {
               </select>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary" style="margin-top:4px;">
+          <button type="submit" class="btn btn-primary">
             Salvar Alterações no Perfil
           </button>
         </form>
       </div>
 
       <!-- Coluna 2: Caderno Ativo (Concursos Salvos + Materiais Concluídos) -->
-      <div style="display:flex; flex-direction:column; gap:20px;">
+      <div class="stack-col-lg">
         <div class="ia-sheet">
-          <div class="match-result-head" style="margin-bottom:8px;">
-            <h3 style="font-size:1.125rem; font-weight:800; color:var(--text);">
+          <div class="match-result-head">
+            <h3 class="sheet-title-sm">
               Concursos Salvos no Caderno (${salvos.length})
             </h3>
             <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaApp.switchView('explorar')">
               Explorar Editais
             </button>
           </div>
-          ${salvosHtml || `<p style="font-size:0.875rem; color:var(--muted); padding:8px 0;">Nenhum concurso salvo no momento. Utilize o botão "Salvar" nos dossiês da aba Concursos para monitorá-los aqui.</p>`}
+          ${salvosHtml || `<p class="empty-inline-note">Nenhum concurso salvo no momento. Utilize o botão "Salvar" nos dossiês da aba Concursos para monitorá-los aqui.</p>`}
         </div>
 
         <div class="ia-sheet">
-          <div class="match-result-head" style="margin-bottom:8px;">
-            <h3 style="font-size:1.125rem; font-weight:800; color:var(--text);">
+          <div class="match-result-head">
+            <h3 class="sheet-title-sm">
               Materiais Concluídos (${estudadosList.length})
             </h3>
             <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaApp.switchView('materiais')">
               Abrir Acervo
             </button>
           </div>
-          ${estudadosHtml || `<p style="font-size:0.875rem; color:var(--muted); padding:8px 0;">Nenhum guia marcado como concluído ainda. Marque os materiais estudados no Acervo ou dentro do Raio-X de cada concurso.</p>`}
+          ${estudadosHtml || `<p class="empty-inline-note">Nenhum guia marcado como concluído ainda. Marque os materiais estudados no Acervo ou dentro do Raio-X de cada concurso.</p>`}
         </div>
       </div>
     </div>

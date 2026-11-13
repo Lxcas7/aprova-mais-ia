@@ -77,17 +77,17 @@
 
         <!-- Painel Tipográfico Plano para Filtrar Rápido pelos 3 Status -->
         <div class="hero-ledger" role="group" aria-label="Resumo por horizonte de concurso">
-          <button type="button" class="ledger-item" data-ledger-status="aberto" onclick="window.AprovaApp.setStatusFilter('aberto')" title="Filtrar Concursos com Edital Aberto">
+          <button type="button" class="ledger-item" data-ledger-status="aberto" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('aberto')" title="Filtrar Concursos com Edital Aberto">
             <span class="ledger-label">Com Edital Aberto</span>
             <span class="ledger-number" id="kpi-abertos-count">5</span>
             <span class="ledger-sub">9.625 vagas imediatas</span>
           </button>
-          <button type="button" class="ledger-item" data-ledger-status="previsto" onclick="window.AprovaApp.setStatusFilter('previsto')" title="Filtrar Concursos Previstos na Internet">
+          <button type="button" class="ledger-item" data-ledger-status="previsto" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('previsto')" title="Filtrar Concursos Previstos na Internet">
             <span class="ledger-label">Previstos (Radar IA)</span>
             <span class="ledger-number" id="kpi-previstos-count">4</span>
             <span class="ledger-sub">Monitorados na web</span>
           </button>
-          <button type="button" class="ledger-item" data-ledger-status="encerrado" onclick="window.AprovaApp.setStatusFilter('encerrado')" title="Filtrar Concursos Passados e Provas">
+          <button type="button" class="ledger-item" data-ledger-status="encerrado" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('encerrado')" title="Filtrar Concursos Passados e Provas">
             <span class="ledger-label">Já Aconteceram</span>
             <span class="ledger-number" id="kpi-encerrados-count">4</span>
             <span class="ledger-sub">Provas e notas de corte</span>
@@ -150,16 +150,16 @@
     <section id="view-explorar" class="view-pane active" aria-label="Painel Central de Concursos e Editais">
       <div class="status-toolbar">
         <div class="status-pills" role="group" aria-label="Filtrar por status do concurso">
-          <button type="button" class="status-pill active-todos" data-status="todos" onclick="window.AprovaApp.setStatusFilter('todos')">
+          <button type="button" class="status-pill active-todos" data-status="todos" aria-pressed="true" onclick="window.AprovaApp.setStatusFilter('todos')">
             <span>Todos (<span id="pill-count-todos">13</span>)</span>
           </button>
-          <button type="button" class="status-pill" data-status="aberto" onclick="window.AprovaApp.setStatusFilter('aberto')">
+          <button type="button" class="status-pill" data-status="aberto" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('aberto')">
             <span>Ativos / Com Edital (<span id="pill-count-aberto">5</span>)</span>
           </button>
-          <button type="button" class="status-pill" data-status="previsto" onclick="window.AprovaApp.setStatusFilter('previsto')">
+          <button type="button" class="status-pill" data-status="previsto" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('previsto')">
             <span>Previstos na Internet (<span id="pill-count-previsto">4</span>)</span>
           </button>
-          <button type="button" class="status-pill" data-status="encerrado" onclick="window.AprovaApp.setStatusFilter('encerrado')">
+          <button type="button" class="status-pill" data-status="encerrado" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('encerrado')">
             <span>Já Aconteceram / Provas (<span id="pill-count-encerrado">4</span>)</span>
           </button>
         </div>
@@ -175,7 +175,7 @@
               <option value="probabilidade">Índice de Confiança IA</option>
             </select>
           </div>
-          <button type="button" id="btn-filtro-salvos" class="btn btn-outline btn-sm" onclick="window.AprovaApp.toggleApenasSalvos()">
+          <button type="button" id="btn-filtro-salvos" class="btn btn-outline btn-sm" aria-pressed="false" onclick="window.AprovaApp.toggleApenasSalvos()">
             <span>Salvos no Caderno (<span id="count-salvos-badge">0</span>)</span>
           </button>
         </div>
@@ -258,7 +258,7 @@
 
   <!-- Modal de Login e Cadastro de Usuário -->
   <div id="auth-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Autenticação de Usuário">
-    <div class="modal-window" style="max-width: 540px;">
+    <div class="modal-window modal-window-sm">
       <button type="button" class="modal-close-btn" onclick="window.AprovaComponents.closeAuthModal()" aria-label="Fechar janela" title="Fechar (Esc)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>

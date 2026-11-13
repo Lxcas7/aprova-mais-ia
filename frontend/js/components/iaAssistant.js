@@ -11,14 +11,14 @@ window.AprovaComponents.renderIAAssistant = function () {
     <div class="split-workspace-ia">
       <!-- Coluna 1: Simulador de Compatibilidade e Alocação Semanal -->
       <div class="ia-sheet">
-        <h3 style="font-size:1.1875rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+        <h3 class="sheet-title">
           Simulador de Compatibilidade e Carga Horária
         </h3>
-        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:16px;">
+        <p class="sheet-desc">
           Defina sua escolaridade, carreira foco e horas líquidas por dia. O motor calcula a aderência aos editais mapeados e distribui a carga horária semanal conforme o peso estatístico das disciplinas.
         </p>
 
-        <form onsubmit="window.AprovaComponents.executarMatchIA(event)" class="form-grid-2" style="padding-bottom:18px; border-bottom:1px solid var(--border); margin-bottom:14px;">
+        <form onsubmit="window.AprovaComponents.executarMatchIA(event)" class="form-grid-2 form-divider-bottom">
           <div class="field-group">
             <label for="ia-escolaridade">Sua Escolaridade</label>
             <select id="ia-escolaridade" class="field-input">
@@ -64,10 +64,10 @@ window.AprovaComponents.renderIAAssistant = function () {
 
       <!-- Coluna 2: Terminal de Consulta Técnica Aprova+ IA -->
       <div class="ia-sheet">
-        <h3 style="font-size:1.1875rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+        <h3 class="sheet-title">
           Consulta Técnica ao Copiloto IA
         </h3>
-        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:14px;">
+        <p class="sheet-desc">
           Consulte dados de editais abertos, estágio de maturidade de rumores na web, notas de corte históricas ou disciplinas prioritárias por órgão.
         </p>
 
@@ -138,7 +138,7 @@ window.AprovaComponents.executarMatchIA = async function (event) {
   const horasSemanais = res.horas_semanais || res.perfil_analisado?.horas_semanais_uteis || payload.horas_por_dia * 6;
 
   if (!recs.length) {
-    box.innerHTML = `<p style="font-size:0.875rem; color:var(--muted);">Nenhum concurso compatível encontrado para os parâmetros selecionados.</p>`;
+    box.innerHTML = `<p class="empty-inline-note">Nenhum concurso compatível encontrado para os parâmetros selecionados.</p>`;
     return;
   }
 
@@ -156,16 +156,16 @@ window.AprovaComponents.executarMatchIA = async function (event) {
     return `
       <div class="match-result-item">
         <div class="match-result-head">
-          <h4 style="font-size:1rem; font-weight:800; color:var(--text);">
+          <h4 class="match-item-title">
             ${idx + 1}. ${clean(cObj.sigla)} · ${clean(cObj.titulo)}
           </h4>
           <span class="badge ${idx === 0 ? 'badge-aberto' : 'badge-cobalt'}">${score}% Compatível</span>
         </div>
-        <p style="font-size:0.8125rem; color:var(--text-secondary); margin-bottom:8px;">
-          <span class="badge ${statusBadge}" style="margin-right:6px;">${clean(cObj.status_label)}</span>
-          Salário: <strong style="color:var(--green);">${clean(cObj.salario)}</strong> · Banca: <strong>${clean(cObj.banca)}</strong>
+        <p class="match-item-meta">
+          <span class="badge ${statusBadge}">${clean(cObj.status_label)}</span>
+          Salário: <strong class="text-green">${clean(cObj.salario)}</strong> · Banca: <strong>${clean(cObj.banca)}</strong>
         </p>
-        <div style="font-size:0.8125rem; color:var(--muted); font-weight:700; margin-top:8px;">
+        <div class="match-schedule-heading">
           Distribuição Semanal Recomendada (${horasSemanais}h líquidas/semana):
         </div>
         <div class="match-schedule-pills">
@@ -210,7 +210,7 @@ window.AprovaComponents.enviarMensagemChat = async function (event) {
       <span class="chat-entry-role">Copiloto Aprova+ IA</span>
       ${clean(res.resposta)}
       ${res.concurso_sugerido ? `
-        <div style="margin-top:10px;">
+        <div class="chat-action-row">
           <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.openConcursoModal('${res.concurso_sugerido}')">
             <span>Abrir Dossiê e Materiais deste Concurso</span>
           </button>

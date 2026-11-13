@@ -69,14 +69,14 @@ window.AprovaComponents.renderRadar = async function () {
 
       <!-- Coluna 2: Painel de Submissão e Classificação NLP -->
       <aside class="radar-submit-sheet">
-        <h3 style="font-size:1.125rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+        <h3 class="sheet-title-sm">
           Submeter Movimentação à IA
         </h3>
-        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:16px;">
+        <p class="sheet-desc">
           Identificou portaria no DOU, processo no SEI/MGI ou nota de comissão organizadora? Envie os dados abaixo para classificação automática de maturidade.
         </p>
 
-        <form onsubmit="window.AprovaComponents.submeterRumor(event)" style="display:flex; flex-direction:column; gap:12px;">
+        <form onsubmit="window.AprovaComponents.submeterRumor(event)" class="form-stack-tight">
           <div class="field-group">
             <label for="rumor-sigla">Sigla do Órgão ou Certame</label>
             <input type="text" id="rumor-sigla" class="field-input" placeholder="Ex: MPU, TRF-1, BNDES, SEFAZ" required />
@@ -96,7 +96,7 @@ window.AprovaComponents.renderRadar = async function () {
         </form>
 
         <div class="radar-stages-legend">
-          <div style="font-weight:700; color:var(--text);">Régua de Classificação NLP:</div>
+          <div class="legend-heading">Régua de Classificação NLP:</div>
           <div><strong>88%–95% (Banca em Contratação):</strong> Dispensa de licitação ou contrato vigente.</div>
           <div><strong>80%–87% (Comissão / Autorizado):</strong> Portaria publicada ou comissão instituída.</div>
           <div><strong>70%–79% (Pedido no MGI):</strong> Nota técnica ou solicitação formal em análise.</div>

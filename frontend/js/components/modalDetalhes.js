@@ -8,8 +8,12 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
   const content = document.getElementById('concurso-modal-body');
   if (!modal || !content) return;
 
+  window.AprovaComponents._lastActiveElement = document.activeElement;
   modal.classList.add('open');
-  content.innerHTML = `<div class="empty-state-sheet" style="border:none;">Carregando dossiê técnico e acervo vinculado...</div>`;
+  content.innerHTML = `<div class="empty-state-sheet empty-state-borderless">Carregando dossiê técnico e acervo vinculado...</div>`;
+
+  const closeBtn = modal.querySelector('.modal-close-btn');
+  if (closeBtn) closeBtn.focus();
 
   const c = await window.AprovaAPI.obterConcurso(concursoId);
   if (!c) return;
@@ -48,7 +52,7 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
             <span class="badge badge-cobalt">${clean(m.categoria)}</span>
             <span>Disciplina: <strong>${clean(m.disciplina || 'Geral')}</strong></span>
             <span>Extensão: <strong>${clean(m.paginas)}</strong></span>
-            <span>Acesso: <strong style="color:var(--green);">${m.gratuito ? 'Gratuito' : 'PRO'}</strong></span>
+            <span>Acesso: <strong class="text-green">${m.gratuito ? 'Gratuito' : 'PRO'}</strong></span>
           </div>
           ${m.resumo_conteudo ? `<p class="mat-item-desc">${clean(m.resumo_conteudo)}</p>` : ''}
         </div>
@@ -56,6 +60,7 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
           <button
             type="button"
             class="btn ${m.estudado ? 'btn-primary' : 'btn-outline'} btn-sm"
+            aria-pressed="${m.estudado ? 'true' : 'false'}"
             onclick="window.AprovaComponents.toggleEstudadoNoModal(${m.id}, '${c.id}')"
           >
             ${m.estudado ? window.AprovaUtils.icon('check') : ''}
@@ -75,21 +80,21 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
   }).join('');
 
   content.innerHTML = `
-    <div style="padding-right:44px;">
-      <h2 style="font-size:1.4375rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+    <div class="modal-header-block">
+      <h2 class="modal-title">
         ${clean(c.sigla)} · ${clean(c.titulo)}
       </h2>
-      <p class="dossier-subtitle" style="font-size:0.875rem;">
+      <p class="dossier-subtitle">
         Órgão: <strong>${clean(c.orgao)}</strong> · Banca: <strong>${clean(c.banca)}</strong> · Área: <strong>${clean(c.area)}</strong> · UF: <strong>${clean(c.uf)}</strong>
       </p>
-      <div class="dossier-badges" style="margin-bottom:14px;">
+      <div class="dossier-badges">
         <span class="badge ${badgeClass}">${statusDot} <span>${clean(c.status_label)}</span></span>
         <span class="badge badge-encerrado">Índice IA: ${probVal}%</span>
         <span class="badge badge-neutral">Último edital: ${clean(c.ultimo_concurso_ano || 'Consulte histórico')}</span>
       </div>
     </div>
 
-    <div class="card-divider-grid" style="grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));">
+    <div class="card-divider-grid modal-meta-grid">
       <div class="meta-item"><span>Salário Inicial</span><strong class="salary-highlight">${clean(c.salario)}</strong></div>
       <div class="meta-item"><span>Vagas e Nível</span><strong>${clean(c.vagas)} (${clean(c.escolaridade)})</strong></div>
       <div class="meta-item"><span>Inscrições / Situação</span><strong>${clean(inscrVal)}</strong></div>
@@ -102,15 +107,15 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
       <div class="ai-editorial-head">
         <span>Parecer de Inteligência Artificial e Estratégia de Prova</span>
       </div>
-      <p class="ai-editorial-body" style="color:var(--text);">${clean(c.resumo_ia)}</p>
+      <p class="ai-editorial-body text-primary-ink">${clean(c.resumo_ia)}</p>
     </div>
 
-    <div style="margin-bottom:24px;">
-      <h3 style="font-size:1.0625rem; font-weight:800; margin-bottom:10px; color:var(--text);">
+    <div class="modal-section-block">
+      <h3 class="modal-section-title">
         Matriz de Disciplinas e Pesos (Edital Verticalizado)
       </h3>
-      <div style="overflow-x:auto;">
-        <table class="data-table">
+      <div class="table-scroll-wrap">
+        <table class="data-table" aria-label="Matriz de Disciplinas e Pesos">
           <thead>
             <tr>
               <th scope="col">Disciplina / Bloco Temático</th>
@@ -127,11 +132,11 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
     </div>
 
     <div>
-      <div class="match-result-head" style="margin-bottom:8px;">
-        <h3 style="font-size:1.0625rem; font-weight:800; color:var(--text);">
+      <div class="match-result-head">
+        <h3 class="modal-section-title">
           Acervo de Estudo Vinculado (${(c.materiais || []).length} guias disponíveis)
         </h3>
-        <span style="font-size:0.8125rem; color:var(--muted);">Clique em "Baixar Guia" para emitir o roteiro verticalizado</span>
+        <span class="text-caption-muted">Clique em "Baixar Guia" para emitir o roteiro verticalizado</span>
       </div>
       <div>
         ${materiaisHtml}
@@ -142,7 +147,12 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
 
 window.AprovaComponents.closeConcursoModal = function () {
   const modal = document.getElementById('concurso-modal');
-  if (modal) modal.classList.remove('open');
+  if (modal && modal.classList.contains('open')) {
+    modal.classList.remove('open');
+    if (window.AprovaComponents._lastActiveElement?.focus) {
+      window.AprovaComponents._lastActiveElement.focus();
+    }
+  }
 };
 
 window.AprovaComponents.toggleEstudadoNoModal = async function (materialId, concursoId) {

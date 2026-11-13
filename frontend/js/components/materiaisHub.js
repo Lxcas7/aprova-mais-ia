@@ -78,6 +78,7 @@ window.AprovaComponents.renderMateriaisHub = async function (concursoIdOverride,
           <button
             type="button"
             class="btn ${m.estudado ? 'btn-primary' : 'btn-outline'} btn-sm"
+            aria-pressed="${m.estudado ? 'true' : 'false'}"
             onclick="window.AprovaComponents.alternarEstudoHub(${m.id})"
           >
             ${m.estudado ? window.AprovaUtils.icon('check') : ''}
@@ -118,12 +119,12 @@ window.AprovaComponents.renderMateriaisHub = async function (concursoIdOverride,
           <option value="estudados" ${statusEstudo === 'estudados' ? 'selected' : ''}>Concluídos (${matResp.estudados})</option>
         </select>
       </div>
-      <div style="padding:2px 0;">
-        <div style="display:flex; justify-content:space-between; font-size:0.8125rem; font-weight:700; color:var(--text);">
+      <div class="acervo-progress-box">
+        <div class="acervo-progress-head">
           <span>Progresso do Filtro</span>
           <span>${matResp.estudados}/${matResp.total} (${matResp.progresso_pct}%)</span>
         </div>
-        <div class="thermometer-bar" style="margin:8px 0 0; background-color:var(--card);">
+        <div class="thermometer-bar thermometer-on-subtle">
           <div class="thermometer-fill fill-green" style="width:${matResp.progresso_pct}%;"></div>
         </div>
       </div>
@@ -131,7 +132,7 @@ window.AprovaComponents.renderMateriaisHub = async function (concursoIdOverride,
 
     <div class="acervo-ledger-sheet">
       ${rowsHtml || `
-        <div class="empty-state-sheet" style="border:none;">
+        <div class="empty-state-sheet empty-state-borderless">
           <h3>Nenhum material encontrado para este recorte</h3>
           <p>Selecione "Todos os Concursos" ou "Todas as Categorias" acima para visualizar o acervo completo de 34 materiais.</p>
           <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.renderMateriaisHub('todos', 'todas', 'todos')">

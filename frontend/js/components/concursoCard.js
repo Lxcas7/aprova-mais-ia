@@ -29,6 +29,7 @@ window.AprovaComponents.renderConcursoCard = function (concurso) {
           <button
             type="button"
             class="btn ${concurso.salvo ? 'btn-primary' : 'btn-outline'} btn-sm"
+            aria-pressed="${concurso.salvo ? 'true' : 'false'}"
             onclick="window.AprovaApp.toggleFavorito('${concurso.id}')"
             title="${concurso.salvo ? 'Remover dos salvos' : 'Salvar concurso no caderno'}"
           >
