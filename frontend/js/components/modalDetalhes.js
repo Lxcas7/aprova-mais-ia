@@ -113,10 +113,10 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
         <table class="data-table">
           <thead>
             <tr>
-              <th>Disciplina / Bloco Temático</th>
-              <th>Itens / Questões</th>
-              <th>Peso na Nota</th>
-              <th>Prioridade IA</th>
+              <th scope="col">Disciplina / Bloco Temático</th>
+              <th scope="col">Itens / Questões</th>
+              <th scope="col">Peso na Nota</th>
+              <th scope="col">Prioridade IA</th>
             </tr>
           </thead>
           <tbody>
