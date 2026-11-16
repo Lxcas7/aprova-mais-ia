@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title description">
+  <title id="title">Aprova+ IA — Business Model Canvas</title>
+  <desc id="description">Canvas minimalista com foco na preparação para concursos, teste de 14 dias, acesso básico limitado e assinaturas pagas.</desc>
+  <style>
+    text { font-family: Arial, Helvetica, sans-serif; fill: #172b3b; }
+    .background { fill: #f7f8f6; }
+    .card { fill: #fff; stroke: #dce2e5; stroke-width: 1.5; }
+    .heading { font-size: 19px; font-weight: 700; }
+    .number { font-size: 13px; font-weight: 700; letter-spacing: 1px; fill: #547082; }
+    .body { font-size: 17px; }
+    .muted { fill: #586b78; }
+    .small { font-size: 15px; }
+  </style>
+  <rect class="background" width="1600" height="1000"/>
+
+  <text x="40" y="58" font-size="34" font-weight="700">Aprova+ IA</text>
+  <text x="40" y="88" class="muted" font-size="18">Business Model Canvas · Preparação para concursos no centro</text>
+  <rect x="940" y="35" width="620" height="48" rx="24" fill="#e2eee8"/>
+  <text x="1250" y="65" text-anchor="middle" font-size="15" font-weight="700" fill="#20543e">14 DIAS DE TESTE · FREEMIUM LIMITADO · ASSINATURAS PAGAS</text>
+
+  <rect class="card" x="40" y="125" width="288" height="540" rx="12"/>
+  <text x="60" y="163" class="number">08</text>
+  <text x="60" y="193" class="heading">Parceiros-chave</text>
+  <line x1="60" y1="211" x2="308" y2="211" stroke="#e5eaec"/>
+  <text x="60" y="250" class="body">
+    <tspan x="60" dy="0">Dados oficiais e</tspan>
+    <tspan x="60" dy="27">infraestrutura de IA.</tspan>
+    <tspan x="60" dy="42">Especialistas para validar</tspan>
+    <tspan x="60" dy="27">trilhas e questões.</tspan>
+    <tspan x="60" dy="42">Conteúdo parceiro é</tspan>
+    <tspan x="60" dy="27">complementar e opcional.</tspan>
+  </text>
+
+  <rect class="card" x="348" y="125" width="288" height="325" rx="12"/>
+  <text x="368" y="163" class="number">07</text>
+  <text x="368" y="193" class="heading">Atividades-chave</text>
+  <line x1="368" y1="211" x2="616" y2="211" stroke="#e5eaec"/>
+  <text x="368" y="250" class="body">
+    <tspan x="368" dy="0">Personalizar o plano de</tspan>
+    <tspan x="368" dy="27">estudos do candidato.</tspan>
+    <tspan x="368" dy="42">Conectar concursos,</tspan>
+    <tspan x="368" dy="27">prática e progresso.</tspan>
+  </text>
+
+  <rect class="card" x="348" y="470" width="288" height="195" rx="12"/>
+  <text x="368" y="508" class="number">06</text>
+  <text x="368" y="538" class="heading">Recursos-chave</text>
+  <line x1="368" y1="556" x2="616" y2="556" stroke="#e5eaec"/>
+  <text x="368" y="597" class="body">
+    <tspan x="368" dy="0">Plataforma, IA, dados</tspan>
+    <tspan x="368" dy="27">e curadoria educacional.</tspan>
+  </text>
+
+  <rect x="656" y="125" width="288" height="540" rx="12" fill="#edf4f0" stroke="#d3e2d9" stroke-width="1.5"/>
+  <text x="676" y="163" class="number">02</text>
+  <text x="676" y="193" class="heading">Proposta de valor</text>
+  <line x1="676" y1="211" x2="924" y2="211" stroke="#d7e3dc"/>
+  <text x="676" y="250" class="body">
+    <tspan x="676" dy="0">Preparar o candidato é</tspan>
+    <tspan x="676" dy="27">o produto central.</tspan>
+    <tspan x="676" dy="42">Do objetivo ao plano,</tspan>
+    <tspan x="676" dy="27">à prática e à evolução.</tspan>
+    <tspan x="676" dy="42">Busca e editais apoiam</tspan>
+    <tspan x="676" dy="27">a jornada de estudo.</tspan>
+  </text>
+  <rect x="676" y="493" width="248" height="128" rx="9" fill="#fff" stroke="#d7e3dc"/>
+  <text x="694" y="524" font-size="15" font-weight="700">ACESSO</text>
+  <text x="694" y="552" class="small">Teste de 14 dias; depois,</text>
+  <text x="694" y="575" class="small">freemium básico limitado.</text>
+  <text x="694" y="602" class="small">Recursos completos: pago.</text>
+
+  <rect class="card" x="964" y="125" width="288" height="325" rx="12"/>
+  <text x="984" y="163" class="number">04</text>
+  <text x="984" y="193" class="heading">Relacionamento</text>
+  <line x1="984" y1="211" x2="1232" y2="211" stroke="#e5eaec"/>
+  <text x="984" y="250" class="body">
+    <tspan x="984" dy="0">Onboarding orientado</tspan>
+    <tspan x="984" dy="27">ao objetivo do candidato.</tspan>
+    <tspan x="984" dy="42">Acompanhamento e apoio</tspan>
+    <tspan x="984" dy="27">contextual ao estudo.</tspan>
+  </text>
+
+  <rect class="card" x="964" y="470" width="288" height="195" rx="12"/>
+  <text x="984" y="508" class="number">03</text>
+  <text x="984" y="538" class="heading">Canais</text>
+  <line x1="984" y1="556" x2="1232" y2="556" stroke="#e5eaec"/>
+  <text x="984" y="597" class="body">
+    <tspan x="984" dy="0">Plataforma web, SEO</tspan>
+    <tspan x="984" dy="27">e comunidades.</tspan>
+  </text>
+
+  <rect class="card" x="1280" y="125" width="280" height="540" rx="12"/>
+  <text x="1300" y="163" class="number">01</text>
+  <text x="1300" y="193" class="heading">Segmentos</text>
+  <line x1="1300" y1="211" x2="1540" y2="211" stroke="#e5eaec"/>
+  <text x="1300" y="250" class="body">
+    <tspan x="1300" dy="0">Concurseiros iniciantes</tspan>
+    <tspan x="1300" dy="27">e experientes, em todas</tspan>
+    <tspan x="1300" dy="27">as etapas da preparação.</tspan>
+    <tspan x="1300" dy="42">Parceiros de conteúdo</tspan>
+    <tspan x="1300" dy="27">são secundários.</tspan>
+  </text>
+
+  <rect class="card" x="40" y="695" width="750" height="265" rx="12"/>
+  <text x="60" y="735" class="number">05</text>
+  <text x="60" y="765" class="heading">Fontes de receita</text>
+  <line x1="60" y1="783" x2="770" y2="783" stroke="#e5eaec"/>
+  <text x="60" y="825" class="body">
+    <tspan x="60" dy="0">Assinaturas pagas como receita principal.</tspan>
+    <tspan x="60" dy="36">Afiliados e conteúdo externo: complemento opcional.</tspan>
+  </text>
+  <text x="60" y="920" class="small muted">Todos os planos de assinatura são pagos.</text>
+
+  <rect class="card" x="810" y="695" width="750" height="265" rx="12"/>
+  <text x="830" y="735" class="number">09</text>
+  <text x="830" y="765" class="heading">Estrutura de custos</text>
+  <line x1="830" y1="783" x2="1540" y2="783" stroke="#e5eaec"/>
+  <text x="830" y="825" class="body">
+    <tspan x="830" dy="0">Produto e engenharia · IA e infraestrutura</tspan>
+    <tspan x="830" dy="36">Preparação e conteúdo · aquisição e pagamentos</tspan>
+  </text>
+  <text x="40" y="988" class="small muted">Modelo e limites sujeitos à validação com candidatos.</text>
+</svg>

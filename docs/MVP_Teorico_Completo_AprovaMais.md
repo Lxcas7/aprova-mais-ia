@@ -7,17 +7,17 @@
 | Frente do Modelo | Antes | Agora (Aprova+ IA) |
 | :--- | :--- | :--- |
 | **Segmento de Clientes** | Misturava vestibulares, ENEM, escolas e concursos. | Foco 100% em **Concurseiros** (iniciantes, avançados/pré-edital e trabalhadores) + **Parceiros B2B** (cursinhos e editoras). |
-| **Proposta de Valor** | Busca genérica de provas e vestibulares abertos. | **Busca Centralizada com IA nos 3 Status**: **(1) Ativos com Edital**, **(2) Previstos na Internet (Radar IA)** e **(3) Já Aconteceram (Histórico)** + **Materiais vinculados a cada concurso**. |
-| **Fases do Produto** | Misturava recursos futuros com o lançamento inicial. | Separação clara entre o **MVP Atual (Gratuito)** e a **Fase 2 Futura (Plano Premium — Aprova+ PRO)**. |
+| **Proposta de Valor** | Busca genérica de provas e vestibulares abertos. | Preparação como núcleo: o candidato escolhe um objetivo, recebe direção de estudo, executa um plano e acompanha evolução; busca e monitoramento de concursos apoiam essa jornada. |
+| **Acesso e Planos** | MVP gratuito e recursos de preparação concentrados em um Premium futuro. | **Teste de 14 dias** dos recursos de preparação; depois, acesso **freemium básico e limitado** ou assinatura. Todos os planos de assinatura são pagos. |
 | **Relacionamento** | Confundia funcionalidades do produto com canais de relação. | Estruturado em **Autoatendimento (Self-Service)**, **Automação por IA**, **Comunidade** e **Cocriação**. |
 | **Operação (Atividades e Recursos)** | Modelo pesado de cursinho tradicional (professores próprios). | **Plataforma Agregadora & IA**: coleta automatizada de dados, classificação de rumores/editais e curadoria de materiais. |
-| **Custos e Receitas** | Cartões sobrepostos e sem divisão por fase. | Layout limpo com receitas **Freemium/Afiliados (MVP)** + **Assinatura Recorrente (Fase 2)** e estrutura enxuta de custos Cloud/IA. |
+| **Custos e Receitas** | A receita dependia de afiliados e de cursos de terceiros, com assinatura adiada. | Assinaturas pagas como receita principal; afiliados e conteúdo parceiro são complementares, sem substituir a preparação oferecida pelo Aprova+ IA. |
 
 ---
 
 ## 2. Business Model Canvas Corrigido
 
-![Business Model Canvas Aprova+ IA](canvas_corrigido.png)
+![Business Model Canvas Aprova+ IA — preparação como núcleo](../canvas_corrigido.svg)
 
 ---
 
@@ -46,7 +46,7 @@ flowchart LR
 
 | Etapa | Definição |
 | :--- | :--- |
-| **1. O que descobrir?** | • Quantos sites o concurseiro acessa por semana para buscar editais e notícias?<br>• Ele estuda antes do edital (previstos) ou só após a publicação (ativos)?<br>• Qual a maior dificuldade ao procurar materiais e provas anteriores?<br>• Qual recurso do futuro **Plano Premium** gera maior interesse e disposição de pagamento? |
+| **1. O que descobrir?** | • Como o candidato organiza hoje seu plano de preparação e sua rotina de estudos?<br>• Quais atividades de preparação geram uso recorrente: cronograma, questões, revisão, copiloto ou acompanhamento?<br>• Como a busca de concursos e o Radar IA ajudam a escolher o objetivo de estudo?<br>• Qual valor o candidato atribui ao teste de 14 dias, ao acesso básico limitado e à assinatura paga? |
 | **2. Com quem falar?** | • **Iniciantes / Nível Médio:** foco em concursos de amplo volume (Caixa, Correios, INSS, TJ-SP).<br>• **Avançados (Pré-Edital):** foco em carreiras Policiais (PF, PRF), Tribunais e Fiscais.<br>• **Trabalhadores:** candidatos que dispõem de 2h a 4h diárias e precisam de curadoria pronta. |
 | **3. Como abordar?** | • Grupos de concurseiros no Telegram, WhatsApp, Discord e Reddit.<br>• Perfis de notícias de concursos no Instagram, TikTok e YouTube.<br>• Formulário integrado ao **Teste de Fumaça (Smoke Test)** dentro do próprio MVP. |
 
@@ -69,7 +69,7 @@ flowchart LR
 
 | Perfil do Cliente (Concurseiro) | Mapa de Valor (Aprova+ IA) |
 | :--- | :--- |
-| **Tarefas:** Descobrir editais abertos, acompanhar concursos previstos e baixar materiais/provas do certame. | **Produtos e Serviços:** Busca centralizada IA (3 status), Radar IA de rumores da web, Central de Materiais por edital e futuro Plano PRO. |
+| **Tarefas:** Definir um objetivo, organizar a rotina, estudar com consistência, praticar questões, revisar e acompanhar a evolução; também descobrir editais e concursos adequados. | **Produtos e Serviços:** Jornada de preparação com perfil, plano de estudos, revisões, questões, acompanhamento e copiloto IA; busca nos 3 status e materiais por edital como apoio. |
 | **Dores:** Perder inscrições, cair em boatos falsos na internet e estudar material fora do edital. | **Aliviadores de Dor:** Centralização em tela única, Termômetro IA de confiança de rumores e materiais vinculados direto ao concurso. |
 | **Ganhos:** Antecipar estudos antes do edital, economizar tempo e focar apenas no que cai na prova. | **Criadores de Ganho:** Raio-X de disciplinas por peso, simulador de Match de perfil e alertas inteligentes. |
 
@@ -82,7 +82,7 @@ flowchart LR
 ## 5. Canais (Comunicação, Distribuição e Vendas)
 
 * **Entrega / Distribuição:** Plataforma Web responsiva (acesso direto via desktop e mobile).
-* **Vendas / Monetização:** Links rastreados de afiliados (Fase MVP) e checkout próprio de assinatura recorrente (Fase 2 — Plano Premium).
+* **Vendas / Monetização:** Teste de 14 dias dos recursos de preparação, acesso básico freemium limitado após o teste e assinaturas pagas para os recursos completos. Afiliados de materiais externos podem complementar a receita, mas não são o modelo principal.
 * **Aquisição (Metodologia Bullseye):**
   * **Anel Intermediário (6 canais promissores):** SEO, Comunidades (Telegram/Reddit), Vídeos Curtos (Reels/TikTok/Shorts), Ferramentas Gratuitas (Edital Verticalizado IA), Newsletter de Alertas e Parcerias com Professores.
   * **🎯 Centro do Alvo (Top 3 Canais Foco no MVP):**
@@ -95,8 +95,8 @@ flowchart LR
 ## 6. Relacionamento com Clientes
 
 ### 6.1. Modelos de Relacionamento Utilizados
-1. **Self-Service (Autoatendimento):** Busca, filtros, favoritos e download de materiais 100% autônomos.
-2. **Serviços Automatizados (IA):** Recomendação de perfil, cronograma semanal automático e avisos de mudança de status de concursos.
+1. **Self-Service (Autoatendimento):** Plano de estudos, prática, revisão, progresso e busca de concursos em fluxo autônomo.
+2. **Serviços Automatizados (IA):** Recomendação de perfil, cronograma semanal, apoio contextual ao estudo e avisos relevantes de concursos.
 3. **Comunidade:** Validação coletiva da relevância dos rumores monitorados.
 4. **Cocriação:** Envio de novas notícias/rumores pelos próprios usuários para classificação automática da IA.
 
@@ -104,8 +104,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    A["1. ATRAIR<br/>SEO + Vídeos Radar IA → Busca gratuita → Download do 1º material"] --> M["2. MANTER / RETER<br/>Termômetro IA diário + Checklist de materiais estudados + Alertas"]
-    M --> C["3. CRESCER<br/>Indicação de materiais parceiros + Lista VIP para Upsell do Plano PRO"]
+    A["1. ATRAIR<br/>Conteúdo útil + diagnóstico do candidato → teste de 14 dias"] --> M["2. PREPARAR / RETER<br/>Plano executável + prática + revisão + acompanhamento"]
+    M --> C["3. CONVERTER<br/>Recursos avançados em assinatura paga; básico limitado permanece disponível"]
 ```
 
 * **Expectativa do Cliente:** Relacionamento ágil, transparente sobre as fontes das notícias e sem spam.
@@ -119,17 +119,17 @@ flowchart LR
 * **Coleta e Monitoramento:** Varredura de Diários Oficiais, sites de bancas e portais de notícias.
 * **Processamento com IA:** Classificação dos concursos em **Ativos**, **Previstos** e **Passados**, cálculo de probabilidade de edital e verticalização das disciplinas.
 * **Curadoria de Materiais:** Vinculação de apostilas, editais verticalizados e provas anteriores a cada concurso.
-* **Crescimento e Relacionamento:** Otimização de SEO, atualização do Radar IA e captação de leads para o Plano Premium.
+* **Crescimento e Relacionamento:** Otimização de SEO, ativação do teste de 14 dias, acompanhamento da preparação e conversão transparente para assinatura.
 
 ### 7.2. Recursos-Chave
 * **Tecnológicos:** Servidor backend (FastAPI), banco de dados relacional (SQLite/PostgreSQL) e interface web responsiva.
 * **Intelectuais:** Motor de IA para análise de editais e rumores, base estruturada de concursos e acervo indexado de materiais.
 * **Humanos:** Equipe enxuta de desenvolvimento Full-Stack/IA, curadoria de conteúdo e marketing de crescimento.
-* **Financeiros:** *Bootstrapping* de baixo custo inicial complementado por receitas de afiliados.
+* **Financeiros:** Receita prioritária de assinaturas; comissões por conteúdo parceiro são acessórias e não pressupõem que o parceiro forneça a preparação central do produto.
 
 ### 7.3. Parceiros-Chave
 * **Fornecedores de Tecnologia:** Provedores de APIs de IA (LLMs) e hospedagem em nuvem.
-* **Parceiros Estratégicos de Conteúdo:** Cursinhos preparatórios, editoras de apostilas, plataformas de questões e professores independentes (fornecem materiais completos em troca de tráfego qualificado e comissão sobre vendas).
+* **Parceiros Estratégicos Complementares:** Editoras, plataformas de questões e professores podem ampliar o catálogo por licenciamento ou indicação afiliada. A plataforma mantém sua própria experiência de preparação; parcerias com cursinhos não são a proposta de valor nem a fonte de receita central.
 
 ---
 
@@ -139,9 +139,10 @@ flowchart LR
 
 | Público | Modelo de Monetização | Preço e Estimativa Inicial |
 | :--- | :--- | :--- |
-| **Usuário Gratuito (MVP)** | Acesso livre à busca (3 status), Radar IA e materiais básicos; monetizado via indicação de materiais completos. | **Gratuito para o concurseiro** (gera tráfego e conversão de afiliados). |
-| **Parceiros B2B (MVP)** | Comissão de afiliados (CPA) sobre cursos/apostilas vendidos + destaque patrocinado. | Comissão média de **R$ 35,00/venda** + patrocínios (**~R$ 2.000,00 no 1º mês**). |
-| **Assinante Aprova+ PRO (Fase 2 Futura)** | Assinatura recorrente (Alertas WhatsApp em tempo real, Corretor IA e Cronograma Adaptativo). | **R$ 29,90/mês** (ou R$ 19,90/mês no plano anual) → **~R$ 145 mil a R$ 213 mil no 1º ano**. |
+| **Teste de 14 dias** | Experimentação dos recursos de preparação para o candidato avaliar valor antes de decidir. | Duração proposta: **14 dias**; recursos incluídos e eventual exigência de meio de pagamento devem ser definidos com transparência. |
+| **Acesso freemium básico** | Permanece disponível após o teste, com limites que permitem uma experiência inicial, sem acesso ilimitado à preparação avançada. | Gratuito, com limites de uso e funcionalidades a validar; não é um plano de assinatura. |
+| **Assinaturas Aprova+** | Planos recorrentes pagos com acesso ampliado à preparação, como cronogramas, revisões, questões, análise de desempenho e recursos avançados de IA. | **Preço e composição dos planos a validar**; R$ 29,90/mês pode ser uma hipótese de pesquisa, não uma decisão fechada. |
+| **Receita complementar** | Comissões transparentes por materiais ou cursos externos que complementem a preparação do candidato. | Secundária e opcional; não incluir projeções de comissão/patrocínio como receita-base sem validação. |
 
 ### 8.2. Estrutura dos 6 Custos Principais
 
@@ -159,23 +160,23 @@ flowchart LR
 ## 9. Planejamento e Validação do MVP
 
 ### 9.1. Composição do MVP
-1. **Protótipo Funcional Full-Stack:** Plataforma web real com busca nos **3 status** (Ativos, Previstos na Internet e Passados), **Materiais vinculados a cada concurso** e **Copiloto IA**.
+1. **Preparação como fluxo principal:** Onboarding de perfil e objetivo, plano de estudos inicial, rotina de prática/revisão e acompanhamento; a busca nos **3 status** e os materiais por concurso alimentam esse fluxo.
 2. **Operação Enxuta (Concierge / Semi-automatizada):** Curadoria ágil dos editais, rumores e materiais garantindo entrega imediata de valor sem custo inicial elevado de servidores.
-3. **Teste de Fumaça (*Smoke Test*) para o Plano Premium:** Aba dedicada ao futuro **Aprova+ PRO** com formulário de Lista VIP para medir a demanda real e o preço ideal antes do desenvolvimento da Fase 2.
+3. **Acesso e monetização:** Validar um **teste de 14 dias**, seguido de freemium básico limitado e convite claro para assinatura paga. O fluxo de preparação não deve ser reduzido a uma lista VIP para um produto futuro.
 
 ### 9.2. Roteiro de Validação em 4 Passos
 
 | Etapa | Definição no Projeto Aprova+ IA |
 | :--- | :--- |
-| **1. Hipóteses a Testar** | • **H1 (Busca Centralizada):** Concurseiros preferem buscar concursos Ativos, Previstos e Passados em um único lugar.<br>• **H2 (Radar IA):** O termômetro de rumores da internet atrai candidatos para o estudo pré-edital.<br>• **H3 (Materiais por Edital):** Ter o material vinculado direto ao concurso gera alto índice de downloads e estudo.<br>• **H4 (Plano Premium Futuro):** Há interesse real em pagar R$ 29,90/mês pelos recursos avançados da Fase 2. |
-| **2. Perguntas de Aprendizado** | • Os usuários utilizam os filtros dos 3 status?<br>• Qual aba retém mais atenção: editais abertos ou rumores previstos na internet?<br>• Os concurseiros baixam e marcam os materiais específicos de cada concurso?<br>• Qual recurso futuro do Plano PRO é o mais votado no cadastro VIP? |
-| **3. Métricas Auditadas** | • **M1:** `% de visitantes` que realizam buscas/filtros.<br>• **M2:** `% de visitantes` que interagem com o Radar IA de previstos.<br>• **M3:** `Taxa de cliques/downloads` nos materiais vinculados aos concursos.<br>• **M4:** `% de conversão` de inscritos na Lista VIP do Plano Premium (Smoke Test). |
-| **4. Critério de Validação (Amostra: 400 concurseiros)** | • **H1 validada se:** $\ge 60\%$ (240 usuários) utilizarem a busca/filtros de status.<br>• **H2 validada se:** $\ge 45\%$ (180 usuários) consultarem o Radar IA de previstos.<br>• **H3 validada se:** $\ge 35\%$ (140 usuários) baixarem/abrirem materiais de um concurso.<br>• **H4 validada se:** $\ge 15\%$ (60 leads) se inscreverem na Lista VIP aceitando a faixa de R$ 29,90/mês. |
+| **1. Hipóteses a Testar** | • **H1 (Preparação):** Um plano de estudos personalizado, prática e acompanhamento resolvem dores mais relevantes do que apenas encontrar concursos.<br>• **H2 (Ativação):** O teste de 14 dias leva o candidato a iniciar uma rotina real de preparação.<br>• **H3 (Freemium):** O acesso básico limitado oferece valor sem eliminar o motivo para assinar.<br>• **H4 (Receita):** Candidatos convertem para assinatura paga por recursos de preparação; parceiros de conteúdo são complementares. |
+| **2. Perguntas de Aprendizado** | • O candidato conclui onboarding e começa um plano de estudo?<br>• Quais ações de preparação são usadas repetidamente durante o teste?<br>• Que limites do acesso básico preservam valor sem bloquear a experiência inicial?<br>• Qual proposta e faixa de preço convertem para assinatura paga?<br>• Conteúdo externo complementa o estudo ou gera conflito com a proposta própria? |
+| **3. Métricas Auditadas** | • **M1:** ativação: candidatos que definem objetivo e começam um plano.<br>• **M2:** frequência de sessões de estudo, revisões e questões concluídas.<br>• **M3:** retenção e evolução de progresso durante os 14 dias.<br>• **M4:** conversão do teste para assinatura paga e permanência após conversão.<br>• **M5:** uso do freemium básico e receita complementar de parceiros, quando aplicável. |
+| **4. Critério de Validação (Amostra: 400 concurseiros)** | Manter a amostra como referência de pesquisa e definir metas quantitativas após instrumentar a linha de base. Não usar os antigos percentuais de busca/lista VIP como validação do modelo de preparação; medir ativação, uso recorrente, conversão e retenção. |
 
 ---
 
 ## 10. Arquivos do Projeto
 
 * **Plataforma MVP Full-Stack (`frontend/` + `backend/`):** pasta [`mvp/`](file:///c:/Users/carlo/OneDrive/Desktop/Projeto/mvp/) (inicie com [`iniciar_mvp.bat`](file:///c:/Users/carlo/OneDrive/Desktop/Projeto/mvp/iniciar_mvp.bat) ou acesse [`mvp/frontend/index.html`](file:///c:/Users/carlo/OneDrive/Desktop/Projeto/mvp/frontend/index.html))
-* **Imagem do Canvas Corrigido:** [`canvas_corrigido.png`](file:///c:/Users/carlo/OneDrive/Desktop/Projeto/canvas_corrigido.png) e [`canvas_corrigido.pdf`](file:///c:/Users/carlo/OneDrive/Desktop/Projeto/canvas_corrigido.pdf)
+* **Canvas atualizado:** [`canvas_corrigido.svg`](../canvas_corrigido.svg) (versão vetorial atualizada).
 * **Planilha Financeira (5 Anos):** [`Modelagem_Financeira_AprovaMais.xlsx`](file:///c:/Users/carlo/OneDrive/Desktop/Projeto/Modelagem_Financeira_AprovaMais.xlsx)

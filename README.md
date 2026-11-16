@@ -4,13 +4,13 @@
 >
 > **📄 Leia a Documentação do MVP Teórico & Canvas:** [**MVP_Teorico_Completo_AprovaMais.md**](./MVP_Teorico_Completo_AprovaMais.md)
 
-Plataforma centralizada com Inteligência Artificial para busca de **Concursos Públicos** em **3 status** (**Ativos com Edital**, **Previstos pelo que estão falando na internet** e **Encerrados/Históricos**), com **Materiais de Estudo vinculados a cada concurso** e validação de demanda do **Plano Premium (Fase 2 — Smoke Test)**.
+Plataforma de **preparação para concursos** com IA: o candidato organiza o plano de estudos, pratica, revisa e acompanha sua evolução. A busca de concursos em **3 status** (**Ativos**, **Previstos** e **Históricos**) e os materiais por edital apoiam essa jornada. A direção de acesso prevê **14 dias de teste**, depois um nível freemium básico e limitado e assinaturas pagas para recursos ampliados.
 
 ---
 
 ## 🎨 Business Model Canvas Corrigido (Aprova+ IA)
 
-![Business Model Canvas Aprova+ IA](./canvas_corrigido.png)
+![Business Model Canvas Aprova+ IA — preparação como núcleo](./canvas_corrigido.svg)
 
 ---
 
@@ -20,7 +20,8 @@ Plataforma centralizada com Inteligência Artificial para busca de **Concursos P
 aprova-mais-ia/
 ├── README.md                        # Visão geral do projeto e guia de execução
 ├── MVP_Teorico_Completo_AprovaMais.md # Documentação limpa do MVP Teórico e Canvas
-├── canvas_corrigido.png             # Imagem em alta definição do Business Model Canvas
+├── canvas_corrigido.svg             # Fonte vetorial editável do Canvas atualizado
+├── canvas_corrigido.png             # Exportação em alta definição do Canvas
 ├── iniciar_mvp.bat                  # Inicializador rápido com 1 clique (Windows)
 ├── iniciar_mvp.ps1                  # Inicializador via PowerShell
 │
