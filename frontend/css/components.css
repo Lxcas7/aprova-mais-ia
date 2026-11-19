@@ -98,8 +98,24 @@ textarea.field-input {
 }
 
 .btn:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn-primary:disabled {
+  background-color: #547281;
+  color: #ffffff;
+}
+
+.btn-accent:disabled,
+.btn-purple:disabled {
+  background-color: #8b563e;
+  color: #ffffff;
+}
+
+.btn-outline:disabled {
+  background-color: var(--bg-subtle);
+  border-color: var(--border-strong);
+  color: var(--muted);
 }
 
 .btn-primary {
@@ -526,7 +542,7 @@ textarea.field-input {
   padding: 24px;
   box-shadow: var(--shadow-sm);
   position: sticky;
-  top: 84px;
+  top: calc(var(--header-height, 72px) + 16px);
 }
 
 .radar-stages-legend {
@@ -573,6 +589,14 @@ textarea.field-input {
   box-shadow: var(--shadow-sm);
 }
 
+.mat-item-wrap {
+  border-bottom: 1px solid var(--border);
+}
+
+.mat-item-wrap:last-child {
+  border-bottom: none;
+}
+
 .mat-item {
   display: flex;
   justify-content: space-between;
@@ -583,8 +607,88 @@ textarea.field-input {
   border-bottom: 1px solid var(--border);
 }
 
+.mat-item-wrap > .mat-item {
+  border-bottom: none;
+}
+
 .mat-item:last-child {
   border-bottom: none;
+}
+
+.material-preview-panel {
+  background-color: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.material-preview-loading {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.material-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.material-preview-kicker {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--primary);
+}
+
+.material-preview-sub {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.material-preview-body p {
+  margin-bottom: 8px;
+}
+
+.material-preview-section {
+  margin-top: 10px;
+}
+
+.material-preview-disc-list {
+  list-style: none;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.material-preview-disc-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.material-preview-disc-list li:last-child {
+  border-bottom: none;
+}
+
+.material-preview-steps {
+  margin: 6px 0 0 18px;
+  font-size: 0.8125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .mat-item-info {
@@ -1200,13 +1304,41 @@ textarea.field-input {
 .toast-msg {
   background-color: var(--bg-dark);
   color: #ffffff;
-  padding: 12px 18px;
+  padding: 12px 16px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: var(--shadow-lg);
   font-size: 0.875rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 440px;
   animation: fadeIn 0.18s ease-out;
+}
+
+.toast-msg.toast-error {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-border);
+}
+
+.toast-action-btn {
+  background-color: #ffffff;
+  color: var(--bg-dark);
+  border: 1px solid #ffffff;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.toast-action-btn:hover {
+  background-color: var(--primary-soft);
 }
 
 @keyframes fadeIn {
@@ -1259,6 +1391,21 @@ textarea.field-input {
     display: none;
   }
 
+  .status-pills.can-scroll-right {
+    -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 26px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 26px), transparent 100%);
+  }
+
+  .status-pills.can-scroll-left {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 26px, #000 100%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 26px, #000 100%);
+  }
+
+  .status-pills.can-scroll-left.can-scroll-right {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 24px, #000 calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 24px, #000 calc(100% - 24px), transparent 100%);
+  }
+
   .status-pill {
     flex-shrink: 0;
     white-space: nowrap;
@@ -1302,9 +1449,13 @@ textarea.field-input {
 
   .mat-item-actions {
     width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .mat-item-actions .btn {
+    flex: 1 1 auto;
   }
 
   .chat-form-row {

@@ -119,3 +119,8 @@ class UsuarioAtualizarPerfilInput(BaseModel):
     plano: Optional[str] = "Gratuito"
 
 
+class SincronizarRascunhoInput(BaseModel):
+    salvos: List[str] = []
+    estudados: List[int] = []
+
+

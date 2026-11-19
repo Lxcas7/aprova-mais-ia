@@ -10,6 +10,7 @@ window.AprovaComponents.renderPremiumView = function () {
   const user = window.AprovaAPI.obterUsuarioAtual();
   const checkIcon = window.AprovaUtils.icon('check');
   const shieldIcon = window.AprovaUtils.icon('shield');
+  const esc = (v) => window.AprovaUtils.escapeHtml(v);
 
   container.innerHTML = `
     <div class="split-workspace-pro">
@@ -84,14 +85,14 @@ window.AprovaComponents.renderPremiumView = function () {
           Registre seu interesse prioritário sem custo para assegurar <strong>30 dias de acesso gratuito e 50% de desconto vitalício</strong> na abertura da Fase 2, além de votar na ferramenta que devemos liberar primeiro.
         </p>
 
-        <form onsubmit="window.AprovaComponents.salvarLeadSmokeTest(event)" class="form-stack">
+        <form id="smoke-lead-form" onsubmit="window.AprovaComponents.salvarLeadSmokeTest(event)" class="form-stack">
           <div class="field-group">
             <label for="lead-nome">Nome Completo</label>
-            <input type="text" id="lead-nome" class="field-input" placeholder="Ex: Carlos Eduardo Silva" value="${user ? user.nome : ''}" required />
+            <input type="text" id="lead-nome" class="field-input" placeholder="Ex: Carlos Eduardo Silva" value="${user ? esc(user.nome) : ''}" minlength="2" required />
           </div>
           <div class="field-group">
             <label for="lead-contato">WhatsApp ou E-mail para Convite VIP</label>
-            <input type="text" id="lead-contato" class="field-input" placeholder="Ex: (11) 99999-8888 ou seu@email.com" value="${user ? user.email : ''}" required />
+            <input type="text" id="lead-contato" class="field-input" placeholder="Ex: (11) 99999-8888 ou seu@email.com" value="${user ? esc(user.email) : ''}" minlength="5" required />
           </div>
           <div class="form-grid-2">
             <div class="field-group">
@@ -121,6 +122,7 @@ window.AprovaComponents.renderPremiumView = function () {
               <option value="Simulados Inéditos Comentados">Gerador de Simulados Inéditos no Estilo da Banca</option>
             </select>
           </div>
+          <div id="smoke-error-box" class="auth-error-banner" role="alert"></div>
           <button type="submit" class="btn btn-accent btn-block">
             Confirmar Reserva na Lista VIP PRO
           </button>
@@ -130,10 +132,21 @@ window.AprovaComponents.renderPremiumView = function () {
       </div>
     </div>
   `;
+
+  document.querySelectorAll('#smoke-lead-form input, #smoke-lead-form select').forEach(el => {
+    el.addEventListener('input', () => {
+      const errBox = document.getElementById('smoke-error-box');
+      if (errBox) {
+        errBox.classList.remove('visible');
+        errBox.textContent = '';
+      }
+    });
+  });
 };
 
 window.AprovaComponents.salvarLeadSmokeTest = async function (event) {
   event.preventDefault();
+  const errBox = document.getElementById('smoke-error-box');
   const payload = {
     nome: document.getElementById('lead-nome').value.trim(),
     contato: document.getElementById('lead-contato').value.trim(),
@@ -142,17 +155,26 @@ window.AprovaComponents.salvarLeadSmokeTest = async function (event) {
     faixa_preco: document.getElementById('lead-preco').value
   };
 
-  const res = await window.AprovaAPI.cadastrarLeadPremium(payload);
-  window.AprovaUtils.showToast(res.mensagem);
-  window.AprovaComponents.renderHeaderUserWidget();
+  try {
+    const res = await window.AprovaAPI.cadastrarLeadPremium(payload);
+    window.AprovaUtils.showToast(res.mensagem);
+    window.AprovaComponents.renderHeaderUserWidget();
 
-  const feedback = document.getElementById('smoke-test-feedback');
-  if (feedback) {
-    feedback.innerHTML = `
-      <div class="smoke-feedback-banner">
-        ${window.AprovaUtils.icon('check')}
-        <span>Reserva VIP confirmada. Seu perfil recebeu o selo Lista VIP PRO com 50% de desconto garantido.</span>
-      </div>
-    `;
+    const feedback = document.getElementById('smoke-test-feedback');
+    if (feedback) {
+      feedback.innerHTML = `
+        <div class="smoke-feedback-banner">
+          ${window.AprovaUtils.icon('check')}
+          <span>Reserva VIP confirmada. Seu perfil recebeu o selo Lista VIP PRO com 50% de desconto garantido.</span>
+        </div>
+      `;
+    }
+  } catch (err) {
+    if (errBox) {
+      errBox.classList.add('visible');
+      errBox.textContent = err.message || 'Não foi possível registrar sua reserva VIP.';
+    } else {
+      window.AprovaUtils.showToast(err.message || 'Não foi possível registrar sua reserva VIP.', { variant: 'error' });
+    }
   }
 };

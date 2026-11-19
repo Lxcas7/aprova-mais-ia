@@ -19,21 +19,61 @@ window.AprovaApp = {
     await this.carregarConcursos();
     await this.atualizarIndicadoresUsuario();
 
-    // Fecha modais ao clicar fora da janela ou pressionar ESC
-    ['concurso-modal', 'auth-modal'].forEach(modalId => {
-      const modal = document.getElementById(modalId);
-      if (modal) {
-        modal.addEventListener('click', (e) => {
-          if (e.target === modal) modal.classList.remove('open');
-        });
-      }
-    });
+    this._initHeaderHeightObserver();
+    this._initScrollAffordances();
+
+    // Fecha modais ao clicar fora da janela ou pressionar ESC (restaurando foco e inert)
+    const concursoModal = document.getElementById('concurso-modal');
+    if (concursoModal) {
+      concursoModal.addEventListener('click', (e) => {
+        if (e.target === concursoModal) window.AprovaComponents.closeConcursoModal();
+      });
+    }
+    const authModal = document.getElementById('auth-modal');
+    if (authModal) {
+      authModal.addEventListener('click', (e) => {
+        if (e.target === authModal) window.AprovaComponents.closeAuthModal();
+      });
+    }
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         window.AprovaComponents.closeConcursoModal();
         window.AprovaComponents.closeAuthModal();
       }
     });
+  },
+
+  _initHeaderHeightObserver() {
+    const header = document.querySelector('.app-header');
+    if (!header) return;
+    const syncHeight = () => {
+      document.documentElement.style.setProperty('--header-height', `${header.offsetHeight}px`);
+    };
+    syncHeight();
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(syncHeight).observe(header);
+    }
+    window.addEventListener('resize', syncHeight);
+  },
+
+  _initScrollAffordances() {
+    const bindScroller = (selector) => {
+      const el = document.querySelector(selector);
+      if (!el) return;
+      const update = () => {
+        const maxScroll = el.scrollWidth - el.clientWidth;
+        el.classList.toggle('can-scroll-left', el.scrollLeft > 4);
+        el.classList.toggle('can-scroll-right', maxScroll > 4 && el.scrollLeft < maxScroll - 4);
+      };
+      update();
+      el.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(update).observe(el);
+      }
+    };
+    bindScroller('.nav-menu');
+    bindScroller('.status-pills');
   },
 
   switchView(viewName) {
@@ -50,16 +90,20 @@ window.AprovaApp = {
       }
     });
 
-    // Exibe apenas a seção ativa
+    // Exibe apenas a seção ativa e oculta semanticamente as demais para manter 1 <h1> ativo
     document.querySelectorAll('.view-pane').forEach(pane => {
-      pane.classList.toggle('active', pane.id === `view-${viewName}`);
+      const isActive = pane.id === `view-${viewName}`;
+      pane.classList.toggle('active', isActive);
+      pane.hidden = !isActive;
     });
 
     // Exibe o Hero Workspace apenas na visão principal Explorar Concursos,
     // permitindo que as abas secundárias abram diretamente em seu cabeçalho de ferramenta
     const heroWorkspace = document.getElementById('hero-workspace');
     if (heroWorkspace) {
-      heroWorkspace.style.display = viewName === 'explorar' ? 'block' : 'none';
+      const showHero = viewName === 'explorar';
+      heroWorkspace.style.display = showHero ? 'block' : 'none';
+      heroWorkspace.hidden = !showHero;
     }
 
     // Carrega dados específicos da aba selecionada
@@ -173,7 +217,23 @@ window.AprovaApp = {
     const grid = document.getElementById('concursos-grid');
     if (!grid) return;
 
-    const resp = await window.AprovaAPI.listarConcursos(this.state);
+    let resp;
+    try {
+      resp = await window.AprovaAPI.listarConcursos(this.state);
+    } catch (err) {
+      grid.innerHTML = `
+        <div class="empty-state-sheet" role="alert">
+          <h3>Não foi possível carregar os concursos</h3>
+          <p>${window.AprovaUtils.escapeHtml(err.message || 'Erro ao consultar a lista de editais.')}</p>
+          <button type="button" class="btn btn-primary" onclick="window.AprovaApp.carregarConcursos()">
+            ${window.AprovaUtils.icon('reset')}
+            <span>Tentar novamente</span>
+          </button>
+        </div>
+      `;
+      return;
+    }
+
     const resumo = resp.resumo || {};
     const lista = this.ordenarLista(resp.concursos || []);
 
@@ -214,12 +274,25 @@ window.AprovaApp = {
   },
 
   async toggleFavorito(concursoId) {
-    const res = await window.AprovaAPI.alternarFavorito(concursoId);
-    window.AprovaUtils.showToast(
-      res.salvo ? 'Concurso adicionado ao seu caderno de estudos.' : 'Concurso removido dos salvos.'
-    );
-    this.carregarConcursos();
-    this.atualizarIndicadoresUsuario();
+    try {
+      const res = await window.AprovaAPI.alternarFavorito(concursoId);
+      if (!res.salvo) {
+        window.AprovaUtils.showToast('Concurso removido dos salvos.', {
+          actionLabel: 'Desfazer',
+          onAction: () => window.AprovaApp.toggleFavorito(concursoId)
+        });
+      } else {
+        window.AprovaUtils.showToast(
+          res.isGuest
+            ? 'Salvo neste dispositivo. Entre ou crie conta para sincronizar.'
+            : 'Concurso adicionado ao seu caderno de estudos.'
+        );
+      }
+      this.carregarConcursos();
+      this.atualizarIndicadoresUsuario();
+    } catch (err) {
+      window.AprovaUtils.showToast(err.message || 'Erro ao atualizar favorito.', { variant: 'error' });
+    }
   },
 
   irParaMateriaisDoConcurso(concursoId) {
@@ -232,18 +305,20 @@ window.AprovaApp = {
   },
 
   async atualizarIndicadoresUsuario() {
-    const [concResp, matResp] = await Promise.all([
-      window.AprovaAPI.listarConcursos(),
-      window.AprovaAPI.listarMateriais('todos', 'todas')
-    ]);
-    const resumo = concResp.resumo || {};
-    const setTxt = (id, val) => {
-      const el = document.getElementById(id);
-      if (el && val !== undefined) el.textContent = val;
-    };
-    setTxt('top-salvos-count', resumo.salvos || 0);
-    setTxt('top-estudados-count', `${matResp.estudados || 0}/${matResp.total || 34}`);
-    setTxt('top-progresso-pct', `${matResp.progresso_pct || 0}%`);
+    try {
+      const [concResp, matResp] = await Promise.all([
+        window.AprovaAPI.listarConcursos(),
+        window.AprovaAPI.listarMateriais('todos', 'todas')
+      ]);
+      const resumo = concResp.resumo || {};
+      const setTxt = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val !== undefined) el.textContent = val;
+      };
+      setTxt('top-salvos-count', resumo.salvos || 0);
+      setTxt('top-estudados-count', `${matResp.estudados || 0}/${matResp.total || 34}`);
+      setTxt('top-progresso-pct', `${matResp.progresso_pct || 0}%`);
+    } catch (e) {}
   },
 
   atualizarTelemetriaTopo() {

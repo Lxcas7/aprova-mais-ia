@@ -24,7 +24,7 @@ window.AprovaComponents.renderMateriaisHub = async function (concursoIdOverride,
     window.AprovaAPI.listarMateriais(concursoId, categoria)
   ]);
 
-  const clean = window.AprovaUtils.cleanText;
+  const safe = (v) => window.AprovaUtils.safeText(v);
   const todosConcursos = concursosResp.concursos || [];
   let materiais = matResp.materiais || [];
 
@@ -44,58 +44,74 @@ window.AprovaComponents.renderMateriaisHub = async function (concursoIdOverride,
   const optionsConcursos = [
     `<option value="todos" ${concursoId === 'todos' ? 'selected' : ''}>Todos os Concursos (${todosConcursos.length} editais)</option>`,
     ...todosConcursos.map(c => `
-      <option value="${c.id}" ${concursoId === c.id ? 'selected' : ''}>
-        ${clean(c.sigla)} · ${clean(c.titulo)} (${clean(c.status_label)})
+      <option value="${window.AprovaUtils.escapeHtml(c.id)}" ${concursoId === c.id ? 'selected' : ''}>
+        ${safe(c.sigla)} · ${safe(c.titulo)} (${safe(c.status_label)})
       </option>
     `)
   ].join('');
 
   const categorias = ['todas', 'Edital Verticalizado', 'Apostila PDF', 'Prova Passada + Gabarito', 'Caderno de Questões', 'Mapa Mental'];
   const optionsCategorias = categorias.map(cat => `
-    <option value="${cat}" ${categoria === cat ? 'selected' : ''}>
-      ${cat === 'todas' ? 'Todas as Categorias' : cat}
+    <option value="${window.AprovaUtils.escapeHtml(cat)}" ${categoria === cat ? 'selected' : ''}>
+      ${cat === 'todas' ? 'Todas as Categorias' : safe(cat)}
     </option>
   `).join('');
 
   const rowsHtml = materiais.map(m => {
     const statusBadgeClass = window.AprovaUtils.getStatusBadgeClass(m.concurso_status || 'aberto');
+    const mid = Number(m.id);
     return `
-      <div class="mat-item">
-        <div class="mat-item-info">
-          <div class="mat-item-title">
-            ${clean(m.titulo)}
+      <div class="mat-item-wrap">
+        <div class="mat-item">
+          <div class="mat-item-info">
+            <div class="mat-item-title">
+              ${safe(m.titulo)}
+            </div>
+            <div class="mat-item-meta">
+              <span class="badge ${statusBadgeClass}">${safe(m.concurso_sigla || m.concurso_id.toUpperCase())}</span>
+              <span class="badge badge-cobalt">${safe(m.categoria)}</span>
+              <span>Disciplina: <strong>${safe(m.disciplina || 'Geral')}</strong></span>
+              <span>Banca: <strong>${safe(m.concurso_banca || 'Oficial')}</strong></span>
+              <span>Formato: <strong>Roteiro + Checklist (PDF)</strong></span>
+            </div>
+            ${m.resumo_conteudo ? `<p class="mat-item-desc">${safe(m.resumo_conteudo)}</p>` : ''}
           </div>
-          <div class="mat-item-meta">
-            <span class="badge ${statusBadgeClass}">${clean(m.concurso_sigla || m.concurso_id.toUpperCase())}</span>
-            <span class="badge badge-cobalt">${clean(m.categoria)}</span>
-            <span>Disciplina: <strong>${clean(m.disciplina || 'Geral')}</strong></span>
-            <span>Banca: <strong>${clean(m.concurso_banca || 'Oficial')}</strong></span>
-            <span>Extensão: <strong>${clean(m.paginas)}</strong></span>
+          <div class="mat-item-actions">
+            <button
+              type="button"
+              class="btn ${m.estudado ? 'btn-primary' : 'btn-outline'} btn-sm"
+              aria-pressed="${m.estudado ? 'true' : 'false'}"
+              onclick="window.AprovaComponents.alternarEstudoHub(${mid})"
+            >
+              ${m.estudado ? window.AprovaUtils.icon('check') : ''}
+              <span>${m.estudado ? 'Estudado' : 'Marcar Estudado'}</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              aria-expanded="false"
+              aria-controls="hub-mat-preview-${mid}"
+              onclick="window.AprovaUtils.toggleMaterialPreview(${mid}, 'hub-mat', this)"
+            >
+              ${window.AprovaUtils.icon('eye')}
+              <span>Pré-visualizar</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-accent btn-sm"
+              onclick="window.AprovaAPI.baixarMaterial(${mid})"
+            >
+              ${window.AprovaUtils.icon('download')}
+              <span>Baixar PDF</span>
+            </button>
           </div>
-          ${m.resumo_conteudo ? `<p class="mat-item-desc">${clean(m.resumo_conteudo)}</p>` : ''}
         </div>
-        <div class="mat-item-actions">
-          <button
-            type="button"
-            class="btn ${m.estudado ? 'btn-primary' : 'btn-outline'} btn-sm"
-            aria-pressed="${m.estudado ? 'true' : 'false'}"
-            onclick="window.AprovaComponents.alternarEstudoHub(${m.id})"
-          >
-            ${m.estudado ? window.AprovaUtils.icon('check') : ''}
-            <span>${m.estudado ? 'Estudado' : 'Marcar Estudado'}</span>
-          </button>
-          <button
-            type="button"
-            class="btn btn-accent btn-sm"
-            onclick="window.AprovaAPI.baixarMaterial(${m.id})"
-          >
-            ${window.AprovaUtils.icon('download')}
-            <span>Baixar Guia</span>
-          </button>
-        </div>
+        <div id="hub-mat-preview-${mid}" class="material-preview-panel" hidden></div>
       </div>
     `;
   }).join('');
+
+  const pct = Math.round(matResp.progresso_pct || 0);
 
   container.innerHTML = `
     <div class="acervo-toolbar">
@@ -124,7 +140,14 @@ window.AprovaComponents.renderMateriaisHub = async function (concursoIdOverride,
           <span>Progresso do Filtro</span>
           <span>${matResp.estudados}/${matResp.total} (${matResp.progresso_pct}%)</span>
         </div>
-        <div class="thermometer-bar thermometer-on-subtle">
+        <div
+          class="thermometer-bar thermometer-on-subtle"
+          role="progressbar"
+          aria-valuenow="${pct}"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-label="Progresso de materiais estudados: ${pct}%"
+        >
           <div class="thermometer-fill fill-green" style="width:${matResp.progresso_pct}%;"></div>
         </div>
       </div>
@@ -146,10 +169,23 @@ window.AprovaComponents.renderMateriaisHub = async function (concursoIdOverride,
 };
 
 window.AprovaComponents.alternarEstudoHub = async function (materialId) {
-  const res = await window.AprovaAPI.alternarMaterialEstudado(materialId);
-  window.AprovaUtils.showToast(
-    res.estudado ? 'Progresso registrado no seu caderno de estudos.' : 'Material marcado como pendente.'
-  );
-  window.AprovaComponents.renderMateriaisHub();
-  window.AprovaApp.atualizarIndicadoresUsuario();
+  try {
+    const res = await window.AprovaAPI.alternarMaterialEstudado(materialId);
+    if (!res.estudado) {
+      window.AprovaUtils.showToast('Material marcado como pendente.', {
+        actionLabel: 'Desfazer',
+        onAction: () => window.AprovaComponents.alternarEstudoHub(materialId)
+      });
+    } else {
+      window.AprovaUtils.showToast(
+        res.isGuest
+          ? 'Progresso salvo neste dispositivo. Entre ou crie conta para sincronizar.'
+          : 'Progresso registrado no seu caderno de estudos.'
+      );
+    }
+    window.AprovaComponents.renderMateriaisHub();
+    window.AprovaApp.atualizarIndicadoresUsuario();
+  } catch (err) {
+    window.AprovaUtils.showToast(err.message || 'Não foi possível atualizar o progresso do material.', { variant: 'error' });
+  }
 };

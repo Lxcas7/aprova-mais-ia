@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="css/components.css" />
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
 
   <!-- Barra Superior de Telemetria do Concurseiro -->
   <div class="top-status-bar">
@@ -37,7 +38,7 @@
       </button>
 
       <nav class="nav-menu" aria-label="Navegação Principal">
-        <button type="button" class="nav-btn active" data-view="explorar" onclick="window.AprovaApp.switchView('explorar')">
+        <button type="button" class="nav-btn active" data-view="explorar" aria-current="page" onclick="window.AprovaApp.switchView('explorar')">
           Concursos (3 Status)
         </button>
         <button type="button" class="nav-btn" data-view="radar" onclick="window.AprovaApp.switchView('radar')">
@@ -144,7 +145,7 @@
   </section>
 
   <!-- Conteúdo Principal (6 Views do Concurseiro) -->
-  <main class="main-container">
+  <main id="main-content" tabindex="-1" class="main-container">
 
     <!-- VIEW 1: EXPLORAR CONCURSOS (ATIVOS, PREVISTOS NA INTERNET E ENCERRADOS) -->
     <section id="view-explorar" class="view-pane active" aria-label="Painel Central de Concursos e Editais">
@@ -185,10 +186,10 @@
     </section>
 
     <!-- VIEW 2: RADAR IA (O QUE ESTÃO FALANDO NA INTERNET SOBRE CONCURSOS PREVISTOS) -->
-    <section id="view-radar" class="view-pane">
+    <section id="view-radar" class="view-pane" hidden>
       <div class="section-banner">
         <div>
-          <h2>Radar IA: Movimentações e Rumores na Internet</h2>
+          <h1>Radar IA: Movimentações e Rumores na Internet</h1>
           <p>Rastreamento de processos no Ministério da Gestão (MGI), dispensas de licitação de bancas, notas sindicais e portais especializados para separar movimentações reais de boatos.</p>
         </div>
         <div class="section-meta-Summary">Termômetro de Maturidade Pré-Edital</div>
@@ -197,10 +198,10 @@
     </section>
 
     <!-- VIEW 3: CENTRAL DE MATERIAIS POR CONCURSO -->
-    <section id="view-materiais" class="view-pane">
+    <section id="view-materiais" class="view-pane" hidden>
       <div class="section-banner">
         <div>
-          <h2>Acervo de Materiais Vinculados por Edital</h2>
+          <h1>Acervo de Materiais Vinculados por Edital</h1>
           <p>Baixe Editais Verticalizados, Apostilas PDF direcionadas à banca, Cadernos de Questões e Provas Anteriores com Gabarito. Marque os itens concluídos para atualizar seu progresso.</p>
         </div>
         <div class="section-meta-Summary">34 Guias e Provas Indexados</div>
@@ -209,10 +210,10 @@
     </section>
 
     <!-- VIEW 4: COPILOTO & MATCH IA -->
-    <section id="view-ia" class="view-pane">
+    <section id="view-ia" class="view-pane" hidden>
       <div class="section-banner">
         <div>
-          <h2>Copiloto Aprova+ IA: Compatibilidade de Perfil e Cronograma</h2>
+          <h1>Copiloto Aprova+ IA: Compatibilidade de Perfil e Cronograma</h1>
           <p>Cruze sua escolaridade, carreira foco e carga horária diária para identificar os certames mais compatíveis e distribuir suas horas semanais por peso de disciplina.</p>
         </div>
         <div class="section-meta-Summary">Motor de Alocação por Peso de Prova</div>
@@ -221,10 +222,10 @@
     </section>
 
     <!-- VIEW 5: PLANO PREMIUM (APROVA+ PRO) -->
-    <section id="view-premium" class="view-pane">
+    <section id="view-premium" class="view-pane" hidden>
       <div class="section-banner">
         <div>
-          <h2>Plano Aprova+ PRO: Alertas em Tempo Real e Recursos Avançados</h2>
+          <h1>Plano Aprova+ PRO: Alertas em Tempo Real e Recursos Avançados</h1>
           <p>A busca nos 3 status, o Radar IA e o acervo base são gratuitos. Conheça a especificação da Fase 2 (Aprova+ PRO) e registre seu interesse na Lista VIP com desconto vitalício de pré-lançamento.</p>
         </div>
         <div class="section-meta-Summary">Validação Fase 2 · Lista VIP</div>
@@ -233,10 +234,10 @@
     </section>
 
     <!-- VIEW 6: MINHA CONTA & PAINEL DE ESTUDOS DO USUÁRIO -->
-    <section id="view-conta" class="view-pane">
+    <section id="view-conta" class="view-pane" hidden>
       <div class="section-banner">
         <div>
-          <h2>Minha Conta, Preferências e Caderno de Estudos</h2>
+          <h1>Minha Conta, Preferências e Caderno de Estudos</h1>
           <p>Gerencie seus parâmetros de estudo, consulte seus concursos favoritados e revise o histórico de apostilas e provas concluídas.</p>
         </div>
         <div class="section-meta-Summary">Sincronizado com o Copiloto IA</div>
@@ -247,7 +248,7 @@
   </main>
 
   <!-- Modal de Detalhes / Raio-X do Concurso e Materiais -->
-  <div id="concurso-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Raio-X do Concurso e Materiais">
+  <div id="concurso-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="concurso-modal-title">
     <div class="modal-window">
       <button type="button" class="modal-close-btn" onclick="window.AprovaComponents.closeConcursoModal()" aria-label="Fechar janela" title="Fechar (Esc)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -257,7 +258,7 @@
   </div>
 
   <!-- Modal de Login e Cadastro de Usuário -->
-  <div id="auth-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Autenticação de Usuário">
+  <div id="auth-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="auth-modal-title">
     <div class="modal-window modal-window-sm">
       <button type="button" class="modal-close-btn" onclick="window.AprovaComponents.closeAuthModal()" aria-label="Fechar janela" title="Fechar (Esc)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>

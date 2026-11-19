@@ -4,6 +4,13 @@ __pycache__/
 .venv/
 venv/
 env/
+.env
+.env.*
+*.log
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite3-journal
 .DS_Store
 Thumbs.db
 .impeccable/config.local.json

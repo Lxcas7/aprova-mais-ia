@@ -3,22 +3,57 @@
  */
 window.AprovaComponents = window.AprovaComponents || {};
 
-window.AprovaComponents.openConcursoModal = async function (concursoId) {
+window.AprovaComponents.openConcursoModal = async function (concursoId, triggerEl) {
   const modal = document.getElementById('concurso-modal');
   const content = document.getElementById('concurso-modal-body');
   if (!modal || !content) return;
 
-  window.AprovaComponents._lastActiveElement = document.activeElement;
-  modal.classList.add('open');
-  content.innerHTML = `<div class="empty-state-sheet empty-state-borderless">Carregando dossiê técnico e acervo vinculado...</div>`;
+  window.AprovaUtils.openAccessibleModal('concurso-modal', triggerEl || document.activeElement);
+  content.innerHTML = `<h2 id="concurso-modal-title" class="sr-only">Raio-X do Concurso e Materiais</h2><div class="empty-state-sheet empty-state-borderless" role="status">Carregando dossiê técnico e acervo vinculado...</div>`;
 
   const closeBtn = modal.querySelector('.modal-close-btn');
   if (closeBtn) closeBtn.focus();
 
-  const c = await window.AprovaAPI.obterConcurso(concursoId);
-  if (!c) return;
+  const safe = (v) => window.AprovaUtils.safeText(v);
+  const safeId = window.AprovaUtils.escapeHtml(concursoId);
 
-  const clean = window.AprovaUtils.cleanText;
+  let c = null;
+  try {
+    c = await window.AprovaAPI.obterConcurso(concursoId);
+  } catch (err) {
+    content.innerHTML = `
+      <div class="empty-state-sheet empty-state-borderless" role="alert">
+        <h2 id="concurso-modal-title" class="modal-title">Não foi possível carregar este concurso</h2>
+        <p>${window.AprovaUtils.escapeHtml(err.message || 'Ocorreu uma falha ao consultar os dados do edital.')}</p>
+        <div class="empty-state-actions">
+          <button type="button" class="btn btn-primary" onclick="window.AprovaComponents.openConcursoModal('${safeId}')">
+            ${window.AprovaUtils.icon('reset')}
+            <span>Tentar novamente</span>
+          </button>
+          <button type="button" class="btn btn-outline" onclick="window.AprovaComponents.closeConcursoModal()">
+            Fechar
+          </button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if (!c) {
+    content.innerHTML = `
+      <div class="empty-state-sheet empty-state-borderless" role="alert">
+        <h2 id="concurso-modal-title" class="modal-title">Concurso não encontrado</h2>
+        <p>O edital solicitado não está disponível na base no momento.</p>
+        <div class="empty-state-actions">
+          <button type="button" class="btn btn-outline" onclick="window.AprovaComponents.closeConcursoModal()">
+            Fechar
+          </button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
   const badgeClass = window.AprovaUtils.getStatusBadgeClass(c.status);
   const statusDot = window.AprovaUtils.getStatusDot(c.status);
 
@@ -33,81 +68,95 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
       : (d.prioridade === 'Alta' ? 'badge-cobalt' : 'badge-neutral');
     return `
       <tr>
-        <td><strong>${clean(d.nome)}</strong></td>
-        <td>${d.questoes}</td>
-        <td><strong>${clean(d.peso)}</strong></td>
-        <td><span class="badge ${prioBadge}">${clean(d.prioridade)}</span></td>
+        <td><strong>${safe(d.nome)}</strong></td>
+        <td>${safe(d.questoes)}</td>
+        <td><strong>${safe(d.peso)}</strong></td>
+        <td><span class="badge ${prioBadge}">${safe(d.prioridade)}</span></td>
       </tr>
     `;
   }).join('');
 
   const materiaisHtml = (c.materiais || []).map(m => {
+    const mid = Number(m.id);
     return `
-      <div class="mat-item" id="modal-mat-${m.id}">
-        <div class="mat-item-info">
-          <div class="mat-item-title">
-            ${clean(m.titulo)}
+      <div class="mat-item-wrap" id="modal-mat-${mid}">
+        <div class="mat-item">
+          <div class="mat-item-info">
+            <div class="mat-item-title">
+              ${safe(m.titulo)}
+            </div>
+            <div class="mat-item-meta">
+              <span class="badge badge-cobalt">${safe(m.categoria)}</span>
+              <span>Disciplina: <strong>${safe(m.disciplina || 'Geral')}</strong></span>
+              <span>Formato: <strong>Roteiro + Checklist (PDF)</strong></span>
+              <span>Acesso: <strong class="text-green">${m.gratuito ? 'Gratuito' : 'PRO'}</strong></span>
+            </div>
+            ${m.resumo_conteudo ? `<p class="mat-item-desc">${safe(m.resumo_conteudo)}</p>` : ''}
           </div>
-          <div class="mat-item-meta">
-            <span class="badge badge-cobalt">${clean(m.categoria)}</span>
-            <span>Disciplina: <strong>${clean(m.disciplina || 'Geral')}</strong></span>
-            <span>Extensão: <strong>${clean(m.paginas)}</strong></span>
-            <span>Acesso: <strong class="text-green">${m.gratuito ? 'Gratuito' : 'PRO'}</strong></span>
+          <div class="mat-item-actions">
+            <button
+              type="button"
+              class="btn ${m.estudado ? 'btn-primary' : 'btn-outline'} btn-sm"
+              aria-pressed="${m.estudado ? 'true' : 'false'}"
+              onclick="window.AprovaComponents.toggleEstudadoNoModal(${mid}, '${safeId}')"
+            >
+              ${m.estudado ? window.AprovaUtils.icon('check') : ''}
+              <span>${m.estudado ? 'Concluído' : 'Marcar Estudado'}</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              aria-expanded="false"
+              aria-controls="modal-mat-preview-${mid}"
+              onclick="window.AprovaUtils.toggleMaterialPreview(${mid}, 'modal-mat', this)"
+            >
+              ${window.AprovaUtils.icon('eye')}
+              <span>Pré-visualizar</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-accent btn-sm"
+              onclick="window.AprovaAPI.baixarMaterial(${mid})"
+            >
+              ${window.AprovaUtils.icon('download')}
+              <span>Baixar PDF</span>
+            </button>
           </div>
-          ${m.resumo_conteudo ? `<p class="mat-item-desc">${clean(m.resumo_conteudo)}</p>` : ''}
         </div>
-        <div class="mat-item-actions">
-          <button
-            type="button"
-            class="btn ${m.estudado ? 'btn-primary' : 'btn-outline'} btn-sm"
-            aria-pressed="${m.estudado ? 'true' : 'false'}"
-            onclick="window.AprovaComponents.toggleEstudadoNoModal(${m.id}, '${c.id}')"
-          >
-            ${m.estudado ? window.AprovaUtils.icon('check') : ''}
-            <span>${m.estudado ? 'Concluído' : 'Marcar Estudado'}</span>
-          </button>
-          <button
-            type="button"
-            class="btn btn-accent btn-sm"
-            onclick="window.AprovaAPI.baixarMaterial(${m.id})"
-          >
-            ${window.AprovaUtils.icon('download')}
-            <span>Baixar Guia</span>
-          </button>
-        </div>
+        <div id="modal-mat-preview-${mid}" class="material-preview-panel" hidden></div>
       </div>
     `;
   }).join('');
 
   content.innerHTML = `
     <div class="modal-header-block">
-      <h2 class="modal-title">
-        ${clean(c.sigla)} · ${clean(c.titulo)}
+      <h2 id="concurso-modal-title" class="modal-title">
+        ${safe(c.sigla)} · ${safe(c.titulo)}
       </h2>
       <p class="dossier-subtitle">
-        Órgão: <strong>${clean(c.orgao)}</strong> · Banca: <strong>${clean(c.banca)}</strong> · Área: <strong>${clean(c.area)}</strong> · UF: <strong>${clean(c.uf)}</strong>
+        Órgão: <strong>${safe(c.orgao)}</strong> · Banca: <strong>${safe(c.banca)}</strong> · Área: <strong>${safe(c.area)}</strong> · UF: <strong>${safe(c.uf)}</strong>
       </p>
       <div class="dossier-badges">
-        <span class="badge ${badgeClass}">${statusDot} <span>${clean(c.status_label)}</span></span>
-        <span class="badge badge-encerrado">Índice IA: ${probVal}%</span>
-        <span class="badge badge-neutral">Último edital: ${clean(c.ultimo_concurso_ano || 'Consulte histórico')}</span>
+        <span class="badge ${badgeClass}">${statusDot} <span>${safe(c.status_label)}</span></span>
+        <span class="badge badge-encerrado">Índice IA: ${safe(probVal)}%</span>
+        <span class="badge badge-neutral">Último edital: ${safe(c.ultimo_concurso_ano || 'Consulte histórico')}</span>
       </div>
     </div>
 
     <div class="card-divider-grid modal-meta-grid">
-      <div class="meta-item"><span>Salário Inicial</span><strong class="salary-highlight">${clean(c.salario)}</strong></div>
-      <div class="meta-item"><span>Vagas e Nível</span><strong>${clean(c.vagas)} (${clean(c.escolaridade)})</strong></div>
-      <div class="meta-item"><span>Inscrições / Situação</span><strong>${clean(inscrVal)}</strong></div>
-      <div class="meta-item"><span>Prova / Previsão</span><strong>${clean(c.data_prova)}</strong></div>
-      <div class="meta-item"><span>Nota de Corte Histórica</span><strong>${clean(corteVal)}</strong></div>
-      <div class="meta-item"><span>Fontes Monitoradas</span><strong>${clean(fonteVal)}</strong></div>
+      <div class="meta-item"><span>Salário Inicial</span><strong class="salary-highlight">${safe(c.salario)}</strong></div>
+      <div class="meta-item"><span>Vagas e Nível</span><strong>${safe(c.vagas)} (${safe(c.escolaridade)})</strong></div>
+      <div class="meta-item"><span>Inscrições / Situação</span><strong>${safe(inscrVal)}</strong></div>
+      <div class="meta-item"><span>Prova / Previsão</span><strong>${safe(c.data_prova)}</strong></div>
+      <div class="meta-item"><span>Nota de Corte Histórica</span><strong>${safe(corteVal)}</strong></div>
+      <div class="meta-item"><span>Fontes Monitoradas</span><strong>${safe(fonteVal)}</strong></div>
     </div>
 
     <div class="ai-editorial-note">
       <div class="ai-editorial-head">
         <span>Parecer de Inteligência Artificial e Estratégia de Prova</span>
       </div>
-      <p class="ai-editorial-body text-primary-ink">${clean(c.resumo_ia)}</p>
+      <p class="ai-editorial-body text-primary-ink">${safe(c.resumo_ia)}</p>
     </div>
 
     <div class="modal-section-block">
@@ -134,9 +183,9 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
     <div>
       <div class="match-result-head">
         <h3 class="modal-section-title">
-          Acervo de Estudo Vinculado (${(c.materiais || []).length} guias disponíveis)
+          Acervo de Estudo Vinculado (${(c.materiais || []).length} roteiros disponíveis)
         </h3>
-        <span class="text-caption-muted">Clique em "Baixar Guia" para emitir o roteiro verticalizado</span>
+        <span class="text-caption-muted">Pré-visualize inline ou baixe o roteiro verticalizado em PDF</span>
       </div>
       <div>
         ${materiaisHtml}
@@ -146,21 +195,28 @@ window.AprovaComponents.openConcursoModal = async function (concursoId) {
 };
 
 window.AprovaComponents.closeConcursoModal = function () {
-  const modal = document.getElementById('concurso-modal');
-  if (modal && modal.classList.contains('open')) {
-    modal.classList.remove('open');
-    if (window.AprovaComponents._lastActiveElement?.focus) {
-      window.AprovaComponents._lastActiveElement.focus();
-    }
-  }
+  window.AprovaUtils.closeAccessibleModal('concurso-modal');
 };
 
 window.AprovaComponents.toggleEstudadoNoModal = async function (materialId, concursoId) {
-  const res = await window.AprovaAPI.alternarMaterialEstudado(materialId);
-  window.AprovaUtils.showToast(
-    res.estudado ? 'Material marcado como concluído no seu caderno.' : 'Material marcado como pendente.'
-  );
-  await window.AprovaComponents.openConcursoModal(concursoId);
-  window.AprovaApp.carregarConcursos();
-  window.AprovaApp.atualizarIndicadoresUsuario();
+  try {
+    const res = await window.AprovaAPI.alternarMaterialEstudado(materialId);
+    if (!res.estudado) {
+      window.AprovaUtils.showToast('Material marcado como pendente.', {
+        actionLabel: 'Desfazer',
+        onAction: () => window.AprovaComponents.toggleEstudadoNoModal(materialId, concursoId)
+      });
+    } else {
+      window.AprovaUtils.showToast(
+        res.isGuest
+          ? 'Concluído neste dispositivo. Entre ou crie conta para salvar na nuvem.'
+          : 'Material marcado como concluído no seu caderno.'
+      );
+    }
+    await window.AprovaComponents.openConcursoModal(concursoId, window.AprovaUtils._modalTriggers['concurso-modal']);
+    window.AprovaApp.carregarConcursos();
+    window.AprovaApp.atualizarIndicadoresUsuario();
+  } catch (err) {
+    window.AprovaUtils.showToast(err.message || 'Erro ao atualizar status do material.', { variant: 'error' });
+  }
 };

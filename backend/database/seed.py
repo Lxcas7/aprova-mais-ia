@@ -7,6 +7,30 @@ def _hash_pw(senha: str) -> str:
     return hashlib.sha256(senha.encode("utf-8")).hexdigest()
 
 
+def _ensure_user_tables_backfill(conn) -> None:
+    """Migra favoritos e materiais estudados iniciais para a conta demo apenas uma vez."""
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM schema_flags WHERE key = 'backfill_user1_salvos'")
+    if cur.fetchone():
+        return
+
+    cur.execute("SELECT id FROM usuarios WHERE lower(email) = 'carlos@aprovamais.com.br' LIMIT 1")
+    demo_row = cur.fetchone()
+    if demo_row:
+        demo_id = demo_row["id"]
+        cur.execute(
+            "INSERT OR IGNORE INTO usuario_concursos_salvos (user_id, concurso_id) SELECT ?, id FROM concursos WHERE salvo = 1",
+            (demo_id,)
+        )
+        cur.execute(
+            "INSERT OR IGNORE INTO usuario_materiais_estudados (user_id, material_id) SELECT ?, id FROM materiais WHERE estudado = 1",
+            (demo_id,)
+        )
+
+    cur.execute("INSERT OR IGNORE INTO schema_flags (key, value) VALUES ('backfill_user1_salvos', '1')")
+    conn.commit()
+
+
 def seed_database() -> None:
     init_db()
     conn = get_db_connection()
@@ -26,6 +50,7 @@ def seed_database() -> None:
 
     cur.execute("SELECT COUNT(*) as total FROM concursos")
     if cur.fetchone()["total"] > 0:
+        _ensure_user_tables_backfill(conn)
         conn.close()
         return
 
@@ -619,5 +644,6 @@ def seed_database() -> None:
         cur.execute("INSERT INTO metricas_mvp (tipo_evento, detalhe) VALUES (?, ?)", ev)
 
     conn.commit()
+    _ensure_user_tables_backfill(conn)
     conn.close()
 

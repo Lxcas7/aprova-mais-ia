@@ -94,6 +94,7 @@ window.AprovaComponents.renderIAAssistant = function () {
         </div>
 
         <form onsubmit="window.AprovaComponents.enviarMensagemChat(event)" class="chat-form-row">
+          <label for="ia-chat-input" class="sr-only">Digite sua pergunta para o Copiloto Aprova+ IA</label>
           <input type="text" id="ia-chat-input" class="field-input" placeholder="Consulte por PF, Caixa, INSS, BB, Receita, Nível Médio..." required />
           <button type="submit" class="btn btn-primary">
             ${window.AprovaUtils.icon('send')}
@@ -125,7 +126,8 @@ window.AprovaComponents.executarMatchIA = async function (event) {
   const box = document.getElementById('ia-match-results');
   if (!box) return;
 
-  const clean = window.AprovaUtils.cleanText;
+  const safe = (v) => window.AprovaUtils.safeText(v);
+  const esc = (v) => window.AprovaUtils.escapeHtml(v);
   const payload = {
     escolaridade: document.getElementById('ia-escolaridade')?.value || 'Superior',
     area_interesse: document.getElementById('ia-area')?.value || 'Policial',
@@ -133,7 +135,22 @@ window.AprovaComponents.executarMatchIA = async function (event) {
     foco_status: document.getElementById('ia-foco')?.value || 'todos'
   };
 
-  const res = await window.AprovaAPI.calcularMatchPerfil(payload);
+  let res;
+  try {
+    res = await window.AprovaAPI.calcularMatchPerfil(payload);
+  } catch (err) {
+    box.innerHTML = `
+      <div class="auth-error-banner visible" role="alert">
+        ${esc(err.message || 'Erro ao calcular compatibilidade de perfil.')}
+      </div>
+      <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.executarMatchIA()">
+        ${window.AprovaUtils.icon('reset')}
+        <span>Tentar novamente</span>
+      </button>
+    `;
+    return;
+  }
+
   const recs = res.recomendacoes || res.top_recomendacoes || [];
   const horasSemanais = res.horas_semanais || res.perfil_analisado?.horas_semanais_uteis || payload.horas_por_dia * 6;
 
@@ -150,20 +167,20 @@ window.AprovaComponents.executarMatchIA = async function (event) {
 
     const pillsHtml = plano.map(p => {
       const hrs = p.horas_semanais ? `${p.horas_semanais}h/sem` : p.horas_semana;
-      return `<span class="schedule-pill">${clean(p.disciplina)}: <strong>${clean(hrs)}</strong></span>`;
+      return `<span class="schedule-pill">${safe(p.disciplina)}: <strong>${safe(hrs)}</strong></span>`;
     }).join('');
 
     return `
       <div class="match-result-item">
         <div class="match-result-head">
           <h4 class="match-item-title">
-            ${idx + 1}. ${clean(cObj.sigla)} · ${clean(cObj.titulo)}
+            ${idx + 1}. ${safe(cObj.sigla)} · ${safe(cObj.titulo)}
           </h4>
-          <span class="badge ${idx === 0 ? 'badge-aberto' : 'badge-cobalt'}">${score}% Compatível</span>
+          <span class="badge ${idx === 0 ? 'badge-aberto' : 'badge-cobalt'}">${safe(score)}% Compatível</span>
         </div>
         <p class="match-item-meta">
-          <span class="badge ${statusBadge}">${clean(cObj.status_label)}</span>
-          Salário: <strong class="text-green">${clean(cObj.salario)}</strong> · Banca: <strong>${clean(cObj.banca)}</strong>
+          <span class="badge ${statusBadge}">${safe(cObj.status_label)}</span>
+          Salário: <strong class="text-green">${safe(cObj.salario)}</strong> · Banca: <strong>${safe(cObj.banca)}</strong>
         </p>
         <div class="match-schedule-heading">
           Distribuição Semanal Recomendada (${horasSemanais}h líquidas/semana):
@@ -171,8 +188,8 @@ window.AprovaComponents.executarMatchIA = async function (event) {
         <div class="match-schedule-pills">
           ${pillsHtml}
         </div>
-        <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.openConcursoModal('${cObj.id}')">
-          <span>Abrir Raio-X e Materiais de ${clean(cObj.sigla)}</span>
+        <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.openConcursoModal('${esc(cObj.id)}', this)">
+          <span>Abrir Raio-X e Materiais de ${safe(cObj.sigla)}</span>
         </button>
       </div>
     `;
@@ -192,31 +209,41 @@ window.AprovaComponents.enviarMensagemChat = async function (event) {
   const log = document.getElementById('ia-chat-log');
   if (!input || !log || !input.value.trim()) return;
 
-  const clean = window.AprovaUtils.cleanText;
+  const esc = (v) => window.AprovaUtils.escapeHtml(v);
   const pergunta = input.value.trim();
   input.value = '';
 
   log.innerHTML += `
     <div class="chat-entry chat-entry-user">
       <span class="chat-entry-role">Sua Consulta</span>
-      ${clean(pergunta)}
+      ${esc(window.AprovaUtils.cleanText(pergunta))}
     </div>
   `;
   log.scrollTop = log.scrollHeight;
 
-  const res = await window.AprovaAPI.enviarChatIA(pergunta);
-  log.innerHTML += `
-    <div class="chat-entry">
-      <span class="chat-entry-role">Copiloto Aprova+ IA</span>
-      ${clean(res.resposta)}
-      ${res.concurso_sugerido ? `
-        <div class="chat-action-row">
-          <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.openConcursoModal('${res.concurso_sugerido}')">
-            <span>Abrir Dossiê e Materiais deste Concurso</span>
-          </button>
-        </div>
-      ` : ''}
-    </div>
-  `;
+  try {
+    const res = await window.AprovaAPI.enviarChatIA(pergunta);
+    const respostaSegura = window.AprovaUtils.sanitizeRichHtml(res.resposta);
+    log.innerHTML += `
+      <div class="chat-entry">
+        <span class="chat-entry-role">Copiloto Aprova+ IA</span>
+        ${respostaSegura}
+        ${res.concurso_sugerido ? `
+          <div class="chat-action-row">
+            <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.openConcursoModal('${esc(res.concurso_sugerido)}', this)">
+              <span>Abrir Dossiê e Materiais deste Concurso</span>
+            </button>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  } catch (err) {
+    log.innerHTML += `
+      <div class="chat-entry" role="alert">
+        <span class="chat-entry-role">Copiloto Aprova+ IA</span>
+        <span class="auth-error-banner visible">${esc(err.message || 'Não foi possível processar sua consulta no momento.')}</span>
+      </div>
+    `;
+  }
   log.scrollTop = log.scrollHeight;
 };

@@ -18,7 +18,7 @@
 
   /* Borders & Hairlines */
   --border: #d8d5cb;
-  --border-strong: #b8b4a8;
+  --border-strong: #76746b;
   --border-dark: rgba(255, 255, 255, 0.16);
 
   /* Primary Civic Cobalt Action */
@@ -152,6 +152,38 @@ input::placeholder,
 textarea::placeholder {
   color: var(--muted);
   opacity: 1;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: -60px;
+  left: 16px;
+  z-index: 400;
+  background-color: var(--primary);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  transition: top 0.14s ease;
+}
+
+.skip-link:focus {
+  top: 12px;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -100,6 +100,29 @@ def init_db() -> None:
             plano TEXT DEFAULT 'Gratuito',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS schema_flags (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS usuario_concursos_salvos (
+            user_id INTEGER NOT NULL,
+            concurso_id TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, concurso_id),
+            FOREIGN KEY (user_id) REFERENCES usuarios(id),
+            FOREIGN KEY (concurso_id) REFERENCES concursos(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS usuario_materiais_estudados (
+            user_id INTEGER NOT NULL,
+            material_id INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, material_id),
+            FOREIGN KEY (user_id) REFERENCES usuarios(id),
+            FOREIGN KEY (material_id) REFERENCES materiais(id)
+        );
         """
     )
     conn.commit()
