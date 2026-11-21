@@ -33,6 +33,7 @@ def match_perfil_concurseiro(req: MatchPerfilRequest):
         req.escolaridade,
         req.area_interesse,
         req.horas_por_dia,
-        req.foco_status
+        req.foco_status,
+        req.dias_por_semana,
     )
 

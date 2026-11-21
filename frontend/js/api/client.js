@@ -204,10 +204,10 @@
     if (!badge) return;
     if (isOnline) {
       badge.className = 'api-status-badge';
-      badge.textContent = 'Aprova+ IA Online · FastAPI + SQLite';
+      badge.textContent = 'Sincronizado';
     } else if (isGitHubPages) {
       badge.className = 'api-status-badge';
-      badge.textContent = 'Aprova+ IA Online · Modo Estático';
+      badge.textContent = 'Modo Estático (Navegador)';
     } else {
       badge.className = 'api-status-badge offline';
       badge.textContent = 'Modo Local (Offline)';
@@ -1074,7 +1074,9 @@
       } catch (e) {
         if (e.isApiError) throw e;
         const st = getLocalState();
-        const horasSem = (payload.horas_por_dia || 4) * 6;
+        const horasDia = Math.max(1, Math.min(16, Number(payload.horas_por_dia || 4)));
+        const diasSem = Math.max(1, Math.min(7, Number(payload.dias_por_semana || 6)));
+        const horasSem = horasDia * diasSem;
         const candidatos = st.concursos
           .filter(c => {
             if (payload.escolaridade === 'Médio' && !c.escolaridade.includes('Médio')) return false;
@@ -1092,10 +1094,30 @@
               score += 12;
               motivos.push(`Compatível com escolaridade (${c.escolaridade})`);
             }
-            if ((payload.horas_por_dia || 4) >= 4 && c.salario_max >= 10000) {
+            if (horasDia >= 4 && c.salario_max >= 10000) {
               score += 8;
               motivos.push('Carga horária compatível com edital de alta complexidade');
             }
+            const discs = c.disciplinas || [];
+            const totalQuestoes = discs.reduce((acc, d) => acc + Math.max(Number(d.questoes) || 1, 1), 0) || 1;
+            let acumulado = 0;
+            const planoSemanal = discs.map((d, idx) => {
+              let fatia;
+              if (idx === discs.length - 1) {
+                fatia = Math.round(Math.max(0, horasSem - acumulado) * 10) / 10;
+              } else {
+                const qVal = Math.max(Number(d.questoes) || 1, 1);
+                fatia = Math.round(horasSem * (qVal / totalQuestoes) * 10) / 10;
+                acumulado += fatia;
+              }
+              return {
+                disciplina: d.nome,
+                prioridade: d.prioridade,
+                peso: d.peso,
+                horas_semanais: fatia,
+                horas_semana: `${fatia}h/sem`
+              };
+            });
             return {
               id: c.id,
               sigla: c.sigla,
@@ -1107,15 +1129,7 @@
               vagas: c.vagas,
               match_score: Math.min(score, 98),
               motivos: motivos.length ? motivos : ['Oportunidade compatível com os parâmetros informados'],
-              plano_semanal: (c.disciplinas || []).map((d, idx) => {
-                const fatia = Math.round(horasSem * (idx === 0 ? 0.30 : (idx === 1 ? 0.25 : 0.15)) * 10) / 10;
-                return {
-                  disciplina: d.nome,
-                  prioridade: d.prioridade,
-                  peso: d.peso,
-                  horas_semana: `${fatia}h/sem`
-                };
-              })
+              plano_semanal: planoSemanal
             };
           })
           .sort((a, b) => b.match_score - a.match_score)
@@ -1125,7 +1139,8 @@
           perfil_analisado: {
             escolaridade: payload.escolaridade,
             area: payload.area_interesse,
-            horas_por_dia: payload.horas_por_dia,
+            horas_por_dia: horasDia,
+            dias_por_semana: diasSem,
             horas_semanais_uteis: horasSem
           },
           top_recomendacoes: candidatos
@@ -1138,7 +1153,7 @@
         const res = await request('/mvp/leads-premium', { method: 'POST', body: JSON.stringify(payload) });
         const user = this.obterUsuarioAtual();
         if (user) {
-          user.plano = 'Lista VIP PRO';
+          user.plano = 'Acesso Prioritário PRO';
           this.salvarSessaoUsuario(user);
         }
         return res;
@@ -1149,13 +1164,13 @@
         saveLocalState(st);
         const user = this.obterUsuarioAtual();
         if (user) {
-          user.plano = 'Lista VIP PRO';
+          user.plano = 'Acesso Prioritário PRO';
           this.salvarSessaoUsuario(user);
         }
         return {
           id: st.leads.length,
           sucesso: true,
-          mensagem: `Reserva VIP confirmada para ${payload.nome}. Prioridade registrada: ${payload.recurso_favorito}.`
+          mensagem: `Inscrição prioritária confirmada para ${payload.nome}. Recurso selecionado: ${payload.recurso_favorito}.`
         };
       }
     }

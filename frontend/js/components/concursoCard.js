@@ -5,37 +5,41 @@
 window.AprovaComponents = window.AprovaComponents || {};
 
 window.AprovaComponents.renderConcursoCard = function (concurso) {
-  const safe = (v) => window.AprovaUtils.safeText(v);
-  const badgeClass = window.AprovaUtils.getStatusBadgeClass(concurso.status);
-  const statusDot = window.AprovaUtils.getStatusDot(concurso.status);
+  const utils = window.AprovaUtils;
+  const safe = (v) => utils.safeText(v);
+  const badgeClass = utils.getStatusBadgeClass(concurso.status);
+  const statusDot = utils.getStatusDot(concurso.status);
+  const shortStatus = utils.getShortStatusLabel(concurso.status);
+  const heading = utils.formatConcursoHeading(concurso.sigla, concurso.titulo);
   const materiaisCount = (concurso.materiais || []).length;
   const estudadosCount = (concurso.materiais || []).filter(m => m.estudado).length;
 
   const probVal = concurso.probabilidade_ia || concurso.prob_ia || 100;
   const inscrVal = concurso.inscricoes || concurso.prazo || 'Consulte o edital';
   const corteVal = concurso.nota_corte_historica || concurso.nota_corte_anterior || 'Referência oficial';
-  const safeId = window.AprovaUtils.escapeHtml(concurso.id);
+  const safeId = utils.escapeHtml(concurso.id);
 
-  const secondaryBadge = concurso.status === 'previsto'
+  const probBadge = concurso.status === 'previsto'
     ? `<span class="badge badge-previsto">${safe(probVal)}% Confiança IA</span>`
-    : `<span class="badge badge-cobalt">${estudadosCount}/${materiaisCount} Materiais</span>`;
+    : '';
+  const materiaisBadge = `<span class="badge badge-cobalt">${estudadosCount}/${materiaisCount} Materiais</span>`;
 
   return `
     <article class="concurso-card">
       <div>
         <div class="dossier-header">
           <h3 class="dossier-title">
-            ${safe(concurso.sigla)} · ${safe(concurso.titulo)}
+            ${heading}
           </h3>
           <button
             type="button"
             class="btn ${concurso.salvo ? 'btn-primary' : 'btn-outline'} btn-sm"
             aria-pressed="${concurso.salvo ? 'true' : 'false'}"
             onclick="window.AprovaApp.toggleFavorito('${safeId}')"
-            title="${concurso.salvo ? 'Remover dos salvos' : 'Salvar concurso no caderno'}"
+            title="${concurso.salvo ? 'Remover do caderno de estudos' : 'Salvar no caderno de estudos'}"
           >
-            ${concurso.salvo ? window.AprovaUtils.icon('bookmarkFilled') : window.AprovaUtils.icon('bookmark')}
-            <span>${concurso.salvo ? 'Salvo' : 'Salvar'}</span>
+            ${concurso.salvo ? utils.icon('bookmarkFilled') : utils.icon('bookmark')}
+            <span>${concurso.salvo ? 'Salvo no caderno' : 'Salvar no caderno'}</span>
           </button>
         </div>
 
@@ -44,8 +48,9 @@ window.AprovaComponents.renderConcursoCard = function (concurso) {
         </p>
 
         <div class="dossier-badges">
-          <span class="badge ${badgeClass}">${statusDot} <span>${safe(concurso.status_label)}</span></span>
-          ${secondaryBadge}
+          <span class="badge ${badgeClass}">${statusDot} <span>${safe(shortStatus)}</span></span>
+          ${probBadge}
+          ${materiaisBadge}
           <span class="badge badge-neutral">${safe(concurso.area)}</span>
         </div>
 
@@ -71,11 +76,14 @@ window.AprovaComponents.renderConcursoCard = function (concurso) {
         <div class="ai-editorial-note">
           <div class="ai-editorial-head">
             <span>Diagnóstico Aprova+ IA</span>
-            <span class="corte-ref">Corte ref.: ${safe(corteVal)}</span>
+            <span class="corte-ref">Último corte: ${safe(corteVal)}</span>
           </div>
           <p class="ai-editorial-body">
             ${safe(concurso.resumo_ia)}
           </p>
+          <button type="button" class="link-expand-note" onclick="window.AprovaComponents.openConcursoModal('${safeId}', this)">
+            Ler parecer completo e matriz no Raio-X →
+          </button>
         </div>
       </div>
 
@@ -84,7 +92,7 @@ window.AprovaComponents.renderConcursoCard = function (concurso) {
           <span>Raio-X e Materiais (${materiaisCount})</span>
         </button>
         <button type="button" class="btn btn-outline" onclick="window.AprovaApp.irParaMateriaisDoConcurso('${safeId}')">
-          ${window.AprovaUtils.icon('download')}
+          ${utils.icon('download')}
           <span>Roteiros PDF</span>
         </button>
       </div>

@@ -9,11 +9,24 @@ window.AprovaComponents.renderHeaderUserWidget = function () {
   if (!box) return;
 
   const user = window.AprovaAPI.obterUsuarioAtual();
+  const isContaActive = window.AprovaApp?.state?.currentView === 'conta';
+  const utils = window.AprovaUtils;
+
   if (!user) {
     box.innerHTML = `
       <div class="header-user-actions">
+        <button
+          type="button"
+          class="btn ${isContaActive ? 'btn-primary' : 'btn-outline'} btn-sm"
+          aria-current="${isContaActive ? 'page' : 'false'}"
+          onclick="window.AprovaApp.switchView('conta')"
+          title="Abrir meu caderno e preferências"
+        >
+          ${utils.icon('book')}
+          <span>Meu Caderno</span>
+        </button>
         <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.openAuthModal('login', this)">
-          ${window.AprovaUtils.icon('user')}
+          ${utils.icon('user')}
           <span>Entrar</span>
         </button>
         <button type="button" class="btn btn-primary btn-sm" onclick="window.AprovaComponents.openAuthModal('register', this)">
@@ -24,12 +37,13 @@ window.AprovaComponents.renderHeaderUserWidget = function () {
     return;
   }
 
-  const safe = (v) => window.AprovaUtils.safeText(v);
+  const safe = (v) => utils.safeText(v);
   box.innerHTML = `
     <div class="header-user-actions">
       <button
         type="button"
-        class="btn btn-outline btn-sm"
+        class="btn ${isContaActive ? 'btn-primary' : 'btn-outline'} btn-sm"
+        aria-current="${isContaActive ? 'page' : 'false'}"
         onclick="window.AprovaApp.switchView('conta')"
         title="Abrir Meu Painel de Estudos e Conta"
       >
@@ -48,12 +62,25 @@ window.AprovaComponents.renderHeaderUserWidget = function () {
   `;
 };
 
+window.AprovaComponents.togglePasswordVisibility = function (inputId, btnEl) {
+  const input = document.getElementById(inputId);
+  if (!input || !btnEl) return;
+  const utils = window.AprovaUtils;
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btnEl.setAttribute('aria-pressed', showing ? 'false' : 'true');
+  btnEl.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Ocultar senha');
+  btnEl.title = showing ? 'Mostrar senha' : 'Ocultar senha';
+  btnEl.innerHTML = showing ? utils.icon('eye') : utils.icon('eyeOff');
+};
+
 window.AprovaComponents.openAuthModal = function (modo = 'login', triggerEl) {
   const modal = document.getElementById('auth-modal');
   const body = document.getElementById('auth-modal-body');
   if (!modal || !body) return;
 
-  window.AprovaUtils.openAccessibleModal('auth-modal', triggerEl || document.activeElement);
+  const utils = window.AprovaUtils;
+  utils.openAccessibleModal('auth-modal', triggerEl || document.activeElement);
 
   const isLogin = modo === 'login';
   body.innerHTML = `
@@ -62,7 +89,7 @@ window.AprovaComponents.openAuthModal = function (modo = 'login', triggerEl) {
         ${isLogin ? 'Entrar na sua Conta Aprova+ IA' : 'Criar Conta Gratuita no Aprova+ IA'}
       </h2>
       <p class="modal-subtitle">
-        Sincronize seus concursos salvos, o histórico de apostilas estudadas e os parâmetros do Copiloto IA.
+        Sincronize seus concursos salvos, o histórico de roteiros estudados e os parâmetros do Copiloto IA.
       </p>
     </div>
 
@@ -95,16 +122,21 @@ window.AprovaComponents.openAuthModal = function (modo = 'login', triggerEl) {
         </div>
         <div class="field-group">
           <label for="login-senha">Senha de Acesso</label>
-          <input type="password" id="login-senha" class="field-input" placeholder="Digite sua senha" autocomplete="current-password" required />
+          <div class="password-field-wrap">
+            <input type="password" id="login-senha" class="field-input" placeholder="Digite sua senha" autocomplete="current-password" required />
+            <button type="button" class="password-toggle-btn" aria-label="Mostrar senha" aria-pressed="false" title="Mostrar senha" onclick="window.AprovaComponents.togglePasswordVisibility('login-senha', this)">
+              ${utils.icon('eye')}
+            </button>
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">
+        <button type="submit" id="login-submit-btn" class="btn btn-primary btn-block">
           Entrar na Plataforma
         </button>
       </form>
 
       <div class="auth-demo-bar">
         <span class="text-caption-muted">Acesso rápido de avaliação:</span>
-        <button type="button" class="btn btn-accent btn-sm" onclick="window.AprovaComponents.entrarContaDemo()">
+        <button type="button" class="btn btn-accent btn-sm" onclick="window.AprovaComponents.entrarContaDemo(this)">
           Entrar com Conta Demo (Carlos Lucas)
         </button>
       </div>
@@ -112,15 +144,20 @@ window.AprovaComponents.openAuthModal = function (modo = 'login', triggerEl) {
       <form id="auth-register-form" onsubmit="window.AprovaComponents.submeterCadastro(event)" class="form-grid-2">
         <div class="field-group form-span-2">
           <label for="reg-nome">Nome Completo</label>
-          <input type="text" id="reg-nome" class="field-input" placeholder="Ex: Ana Beatriz Silva" minlength="2" required />
+          <input type="text" id="reg-nome" class="field-input" placeholder="Ex: Ana Beatriz Silva" autocomplete="name" minlength="2" required />
         </div>
         <div class="field-group">
           <label for="reg-email">E-mail Principal</label>
-          <input type="email" id="reg-email" class="field-input" placeholder="seu@email.com" minlength="5" required />
+          <input type="email" id="reg-email" class="field-input" placeholder="seu@email.com" autocomplete="email" minlength="5" required />
         </div>
         <div class="field-group">
           <label for="reg-senha">Senha</label>
-          <input type="password" id="reg-senha" class="field-input" placeholder="Mínimo 4 caracteres" minlength="4" required />
+          <div class="password-field-wrap">
+            <input type="password" id="reg-senha" class="field-input" placeholder="Mínimo 4 caracteres" autocomplete="new-password" minlength="4" required />
+            <button type="button" class="password-toggle-btn" aria-label="Mostrar senha" aria-pressed="false" title="Mostrar senha" onclick="window.AprovaComponents.togglePasswordVisibility('reg-senha', this)">
+              ${utils.icon('eye')}
+            </button>
+          </div>
         </div>
         <div class="field-group">
           <label for="reg-carreira">Carreira Principal de Foco</label>
@@ -143,7 +180,7 @@ window.AprovaComponents.openAuthModal = function (modo = 'login', triggerEl) {
         <div class="field-group">
           <label for="reg-uf">UF de Interesse</label>
           <select id="reg-uf" class="field-input">
-            <option value="Nacional">Nacional (Qualquer Estado)</option>
+            <option value="Nacional">Nacional (Vagas em Todo o Brasil)</option>
             <option value="DF">Distrito Federal (DF)</option>
             <option value="SP">São Paulo (SP)</option>
           </select>
@@ -157,7 +194,7 @@ window.AprovaComponents.openAuthModal = function (modo = 'login', triggerEl) {
             <option value="6">6 horas/dia</option>
           </select>
         </div>
-        <button type="submit" class="btn btn-primary form-span-2">
+        <button type="submit" id="register-submit-btn" class="btn btn-primary form-span-2">
           Criar Conta e Abrir Caderno de Estudos
         </button>
       </form>
@@ -187,7 +224,9 @@ window.AprovaComponents.submeterLogin = async function (event) {
   const email = document.getElementById('login-email').value.trim();
   const senha = document.getElementById('login-senha').value;
   const errBox = document.getElementById('auth-error-box');
+  const submitBtn = document.getElementById('login-submit-btn');
 
+  window.AprovaUtils.setButtonLoading(submitBtn, true, 'Entrando...');
   try {
     const resp = await window.AprovaAPI.loginUsuario(email, senha);
     window.AprovaComponents.closeAuthModal();
@@ -201,6 +240,7 @@ window.AprovaComponents.submeterLogin = async function (event) {
       window.AprovaComponents.renderMateriaisHub();
     }
   } catch (err) {
+    window.AprovaUtils.setButtonLoading(submitBtn, false);
     if (errBox) {
       errBox.classList.add('visible');
       errBox.textContent = err.message || 'Erro ao realizar login.';
@@ -208,8 +248,9 @@ window.AprovaComponents.submeterLogin = async function (event) {
   }
 };
 
-window.AprovaComponents.entrarContaDemo = async function () {
+window.AprovaComponents.entrarContaDemo = async function (triggerBtn) {
   const errBox = document.getElementById('auth-error-box');
+  window.AprovaUtils.setButtonLoading(triggerBtn, true, 'Entrando...');
   try {
     const resp = await window.AprovaAPI.loginUsuario('carlos@aprovamais.com.br', '123456');
     window.AprovaComponents.closeAuthModal();
@@ -223,6 +264,7 @@ window.AprovaComponents.entrarContaDemo = async function () {
       window.AprovaComponents.renderMateriaisHub();
     }
   } catch (err) {
+    window.AprovaUtils.setButtonLoading(triggerBtn, false);
     if (errBox) {
       errBox.classList.add('visible');
       errBox.textContent = err.message || 'Não foi possível entrar na conta demo.';
@@ -235,6 +277,7 @@ window.AprovaComponents.entrarContaDemo = async function () {
 window.AprovaComponents.submeterCadastro = async function (event) {
   event.preventDefault();
   const errBox = document.getElementById('auth-error-box');
+  const submitBtn = document.getElementById('register-submit-btn');
   const payload = {
     nome: document.getElementById('reg-nome').value.trim(),
     email: document.getElementById('reg-email').value.trim(),
@@ -245,6 +288,7 @@ window.AprovaComponents.submeterCadastro = async function (event) {
     horas_estudo_dia: parseInt(document.getElementById('reg-horas').value, 10)
   };
 
+  window.AprovaUtils.setButtonLoading(submitBtn, true, 'Criando conta...');
   try {
     const resp = await window.AprovaAPI.registrarUsuario(payload);
     window.AprovaComponents.closeAuthModal();
@@ -252,6 +296,7 @@ window.AprovaComponents.submeterCadastro = async function (event) {
     window.AprovaUtils.showToast(resp.mensagem);
     window.AprovaApp.switchView('conta');
   } catch (err) {
+    window.AprovaUtils.setButtonLoading(submitBtn, false);
     if (errBox) {
       errBox.classList.add('visible');
       errBox.textContent = err.message || 'Erro ao criar conta.';
@@ -276,6 +321,7 @@ window.AprovaComponents.renderUserDashboard = async function () {
   const container = document.getElementById('user-dashboard-container');
   if (!container) return;
 
+  const utils = window.AprovaUtils;
   const user = window.AprovaAPI.obterUsuarioAtual();
   if (!user) {
     const draft = window.AprovaAPI.obterRascunhoVisitante();
@@ -295,7 +341,7 @@ window.AprovaComponents.renderUserDashboard = async function () {
           <button type="button" class="btn btn-accent" onclick="window.AprovaComponents.openAuthModal('register', this)">
             Criar Conta Gratuita
           </button>
-          <button type="button" class="btn btn-outline" onclick="window.AprovaComponents.entrarContaDemo()">
+          <button type="button" class="btn btn-outline" onclick="window.AprovaComponents.entrarContaDemo(this)">
             Entrar com Conta Demo (1 Clique)
           </button>
         </div>
@@ -315,9 +361,9 @@ window.AprovaComponents.renderUserDashboard = async function () {
     container.innerHTML = `
       <div class="empty-state-sheet empty-state-narrow" role="alert">
         <h3>Não foi possível carregar seu painel de estudos</h3>
-        <p>${window.AprovaUtils.escapeHtml(err.message || 'Falha ao consultar concursos e materiais.')}</p>
+        <p>${utils.escapeHtml(err.message || 'Falha ao consultar concursos e materiais.')}</p>
         <button type="button" class="btn btn-primary" onclick="window.AprovaComponents.renderUserDashboard()">
-          ${window.AprovaUtils.icon('reset')}
+          ${utils.icon('reset')}
           <span>Tentar novamente</span>
         </button>
       </div>
@@ -325,8 +371,8 @@ window.AprovaComponents.renderUserDashboard = async function () {
     return;
   }
 
-  const safe = (v) => window.AprovaUtils.safeText(v);
-  const esc = (v) => window.AprovaUtils.escapeHtml(v);
+  const safe = (v) => utils.safeText(v);
+  const esc = (v) => utils.escapeHtml(v);
   const salvos = (concursosResp.concursos || []).filter(c => c.salvo);
   const estudadosList = (materiaisResp.materiais || []).filter(m => m.estudado);
 
@@ -336,10 +382,10 @@ window.AprovaComponents.renderUserDashboard = async function () {
       <div class="mat-item">
         <div class="mat-item-info">
           <div class="mat-item-title">
-            ${safe(c.sigla)} · ${safe(c.titulo)}
+            ${utils.formatConcursoHeading(c.sigla, c.titulo)}
           </div>
           <div class="mat-item-meta">
-            <span class="badge ${window.AprovaUtils.getStatusBadgeClass(c.status)}">${safe(c.status_label)}</span>
+            <span class="badge ${utils.getStatusBadgeClass(c.status)}">${safe(utils.getShortStatusLabel(c.status))}</span>
             <span>Banca: <strong>${safe(c.banca)}</strong></span>
             <span>Salário: <strong class="text-green">${safe(c.salario)}</strong></span>
           </div>
@@ -349,7 +395,7 @@ window.AprovaComponents.renderUserDashboard = async function () {
             Raio-X e Materiais
           </button>
           <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.removerFavoritoDaConta('${safeId}')">
-            ${window.AprovaUtils.icon('trash')}
+            ${utils.icon('trash')}
             <span>Remover</span>
           </button>
         </div>
@@ -367,22 +413,22 @@ window.AprovaComponents.renderUserDashboard = async function () {
               ${safe(m.titulo)}
             </div>
             <div class="mat-item-meta">
-              <span class="badge ${window.AprovaUtils.getStatusBadgeClass(m.concurso_status || 'aberto')}">${safe(m.concurso_sigla || m.concurso_id.toUpperCase())}</span>
+              <span class="badge ${utils.getStatusBadgeClass(m.concurso_status || 'aberto')}">${safe(m.concurso_sigla || m.concurso_id.toUpperCase())}</span>
               <span class="badge badge-cobalt">${safe(m.categoria)}</span>
               <span>Formato: <strong>Roteiro + Checklist (PDF)</strong></span>
             </div>
           </div>
           <div class="mat-item-actions">
             <button type="button" class="btn btn-outline btn-sm" aria-expanded="false" aria-controls="conta-mat-preview-${mid}" onclick="window.AprovaUtils.toggleMaterialPreview(${mid}, 'conta-mat', this)">
-              ${window.AprovaUtils.icon('eye')}
+              ${utils.icon('eye')}
               <span>Pré-visualizar</span>
             </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaAPI.baixarMaterial(${mid})">
-              ${window.AprovaUtils.icon('download')}
+            <button type="button" class="btn btn-accent btn-sm" onclick="window.AprovaAPI.baixarMaterial(${mid})">
+              ${utils.icon('download')}
               <span>Baixar PDF</span>
             </button>
             <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaComponents.desmarcarMaterialDaConta(${mid})">
-              ${window.AprovaUtils.icon('x')}
+              ${utils.icon('x')}
               <span>Desmarcar</span>
             </button>
           </div>
@@ -413,7 +459,7 @@ window.AprovaComponents.renderUserDashboard = async function () {
       </div>
 
       <div class="account-ledger-cell">
-        <span class="account-metric-label">Materiais Concluídos</span>
+        <span class="account-metric-label">Materiais Estudados</span>
         <strong class="account-metric-value metric-green">${materiaisResp.estudados}/${materiaisResp.total}</strong>
         <span class="account-metric-sub">${materiaisResp.progresso_pct}% do acervo estudado</span>
       </div>
@@ -470,7 +516,7 @@ window.AprovaComponents.renderUserDashboard = async function () {
             <div class="field-group">
               <label for="prof-uf">UF de Interesse</label>
               <select id="prof-uf" class="field-input">
-                <option value="Nacional" ${user.uf_interesse === 'Nacional' ? 'selected' : ''}>Nacional</option>
+                <option value="Nacional" ${user.uf_interesse === 'Nacional' ? 'selected' : ''}>Nacional (Todo o Brasil)</option>
                 <option value="DF" ${user.uf_interesse === 'DF' ? 'selected' : ''}>Distrito Federal (DF)</option>
                 <option value="SP" ${user.uf_interesse === 'SP' ? 'selected' : ''}>São Paulo (SP)</option>
               </select>
@@ -485,13 +531,13 @@ window.AprovaComponents.renderUserDashboard = async function () {
               </select>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" id="profile-submit-btn" class="btn btn-primary">
             Salvar Alterações no Perfil
           </button>
         </form>
       </div>
 
-      <!-- Coluna 2: Caderno Ativo (Concursos Salvos + Materiais Concluídos) -->
+      <!-- Coluna 2: Caderno Ativo (Concursos Salvos + Materiais Estudados) -->
       <div class="stack-col-lg">
         <div class="ia-sheet">
           <div class="match-result-head">
@@ -502,19 +548,19 @@ window.AprovaComponents.renderUserDashboard = async function () {
               Explorar Editais
             </button>
           </div>
-          ${salvosHtml || `<p class="empty-inline-note">Nenhum concurso salvo no momento. Utilize o botão "Salvar" nos dossiês da aba Concursos para monitorá-los aqui.</p>`}
+          ${salvosHtml || `<p class="empty-inline-note">Nenhum concurso salvo no momento. Utilize o botão "Salvar no caderno" nos dossiês da aba Concursos para monitorá-los aqui.</p>`}
         </div>
 
         <div class="ia-sheet">
           <div class="match-result-head">
             <h3 class="sheet-title-sm">
-              Materiais Concluídos (${estudadosList.length})
+              Materiais Estudados (${estudadosList.length})
             </h3>
             <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaApp.switchView('materiais')">
               Abrir Acervo
             </button>
           </div>
-          ${estudadosHtml || `<p class="empty-inline-note">Nenhum guia marcado como concluído ainda. Marque os materiais estudados no Acervo ou dentro do Raio-X de cada concurso.</p>`}
+          ${estudadosHtml || `<p class="empty-inline-note">Nenhum roteiro marcado como estudado ainda. Marque os materiais no Acervo ou dentro do Raio-X de cada concurso.</p>`}
         </div>
       </div>
     </div>
@@ -578,6 +624,7 @@ window.AprovaComponents.desmarcarMaterialDaConta = async function (materialId) {
 window.AprovaComponents.salvarPerfilUsuario = async function (event) {
   event.preventDefault();
   const errBox = document.getElementById('profile-error-box');
+  const submitBtn = document.getElementById('profile-submit-btn');
   const payload = {
     nome: document.getElementById('prof-nome').value.trim(),
     carreira_foco: document.getElementById('prof-carreira').value,
@@ -586,12 +633,14 @@ window.AprovaComponents.salvarPerfilUsuario = async function (event) {
     horas_estudo_dia: parseInt(document.getElementById('prof-horas').value, 10)
   };
 
+  window.AprovaUtils.setButtonLoading(submitBtn, true, 'Salvando...');
   try {
     const resp = await window.AprovaAPI.atualizarPerfilUsuario(payload);
     window.AprovaUtils.showToast(resp.mensagem);
     window.AprovaComponents.renderHeaderUserWidget();
     window.AprovaComponents.renderUserDashboard();
   } catch (err) {
+    window.AprovaUtils.setButtonLoading(submitBtn, false);
     if (errBox) {
       errBox.classList.add('visible');
       errBox.textContent = err.message || 'Erro ao atualizar perfil.';

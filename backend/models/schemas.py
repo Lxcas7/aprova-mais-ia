@@ -79,6 +79,7 @@ class MatchPerfilRequest(BaseModel):
     escolaridade: str = "Médio"
     area_interesse: str = "todas"
     horas_por_dia: int = 3
+    dias_por_semana: int = Field(6, ge=1, le=7)
     foco_status: str = "todos"  # 'aberto', 'previsto', 'todos'
 
 

@@ -3,19 +3,27 @@
  */
 window.AprovaComponents = window.AprovaComponents || {};
 
-window.AprovaComponents.openConcursoModal = async function (concursoId, triggerEl) {
+window.AprovaComponents.openConcursoModal = async function (concursoId, triggerEl, options = {}) {
   const modal = document.getElementById('concurso-modal');
   const content = document.getElementById('concurso-modal-body');
   if (!modal || !content) return;
 
-  window.AprovaUtils.openAccessibleModal('concurso-modal', triggerEl || document.activeElement);
+  const utils = window.AprovaUtils;
+  if (!options.skipHash) {
+    const desiredHash = `#concurso/${encodeURIComponent(concursoId)}`;
+    if (window.location.hash !== desiredHash) {
+      history.pushState({ concursoId }, '', desiredHash);
+    }
+  }
+
+  utils.openAccessibleModal('concurso-modal', triggerEl || document.activeElement);
   content.innerHTML = `<h2 id="concurso-modal-title" class="sr-only">Raio-X do Concurso e Materiais</h2><div class="empty-state-sheet empty-state-borderless" role="status">Carregando dossiê técnico e acervo vinculado...</div>`;
 
   const closeBtn = modal.querySelector('.modal-close-btn');
   if (closeBtn) closeBtn.focus();
 
-  const safe = (v) => window.AprovaUtils.safeText(v);
-  const safeId = window.AprovaUtils.escapeHtml(concursoId);
+  const safe = (v) => utils.safeText(v);
+  const safeId = utils.escapeHtml(concursoId);
 
   let c = null;
   try {
@@ -24,10 +32,10 @@ window.AprovaComponents.openConcursoModal = async function (concursoId, triggerE
     content.innerHTML = `
       <div class="empty-state-sheet empty-state-borderless" role="alert">
         <h2 id="concurso-modal-title" class="modal-title">Não foi possível carregar este concurso</h2>
-        <p>${window.AprovaUtils.escapeHtml(err.message || 'Ocorreu uma falha ao consultar os dados do edital.')}</p>
+        <p>${utils.escapeHtml(err.message || 'Ocorreu uma falha ao consultar os dados do edital.')}</p>
         <div class="empty-state-actions">
-          <button type="button" class="btn btn-primary" onclick="window.AprovaComponents.openConcursoModal('${safeId}')">
-            ${window.AprovaUtils.icon('reset')}
+          <button type="button" class="btn btn-primary" onclick="window.AprovaComponents.openConcursoModal('${safeId}', null, { skipHash: true })">
+            ${utils.icon('reset')}
             <span>Tentar novamente</span>
           </button>
           <button type="button" class="btn btn-outline" onclick="window.AprovaComponents.closeConcursoModal()">
@@ -54,8 +62,10 @@ window.AprovaComponents.openConcursoModal = async function (concursoId, triggerE
     return;
   }
 
-  const badgeClass = window.AprovaUtils.getStatusBadgeClass(c.status);
-  const statusDot = window.AprovaUtils.getStatusDot(c.status);
+  const badgeClass = utils.getStatusBadgeClass(c.status);
+  const statusDot = utils.getStatusDot(c.status);
+  const shortStatus = utils.getShortStatusLabel(c.status);
+  const heading = utils.formatConcursoHeading(c.sigla, c.titulo);
 
   const probVal = c.probabilidade_ia || c.prob_ia || 100;
   const inscrVal = c.inscricoes || c.prazo || 'Consulte o edital';
@@ -98,10 +108,10 @@ window.AprovaComponents.openConcursoModal = async function (concursoId, triggerE
               type="button"
               class="btn ${m.estudado ? 'btn-primary' : 'btn-outline'} btn-sm"
               aria-pressed="${m.estudado ? 'true' : 'false'}"
-              onclick="window.AprovaComponents.toggleEstudadoNoModal(${mid}, '${safeId}')"
+              onclick="window.AprovaComponents.toggleEstudadoNoModal(${mid}, '${safeId}', this)"
             >
-              ${m.estudado ? window.AprovaUtils.icon('check') : ''}
-              <span>${m.estudado ? 'Concluído' : 'Marcar Estudado'}</span>
+              ${m.estudado ? utils.icon('check') : ''}
+              <span>${m.estudado ? 'Estudado' : 'Marcar estudado'}</span>
             </button>
             <button
               type="button"
@@ -110,7 +120,7 @@ window.AprovaComponents.openConcursoModal = async function (concursoId, triggerE
               aria-controls="modal-mat-preview-${mid}"
               onclick="window.AprovaUtils.toggleMaterialPreview(${mid}, 'modal-mat', this)"
             >
-              ${window.AprovaUtils.icon('eye')}
+              ${utils.icon('eye')}
               <span>Pré-visualizar</span>
             </button>
             <button
@@ -118,7 +128,7 @@ window.AprovaComponents.openConcursoModal = async function (concursoId, triggerE
               class="btn btn-accent btn-sm"
               onclick="window.AprovaAPI.baixarMaterial(${mid})"
             >
-              ${window.AprovaUtils.icon('download')}
+              ${utils.icon('download')}
               <span>Baixar PDF</span>
             </button>
           </div>
@@ -130,15 +140,27 @@ window.AprovaComponents.openConcursoModal = async function (concursoId, triggerE
 
   content.innerHTML = `
     <div class="modal-header-block">
-      <h2 id="concurso-modal-title" class="modal-title">
-        ${safe(c.sigla)} · ${safe(c.titulo)}
-      </h2>
+      <div class="modal-title-row">
+        <h2 id="concurso-modal-title" class="modal-title">
+          ${heading}
+        </h2>
+        <button
+          type="button"
+          id="modal-fav-btn"
+          class="btn ${c.salvo ? 'btn-primary' : 'btn-outline'} btn-sm"
+          aria-pressed="${c.salvo ? 'true' : 'false'}"
+          onclick="window.AprovaComponents.toggleFavoritoNoModal('${safeId}', this)"
+        >
+          ${c.salvo ? utils.icon('bookmarkFilled') : utils.icon('bookmark')}
+          <span>${c.salvo ? 'Salvo no caderno' : 'Salvar no caderno'}</span>
+        </button>
+      </div>
       <p class="dossier-subtitle">
         Órgão: <strong>${safe(c.orgao)}</strong> · Banca: <strong>${safe(c.banca)}</strong> · Área: <strong>${safe(c.area)}</strong> · UF: <strong>${safe(c.uf)}</strong>
       </p>
       <div class="dossier-badges">
-        <span class="badge ${badgeClass}">${statusDot} <span>${safe(c.status_label)}</span></span>
-        <span class="badge badge-encerrado">Índice IA: ${safe(probVal)}%</span>
+        <span class="badge ${badgeClass}">${statusDot} <span>${safe(shortStatus)}</span></span>
+        ${c.status === 'previsto' ? `<span class="badge badge-cobalt">Probabilidade IA: ${safe(probVal)}%</span>` : ''}
         <span class="badge badge-neutral">Último edital: ${safe(c.ultimo_concurso_ano || 'Consulte histórico')}</span>
       </div>
     </div>
@@ -163,6 +185,17 @@ window.AprovaComponents.openConcursoModal = async function (concursoId, triggerE
       <h3 class="modal-section-title">
         Matriz de Disciplinas e Pesos (Edital Verticalizado)
       </h3>
+      <details class="domain-glossary">
+        <summary>
+          ${utils.icon('help')}
+          <span>Entenda os termos desta matriz (Prioridade, Pontos Líquidos e Edital Verticalizado)</span>
+        </summary>
+        <p>
+          <strong>Prioridade IA:</strong> calculada pelo peso percentual da disciplina na nota final. Foque ~70% do tempo nas matérias <em>Crítica</em> e <em>Alta</em>.
+          <strong>Pontos Líquidos (Cebraspe):</strong> itens errados podem anular acertos.
+          <strong>Edital Verticalizado:</strong> distribuição estruturada para você acompanhar o estudo por bloco.
+        </p>
+      </details>
       <div class="table-scroll-wrap">
         <table class="data-table" aria-label="Matriz de Disciplinas e Pesos">
           <thead>
@@ -196,24 +229,45 @@ window.AprovaComponents.openConcursoModal = async function (concursoId, triggerE
 
 window.AprovaComponents.closeConcursoModal = function () {
   window.AprovaUtils.closeAccessibleModal('concurso-modal');
+  if (window.location.hash.startsWith('#concurso/')) {
+    const fallbackView = window.AprovaApp?.state?.currentView || 'explorar';
+    history.replaceState({ view: fallbackView }, '', `#${fallbackView}`);
+  }
 };
 
-window.AprovaComponents.toggleEstudadoNoModal = async function (materialId, concursoId) {
+window.AprovaComponents.toggleFavoritoNoModal = async function (concursoId, btnEl) {
+  const res = await window.AprovaApp.toggleFavorito(concursoId);
+  if (!res || !btnEl) return;
+  const utils = window.AprovaUtils;
+  btnEl.className = `btn ${res.salvo ? 'btn-primary' : 'btn-outline'} btn-sm`;
+  btnEl.setAttribute('aria-pressed', res.salvo ? 'true' : 'false');
+  btnEl.innerHTML = `${res.salvo ? utils.icon('bookmarkFilled') : utils.icon('bookmark')}<span>${res.salvo ? 'Salvo no caderno' : 'Salvar no caderno'}</span>`;
+};
+
+window.AprovaComponents.toggleEstudadoNoModal = async function (materialId, concursoId, btnEl) {
   try {
     const res = await window.AprovaAPI.alternarMaterialEstudado(materialId);
+    const utils = window.AprovaUtils;
+
+    if (btnEl) {
+      btnEl.className = `btn ${res.estudado ? 'btn-primary' : 'btn-outline'} btn-sm`;
+      btnEl.setAttribute('aria-pressed', res.estudado ? 'true' : 'false');
+      btnEl.innerHTML = `${res.estudado ? utils.icon('check') : ''}<span>${res.estudado ? 'Estudado' : 'Marcar estudado'}</span>`;
+    }
+
     if (!res.estudado) {
-      window.AprovaUtils.showToast('Material marcado como pendente.', {
+      utils.showToast('Material marcado como pendente.', {
         actionLabel: 'Desfazer',
-        onAction: () => window.AprovaComponents.toggleEstudadoNoModal(materialId, concursoId)
+        onAction: () => window.AprovaComponents.toggleEstudadoNoModal(materialId, concursoId, btnEl)
       });
     } else {
-      window.AprovaUtils.showToast(
+      utils.showToast(
         res.isGuest
           ? 'Concluído neste dispositivo. Entre ou crie conta para salvar na nuvem.'
-          : 'Material marcado como concluído no seu caderno.'
+          : 'Material marcado como estudado no seu caderno.'
       );
     }
-    await window.AprovaComponents.openConcursoModal(concursoId, window.AprovaUtils._modalTriggers['concurso-modal']);
+
     window.AprovaApp.carregarConcursos();
     window.AprovaApp.atualizarIndicadoresUsuario();
   } catch (err) {

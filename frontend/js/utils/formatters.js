@@ -23,6 +23,61 @@ window.AprovaUtils = {
     return this.escapeHtml(this.cleanText(String(str)));
   },
 
+  formatConcursoHeading(sigla, titulo) {
+    const cleanSigla = this.cleanText(String(sigla || '')).trim();
+    let cleanTitulo = this.cleanText(String(titulo || '')).trim();
+    if (cleanSigla) {
+      const escapedSigla = cleanSigla.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      cleanTitulo = cleanTitulo.replace(new RegExp(`\\s*\\(${escapedSigla}\\)`, 'gi'), '');
+      if (cleanTitulo.toUpperCase().startsWith(cleanSigla.toUpperCase() + ' ·')) {
+        return this.escapeHtml(cleanTitulo);
+      }
+      if (cleanTitulo.toUpperCase().startsWith(cleanSigla.toUpperCase() + ' ')) {
+        return this.escapeHtml(cleanTitulo);
+      }
+    }
+    return this.escapeHtml(cleanSigla ? `${cleanSigla} · ${cleanTitulo}` : cleanTitulo);
+  },
+
+  getShortStatusLabel(status) {
+    if (status === 'aberto') return 'Edital Aberto';
+    if (status === 'previsto') return 'Previsto · Radar IA';
+    return 'Histórico · Provas';
+  },
+
+  formatSourceWithLinks(str) {
+    if (!str) return '';
+    const raw = this.cleanText(String(str));
+    const urlRegex = /(https?:\/\/[^\s<>"']+)/gi;
+    const parts = raw.split(urlRegex);
+    return parts.map(part => {
+      if (/^https?:\/\//i.test(part)) {
+        const safeUrl = this.escapeHtml(part);
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>`;
+      }
+      return this.escapeHtml(part);
+    }).join('');
+  },
+
+  setButtonLoading(btn, isLoading, loadingText = 'Processando...') {
+    if (!btn) return;
+    if (isLoading) {
+      if (btn.dataset.origHtml === undefined) {
+        btn.dataset.origHtml = btn.innerHTML;
+      }
+      btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
+      btn.textContent = loadingText;
+    } else {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      if (btn.dataset.origHtml !== undefined) {
+        btn.innerHTML = btn.dataset.origHtml;
+        delete btn.dataset.origHtml;
+      }
+    }
+  },
+
   sanitizeRichHtml(str) {
     if (!str) return '';
     const cleaned = this.cleanText(String(str));
@@ -264,6 +319,8 @@ window.AprovaUtils = {
       bookmarkFilled: '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>',
       download: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
       eye: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+      eyeOff: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="m1 1 22 22"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>',
+      help: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>',
       book: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>',
       check: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
       radar: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 12 19 5"/><circle cx="12" cy="12" r="4"/></svg>',

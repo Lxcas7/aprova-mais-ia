@@ -66,7 +66,7 @@ def cadastrar_lead_smoke_test(lead: LeadPremiumInput):
     return {
         "id": novo_id,
         "sucesso": True,
-        "mensagem": f"Cadastro VIP de {lead.nome} salvo no banco SQLite! Funcionalidade priorizada: {lead.recurso_favorito}."
+        "mensagem": f"Inscrição prioritária de {lead.nome} confirmada! Recurso selecionado: {lead.recurso_favorito}."
     }
 
 
