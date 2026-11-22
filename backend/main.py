@@ -20,6 +20,8 @@ from backend.routes.radar_routes import router as radar_router
 from backend.routes.ia_routes import router as ia_router
 from backend.routes.mvp_routes import router as mvp_router
 from backend.routes.auth_routes import router as auth_router
+from backend.routes.orquestracao_routes import router as orquestracao_router
+from backend.routes.questoes_routes import router as questoes_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -30,10 +32,19 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
+    allow_credentials="*" not in settings.CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    return response
 
 
 @app.on_event("startup")
@@ -53,6 +64,8 @@ def healthcheck():
 
 # Register API Routers
 app.include_router(auth_router)
+app.include_router(orquestracao_router)
+app.include_router(questoes_router)
 app.include_router(concursos_router)
 app.include_router(materiais_router)
 app.include_router(radar_router)

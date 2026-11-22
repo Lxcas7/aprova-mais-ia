@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="256" height="256" shape-rendering="geometricPrecision">
+  <!-- Document base with 45-degree chamfered top-right corner -->
+  <path d="M 6 4 L 26 4 L 34 12 L 34 36 L 6 36 Z" fill="#102338" />
+
+  <!-- Inner sheet cut creating modern architectural border / sheet surface -->
+  <path d="M 8.5 6.5 L 24.5 6.5 L 31.5 13.5 L 31.5 33.5 L 8.5 33.5 Z" fill="#f6f5f1" />
+
+  <!-- Precision folded corner facet -->
+  <path d="M 24.5 6.5 L 24.5 13.5 L 31.5 13.5 Z" fill="#102338" opacity="0.14" />
+  <path d="M 26 4 L 26 12 L 34 12 Z" fill="#102338" />
+
+  <!-- Optical mark / exam calibration timing tracks on left margin -->
+  <rect x="9.5" y="10" width="3.5" height="1.8" rx="0.5" fill="#0b4f6c" />
+  <rect x="9.5" y="14" width="3.5" height="1.8" rx="0.5" fill="#0b4f6c" />
+  <rect x="9.5" y="18" width="2" height="1.8" rx="0.5" fill="#0b4f6c" opacity="0.6" />
+
+  <!-- Ascending geometric monogram 'A' -->
+  <polygon points="18.5,10.5 22.5,10.5 28.5,30 24.5,30 23.1,25.5 17.9,25.5 16.5,30 12.5,30" fill="#102338" />
+  <polygon points="20.5,15.2 18.8,22 22.2,22" fill="#f6f5f1" />
+  <rect x="17.2" y="21.5" width="6.6" height="2.2" fill="#0b4f6c" />
+
+  <!-- Precision '+' cross mark positioned in the upper-right quadrant -->
+  <rect x="25.2" y="16.5" width="2.6" height="8" rx="0.6" fill="#8c3d19" />
+  <rect x="22.5" y="19.2" width="8" height="2.6" rx="0.6" fill="#8c3d19" />
+  <rect x="25.2" y="19.2" width="2.6" height="2.6" fill="#8c3d19" />
+</svg>

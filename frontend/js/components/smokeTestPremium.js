@@ -1,158 +1,232 @@
 /**
- * Componente: Plano Premium (Aprova+ PRO · Matriz Comparativa e Lista VIP Smoke Test)
+ * Tela 5: Planos e Assinaturas (Gratuito, Básico R$ 19,90, Pro R$ 37,90, Pro+ R$ 67,90 · Mensal / Anual 24% OFF)
  */
 window.AprovaComponents = window.AprovaComponents || {};
 
-window.AprovaComponents.renderPremiumView = function () {
-  const container = document.getElementById('premium-smoke-container');
-  if (!container) return;
+(function () {
+  let billingPeriod = 'mensal'; // 'mensal' | 'anual'
 
-  const user = window.AprovaAPI.obterUsuarioAtual();
-  const checkIcon = window.AprovaUtils.icon('check');
-  const shieldIcon = window.AprovaUtils.icon('shield');
-
-  container.innerHTML = `
-    <div class="split-workspace-pro">
-      <!-- Coluna 1: Matriz Comparativa Plano Gratuito vs Aprova+ PRO -->
-      <div class="ia-sheet">
-        <div class="match-result-head">
-          <h3 class="sheet-title">
-            Acesso Gratuito (MVP) vs. Aprova+ PRO
-          </h3>
-          <span class="badge badge-neutral">Comparativo de Escopo</span>
-        </div>
-        <p class="sheet-desc">
-          Toda a infraestrutura essencial de descoberta de editais, verificação de rumores e acervo base permanece gratuita para o candidato:
-        </p>
-
-        <ul class="pro-feature-list">
-          <li>
-            ${checkIcon}
-            <div><strong>Busca Centralizada em 3 Horizontes:</strong> Concursos Ativos com edital aberto, Previstos na Internet e Históricos com notas de corte.</div>
-          </li>
-          <li>
-            ${checkIcon}
-            <div><strong>Radar IA de Movimentações Web:</strong> Termômetro percentual de maturidade (comissão formada, dispensa de banca e pedidos no MGI).</div>
-          </li>
-          <li>
-            ${checkIcon}
-            <div><strong>Acervo Vinculado por Edital:</strong> Download imediato de editais verticalizados, apostilas direcionadas e provas passadas.</div>
-          </li>
-          <li>
-            ${checkIcon}
-            <div><strong>Caderno de Estudos Pessoal:</strong> Marcação de materiais concluídos, favoritos e telemetria de evolução na barra superior.</div>
-          </li>
-        </ul>
-
-        <div class="pro-tier-divider">
-          <div class="match-result-head">
-            <h4 class="sheet-subtitle">
-              Especificação Exclusiva Aprova+ PRO (Fase 2)
-            </h4>
-            <span class="badge badge-previsto">Em Validação</span>
-          </div>
-          <ul class="pro-feature-list pro-tier">
-            <li>
-              ${shieldIcon}
-              <div><strong>Alertas Instantâneos via WhatsApp e Telegram:</strong> Notificação imediata na publicação de portarias no DOU ou contratação de banca da sua carreira foco.</div>
-            </li>
-            <li>
-              ${shieldIcon}
-              <div><strong>Corretor de Discursivas e Redação por IA:</strong> Avaliação analítica baseada nos espelhos oficiais de correção da Cebraspe, FGV, FCC e Cesgranrio.</div>
-            </li>
-            <li>
-              ${shieldIcon}
-              <div><strong>Cronograma Dinâmico Adaptativo:</strong> Recálculo automático das metas semanais conforme sua taxa de acerto em baterias de questões.</div>
-            </li>
-            <li>
-              ${shieldIcon}
-              <div><strong>Preditor de Nota de Corte por Polo/Região:</strong> Simulação estatística de concorrência para escolha estratégica de lotação.</div>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- Coluna 2: Dossiê de Pré-Inscrição VIP Aprova+ PRO -->
-      <div class="ia-sheet">
-        <div class="match-result-head">
-          <h3 class="sheet-title">
-            Reserva na Lista VIP · Aprova+ PRO
-          </h3>
-          <span class="badge badge-aberto">30 Dias Grátis + 50% OFF</span>
-        </div>
-        <p class="sheet-desc">
-          Registre seu interesse prioritário sem custo para assegurar <strong>30 dias de acesso gratuito e 50% de desconto vitalício</strong> na abertura da Fase 2, além de votar na ferramenta que devemos liberar primeiro.
-        </p>
-
-        <form onsubmit="window.AprovaComponents.salvarLeadSmokeTest(event)" class="form-stack">
-          <div class="field-group">
-            <label for="lead-nome">Nome Completo</label>
-            <input type="text" id="lead-nome" class="field-input" placeholder="Ex: Carlos Eduardo Silva" value="${user ? user.nome : ''}" required />
-          </div>
-          <div class="field-group">
-            <label for="lead-contato">WhatsApp ou E-mail para Convite VIP</label>
-            <input type="text" id="lead-contato" class="field-input" placeholder="Ex: (11) 99999-8888 ou seu@email.com" value="${user ? user.email : ''}" required />
-          </div>
-          <div class="form-grid-2">
-            <div class="field-group">
-              <label for="lead-carreira">Carreira Foco</label>
-              <select id="lead-carreira" class="field-input">
-                <option value="Policial (PF / PRF / PC)">Policial (PF / PRF / PC)</option>
-                <option value="Bancária (Caixa / BB / BACEN)">Bancária (Caixa / BB / BACEN)</option>
-                <option value="Tribunais e Judiciário">Tribunais e Judiciário</option>
-                <option value="Administrativa / INSS / CNU">Administrativa / INSS / CNU</option>
-                <option value="Fiscal e Controle (Receita / CGU)">Fiscal e Controle (Receita / CGU)</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label for="lead-preco">Modalidade de Interesse</label>
-              <select id="lead-preco" class="field-input">
-                <option value="R$ 19,90/mês (Anual)">Plano Anual · R$ 19,90/mês</option>
-                <option value="R$ 29,90/mês (Mensal)" selected>Plano Mensal · R$ 29,90/mês</option>
-              </select>
-            </div>
-          </div>
-          <div class="field-group">
-            <label for="lead-recurso">Qual recurso PRO tem maior utilidade para a sua rotina?</label>
-            <select id="lead-recurso" class="field-input">
-              <option value="Alertas WhatsApp de Rumores e Editais">Alertas no WhatsApp sobre Rumores e Abertura de Edital</option>
-              <option value="Cronograma Adaptativo por IA">Cronograma de Estudos Adaptativo por IA</option>
-              <option value="Corretor de Discursivas IA (Padrão Banca)">Corretor de Redação e Discursivas por IA</option>
-              <option value="Simulados Inéditos Comentados">Gerador de Simulados Inéditos no Estilo da Banca</option>
-            </select>
-          </div>
-          <button type="submit" class="btn btn-accent btn-block">
-            Confirmar Reserva na Lista VIP PRO
-          </button>
-        </form>
-
-        <div id="smoke-test-feedback" class="smoke-feedback-box"></div>
-      </div>
-    </div>
-  `;
-};
-
-window.AprovaComponents.salvarLeadSmokeTest = async function (event) {
-  event.preventDefault();
-  const payload = {
-    nome: document.getElementById('lead-nome').value.trim(),
-    contato: document.getElementById('lead-contato').value.trim(),
-    carreira_foco: document.getElementById('lead-carreira').value,
-    recurso_favorito: document.getElementById('lead-recurso').value,
-    faixa_preco: document.getElementById('lead-preco').value
+  window.AprovaComponents.setPlanBilling = function (period) {
+    billingPeriod = period === 'anual' ? 'anual' : 'mensal';
+    window.AprovaComponents.renderPremiumView();
   };
 
-  const res = await window.AprovaAPI.cadastrarLeadPremium(payload);
-  window.AprovaUtils.showToast(res.mensagem);
-  window.AprovaComponents.renderHeaderUserWidget();
+  window.AprovaComponents.ativarPlanoSelecionado = async function (planoNome, btnEl) {
+    const user = window.AprovaAPI.obterUsuarioAtual();
+    const utils = window.AprovaUtils;
+    if (!user) {
+      window.AprovaComponents.openAuthModal('register', btnEl);
+      utils.showToast(`Crie sua conta gratuita para experimentar ou ativar o plano ${planoNome}.`);
+      return;
+    }
 
-  const feedback = document.getElementById('smoke-test-feedback');
-  if (feedback) {
-    feedback.innerHTML = `
-      <div class="smoke-feedback-banner">
-        ${window.AprovaUtils.icon('check')}
-        <span>Reserva VIP confirmada. Seu perfil recebeu o selo Lista VIP PRO com 50% de desconto garantido.</span>
+    utils.setButtonLoading(btnEl, true, 'Atualizando plano...');
+    try {
+      const resp = await window.AprovaAPI.atualizarPerfilUsuario({
+        nome: user.nome,
+        carreira_foco: user.carreira_foco || 'Policial',
+        escolaridade: user.escolaridade || 'Superior',
+        uf_interesse: user.ufs_interesse || user.uf_interesse || 'Nacional',
+        horas_estudo_dia: Number(user.horas_estudo_dia || 4),
+        plano: planoNome,
+        concurso_alvo_id: user.concurso_alvo_id || 'pf-2026'
+      });
+      if (resp?.usuario) {
+        window.AprovaAPI.salvarSessaoUsuario(resp.usuario);
+      }
+      utils.showToast(`Plano atualizado para ${planoNome}! Todas as permissões e selos foram aplicados.`);
+      window.AprovaComponents.renderHeaderUserWidget();
+      window.AprovaComponents.renderPremiumView();
+    } catch (err) {
+      utils.setButtonLoading(btnEl, false);
+      utils.showToast(err.message || 'Não foi possível atualizar o plano.', { variant: 'error' });
+    }
+  };
+
+  window.AprovaComponents.renderPremiumView = function () {
+    const container = document.getElementById('premium-smoke-container');
+    if (!container) return;
+
+    const user = window.AprovaAPI.obterUsuarioAtual();
+    const activePlan = user?.plano || 'Gratuito';
+    const checkIcon = window.AprovaUtils.icon('check');
+    const esc = (v) => window.AprovaUtils.escapeHtml(v);
+    const isAnual = billingPeriod === 'anual';
+
+    const tiers = [
+      {
+        id: 'Gratuito',
+        badge: 'Para começar',
+        precoMensal: 'R$ 0',
+        precoAnual: 'R$ 0',
+        desc: 'Conheça seu nível inicial e organize o edital escolhido.',
+        featured: false,
+        itens: [
+          '1 simulado de nivelamento — independentemente da banca',
+          '15 questões comentadas por dia',
+          '1 guia do edital na tela (sem download PDF)',
+          'Painel de evolução por disciplina'
+        ]
+      },
+      {
+        id: 'Básico',
+        badge: 'Ritmo constante',
+        precoMensal: 'R$ 19,90',
+        precoAnual: 'R$ 15,10',
+        desc: 'Prática diária com provas oficiais todas as semanas.',
+        featured: false,
+        itens: [
+          '50 questões comentadas por dia',
+          '1 prova anterior oficial por semana',
+          '40% dos guias do edital na tela (sem download PDF)',
+          'Cronograma semanal por peso de prova'
+        ]
+      },
+      {
+        id: 'Pro',
+        badge: 'Mais escolhido',
+        precoMensal: 'R$ 37,90',
+        precoAnual: 'R$ 28,80',
+        desc: 'Preparação completa com PDF A4 e Simulados Dirigidos do Theo.',
+        featured: true,
+        itens: [
+          'Questões, nivelamentos e provas anteriores ilimitados',
+          'Simulados Dirigidos do Theo cruzando todo o concurso',
+          '100% dos roteiros organizados por tópico + Download em PDF A4',
+          'Cronograma adaptativo automático'
+        ]
+      },
+      {
+        id: 'Pro+',
+        badge: 'Acompanhamento VIP',
+        precoMensal: 'R$ 67,90',
+        precoAnual: 'R$ 51,60',
+        desc: 'Para quem busca correção de discursivas e alertas em tempo real.',
+        featured: false,
+        itens: [
+          'Tudo do plano Pro ilimitado + PDF A4',
+          'Correção detalhada de redação e discursivas por banca',
+          'Alertas imediatos de movimentações e abertura de edital',
+          'Prioridade máxima no atendimento humano'
+        ]
+      }
+    ];
+
+    container.innerHTML = `
+      <div class="section-banner">
+        <div>
+          <h1>Escolha o plano ideal para o seu momento de aprovação</h1>
+          <p>Alterne entre os planos a qualquer instante para testar os recursos completos, download em PDF A4 e regras automáticas da conta.</p>
+        </div>
+        <span class="badge badge-cobalt">Plano atual: ${window.AprovaUtils.safeText(activePlan)}</span>
+      </div>
+
+      <div class="planos-billing-bar">
+        <div class="subtabs-pill-group" role="group" aria-label="Ciclo de cobrança">
+          <button type="button" class="subtab-btn ${!isAnual ? 'active' : ''}" onclick="window.AprovaComponents.setPlanBilling('mensal')">
+            Mensal
+          </button>
+          <button type="button" class="subtab-btn ${isAnual ? 'active' : ''}" onclick="window.AprovaComponents.setPlanBilling('anual')">
+            Anual · Economize 24%
+          </button>
+        </div>
+      </div>
+
+      <div class="planos-grid-4">
+        ${tiers.map(t => {
+          const isCurrent = activePlan.toLowerCase() === t.id.toLowerCase();
+          const price = isAnual ? t.precoAnual : t.precoMensal;
+          return `
+            <article class="plano-card ${t.featured ? 'featured' : ''}">
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
+                  <strong style="font-size:1.125rem; color:var(--text);">${t.id}</strong>
+                  <span class="badge ${t.featured ? 'badge-cobalt' : 'badge-neutral'}">${t.badge}</span>
+                </div>
+                <div class="plano-price">
+                  ${price}${t.id === 'Gratuito' ? '' : '<small>/mês</small>'}
+                </div>
+                <p class="text-caption-muted" style="margin-top:8px;">${t.desc}</p>
+
+                <ul class="pro-feature-list" style="margin-top:16px;">
+                  ${t.itens.map(it => `<li>${checkIcon}<span>${it}</span></li>`).join('')}
+                </ul>
+              </div>
+
+              <button
+                type="button"
+                class="btn ${isCurrent ? 'btn-soft' : (t.featured ? 'btn-primary' : 'btn-outline')} btn-block"
+                ${isCurrent ? 'disabled' : ''}
+                onclick="window.AprovaComponents.ativarPlanoSelecionado('${esc(t.id)}', this)"
+              >
+                ${isCurrent ? 'Plano ativo agora' : (user ? `Selecionar plano ${t.id}` : `Começar no ${t.id}`)}
+              </button>
+            </article>
+          `;
+        }).join('')}
+      </div>
+
+      <div class="surface-card">
+        <h2 class="card-head-title" style="margin-bottom:4px;">Comparativo Detalhado dos Planos</h2>
+        <p class="card-head-sub" style="margin-bottom:16px;">Transparência total sobre limites diários, semanais e exportação.</p>
+        <div class="table-scroll-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Recurso</th>
+                <th>Gratuito</th>
+                <th>Básico</th>
+                <th>Pro</th>
+                <th>Pro+</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Simulados de Nivelamento Diagnóstico</strong></td>
+                <td>1 simulado (qualquer banca)</td>
+                <td>Ilimitado</td>
+                <td>Ilimitado</td>
+                <td>Ilimitado</td>
+              </tr>
+              <tr>
+                <td><strong>Banco de Questões Comentadas</strong></td>
+                <td>15 questões/dia</td>
+                <td>50 questões/dia</td>
+                <td>Ilimitado</td>
+                <td>Ilimitado</td>
+              </tr>
+              <tr>
+                <td><strong>Provas Anteriores Oficiais</strong></td>
+                <td>Amostra</td>
+                <td>1 prova anterior por semana</td>
+                <td>Ilimitado</td>
+                <td>Ilimitado</td>
+              </tr>
+              <tr>
+                <td><strong>Guias de Estudo &amp; Download em PDF</strong><br><span class="text-caption-muted">Roteiros organizados por tópico do edital</span></td>
+                <td>1 guia na tela (sem PDF)</td>
+                <td>40% do edital na tela (sem PDF)</td>
+                <td>Ilimitado + Download PDF A4</td>
+                <td>Ilimitado + Download PDF A4</td>
+              </tr>
+              <tr>
+                <td><strong>Simulados Dirigidos do Theo</strong></td>
+                <td>—</td>
+                <td>—</td>
+                <td>Incluído</td>
+                <td>Incluído</td>
+              </tr>
+              <tr>
+                <td><strong>Discursivas IA &amp; Alertas Pré-Edital</strong></td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>VIP em tempo real</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     `;
-  }
-};
+  };
+})();

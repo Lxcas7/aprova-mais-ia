@@ -107,12 +107,22 @@ def responder_chat(mensagem: str) -> Dict[str, Any]:
     }
 
 
-def calcular_match_perfil(escolaridade: str, area: str, horas_dia: int, foco_status: str) -> Dict[str, Any]:
+def calcular_match_perfil(
+    escolaridade: str,
+    area: str,
+    horas_dia: float,
+    foco_status: str,
+    dias_semana: int = 6,
+) -> Dict[str, Any]:
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("SELECT * FROM concursos")
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()
+
+    dias_validos = max(1, min(7, int(dias_semana or 6)))
+    horas_dia_validas = max(0.5, min(16.0, float(horas_dia or 4.0)))
+    horas_semanais = round(horas_dia_validas * dias_validos, 1)
 
     recomendados = []
     for c in rows:
@@ -135,23 +145,30 @@ def calcular_match_perfil(escolaridade: str, area: str, horas_dia: int, foco_sta
             score += 12
             motivos.append(f"Horizonte desejado ({c['status_label']})")
 
-        if horas_dia <= 2 and c["id"] in ("correios-2026", "caixa-2026", "tjsp-historico", "bb-previsto"):
+        if horas_dia_validas <= 2 and c["id"] in ("correios-2026", "caixa-2026", "tjsp-historico", "bb-previsto"):
             score += 10
             motivos.append("Edital enxuto adequado para rotina compacta")
-        elif horas_dia >= 4 and c["salario_max"] >= 10000:
+        elif horas_dia_validas >= 4 and c["salario_max"] >= 10000:
             score += 10
             motivos.append("Carga horária compatível com edital de alta remuneração (> R$ 10 mil)")
 
         score = min(score, 99)
         disciplinas = json.loads(c["disciplinas_json"])
-        horas_semanais = horas_dia * 6
+        total_questoes = sum(max(int(d.get("questoes", 1)), 1) for d in disciplinas) or 1
         plano_semanal = []
+        acumulado = 0.0
         for idx, d in enumerate(disciplinas):
-            fatia = round(horas_semanais * (0.30 if idx == 0 else (0.25 if idx == 1 else 0.15)), 1)
+            if idx == len(disciplinas) - 1:
+                fatia = round(max(0.0, horas_semanais - acumulado), 1)
+            else:
+                q_val = max(int(d.get("questoes", 1)), 1)
+                fatia = round(horas_semanais * (q_val / total_questoes), 1)
+                acumulado += fatia
             plano_semanal.append({
                 "disciplina": d["nome"],
                 "prioridade": d["prioridade"],
                 "peso": d["peso"],
+                "horas_semanais": fatia,
                 "horas_semana": f"{fatia}h/sem"
             })
 
@@ -174,8 +191,9 @@ def calcular_match_perfil(escolaridade: str, area: str, horas_dia: int, foco_sta
         "perfil_analisado": {
             "escolaridade": escolaridade,
             "area": area,
-            "horas_por_dia": horas_dia,
-            "horas_semanais_uteis": horas_dia * 6
+            "horas_por_dia": horas_dia_validas,
+            "dias_por_semana": dias_validos,
+            "horas_semanais_uteis": horas_semanais
         },
         "top_recomendacoes": recomendados[:4]
     }
@@ -197,7 +215,7 @@ def analisar_novo_rumor(orgao_sigla: str, titulo_noticia: str, fonte_portal: str
         confianca = 58
 
     analise = (
-        f"Classificação automática Aprova+ IA ({confianca}% de maturidade): Notícia referente a {orgao_sigla.upper()} "
-        f"enquadrada no estágio '{estagio}' com base na fonte '{fonte_portal}'. Recomendado iniciar estudo das disciplinas nucleares."
+        f"Análise de maturidade pré-edital ({confianca}%): movimentação de {orgao_sigla.upper()} "
+        f"classificada no estágio '{estagio}' com base na fonte '{fonte_portal}'. Recomendado iniciar estudo das disciplinas nucleares."
     )
     return {"estagio_maturidade": estagio, "confianca_ia": confianca, "analise_ia": analise}

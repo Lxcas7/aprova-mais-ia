@@ -1,10 +1,366 @@
 import hashlib
 import json
+from datetime import datetime, timedelta
 from backend.database.connection import get_db_connection, init_db
+from backend.database.questoes_seed import CURATED_QUESTOES
 
 
 def _hash_pw(senha: str) -> str:
     return hashlib.sha256(senha.encode("utf-8")).hexdigest()
+
+
+def _ensure_user_tables_backfill(conn) -> None:
+    """Migra favoritos e materiais estudados iniciais para a conta demo apenas uma vez."""
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM schema_flags WHERE key = 'backfill_user1_salvos'")
+    if cur.fetchone():
+        return
+
+    cur.execute("SELECT id FROM usuarios WHERE lower(email) = 'carlos@aprovamais.com.br' LIMIT 1")
+    demo_row = cur.fetchone()
+    if demo_row:
+        demo_id = demo_row["id"]
+        cur.execute(
+            "INSERT OR IGNORE INTO usuario_concursos_salvos (user_id, concurso_id) SELECT ?, id FROM concursos WHERE salvo = 1",
+            (demo_id,)
+        )
+        cur.execute(
+            "INSERT OR IGNORE INTO usuario_materiais_estudados (user_id, material_id) SELECT ?, id FROM materiais WHERE estudado = 1",
+            (demo_id,)
+        )
+
+    cur.execute("INSERT OR IGNORE INTO schema_flags (key, value) VALUES ('backfill_user1_salvos', '1')")
+    conn.commit()
+
+
+def _ensure_v2_migrations(conn) -> None:
+    """Aplica migrações idempotentes da versão 2.0 (nomenclatura limpa, banco de questões e histórico inicial)."""
+    cur = conn.cursor()
+
+    # 1) Remoção do termo técnico antigo em registros já persistidos
+    cur.execute("SELECT 1 FROM schema_flags WHERE key = 'migrate_remove_verticalizado_v1'")
+    if not cur.fetchone():
+        cur.execute(
+            "UPDATE materiais SET categoria = 'Guia do Edital' WHERE categoria = 'Edital Verticalizado'"
+        )
+        cur.execute("SELECT id, titulo, resumo_conteudo FROM materiais")
+        for row in cur.fetchall():
+            new_title = (
+                (row["titulo"] or "")
+                .replace("Edital Verticalizado", "Guia do Edital")
+                .replace("verticalizado", "organizado por tópico")
+                .replace("Verticalizado", "Organizado por Tópico")
+            )
+            new_resumo = (
+                (row["resumo_conteudo"] or "")
+                .replace("Edital Verticalizado", "Guia do Edital")
+                .replace("verticalizado", "organizado por tópico")
+                .replace("Verticalizado", "Organizado por Tópico")
+            )
+            if new_title != row["titulo"] or new_resumo != row["resumo_conteudo"]:
+                cur.execute(
+                    "UPDATE materiais SET titulo = ?, resumo_conteudo = ? WHERE id = ?",
+                    (new_title, new_resumo, row["id"]),
+                )
+        cur.execute(
+            "UPDATE leads_premium SET recurso_favorito = replace(recurso_favorito, 'Edital Verticalizado Automático', 'Guia do Edital Automático')"
+        )
+        cur.execute(
+            "UPDATE metricas_mvp SET detalhe = replace(detalhe, 'Edital Verticalizado', 'Guia do Edital')"
+        )
+        cur.execute(
+            "INSERT OR IGNORE INTO schema_flags (key, value) VALUES ('migrate_remove_verticalizado_v1', '1')"
+        )
+        conn.commit()
+
+    # 2) Seed de questões curadas e histórico inicial em ciclo fechado para a conta demo
+    cur.execute("SELECT 1 FROM schema_flags WHERE key = 'seed_questoes_e_orquestracao_v1'")
+    if not cur.fetchone():
+        for q in CURATED_QUESTOES:
+            cur.execute(
+                """
+                INSERT OR IGNORE INTO questoes_cache (
+                    external_id, banca, orgao, concurso_id, ano, disciplina, assunto,
+                    dificuldade, tipo_questao, enunciado, alternativas_json, gabarito,
+                    comentario, is_prova_anterior, prova_titulo
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    q["external_id"],
+                    q["banca"],
+                    q.get("orgao", ""),
+                    q["concurso_id"],
+                    q.get("ano", 2024),
+                    q["disciplina"],
+                    q.get("assunto", ""),
+                    q.get("dificuldade", "intermediario"),
+                    q.get("tipo_questao", "certo_errado"),
+                    q["enunciado"],
+                    json.dumps(q.get("alternativas", []), ensure_ascii=False),
+                    q["gabarito"],
+                    q.get("comentario", ""),
+                    q.get("is_prova_anterior", 0),
+                    q.get("prova_titulo", ""),
+                ),
+            )
+
+        cur.execute("SELECT id, concurso_alvo_id FROM usuarios WHERE lower(email) = 'carlos@aprovamais.com.br' LIMIT 1")
+        demo_row = cur.fetchone()
+        if demo_row:
+            demo_id = demo_row["id"]
+            cur.execute(
+                """
+                UPDATE usuarios
+                SET plano = 'Pro',
+                    concurso_alvo_id = 'pf-2026',
+                    onboarding_concluido = 1,
+                    streak_dias = 12,
+                    ultimo_estudo_em = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (demo_id,),
+            )
+
+            cur.execute(
+                """
+                INSERT OR IGNORE INTO usuario_onboarding (
+                    user_id, momento_jornada, concurso_alvo_id, areas_interesse_json,
+                    horas_dia, dias_semana_json, nivel_base_json, estilo_estudo
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    demo_id,
+                    "estudando_edital",
+                    "pf-2026",
+                    json.dumps(["Policial", "Administrativa"], ensure_ascii=False),
+                    4,
+                    json.dumps(["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"], ensure_ascii=False),
+                    json.dumps(
+                        {
+                            "Informática, Redes e Banco de Dados": "Intermediário",
+                            "Língua Portuguesa e Redação Oficial": "Intermediário",
+                            "Contabilidade Geral": "Iniciante",
+                            "Direito Administrativo, Constitucional e Penal": "Intermediário",
+                            "Raciocínio Lógico e Estatística": "Iniciante",
+                        },
+                        ensure_ascii=False,
+                    ),
+                    "equilibrado",
+                ),
+            )
+
+            # Mapa de questões PF para criar sessões reais em ciclo fechado
+            cur.execute("SELECT id, external_id, disciplina, banca, dificuldade, gabarito FROM questoes_cache WHERE concurso_id = 'pf-2026'")
+            pf_qs = cur.fetchall()
+
+            def _pick_ids(filter_fn):
+                return [r["id"] for r in pf_qs if filter_fn(r)]
+
+            now = datetime.now()
+
+            # Sessão 1: Nivelamento Diagnóstico há 21 dias (~52% de acerto)
+            if pf_qs:
+                niv_q = pf_qs[:15]
+                niv_ids = [r["id"] for r in niv_q]
+                niv_outcomes = [1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0]  # 8/15 = 53.3%
+                cur.execute(
+                    """
+                    INSERT INTO sessoes_estudo_questoes (
+                        user_id, concurso_id, tipo_sessao, titulo, dificuldade_filtro, disciplina_filtro,
+                        questoes_ids_json, total_questoes, respondidas, acertos, erros, branco, escore_liquido,
+                        status, iniciado_em, finalizado_em
+                    ) VALUES (?, 'pf-2026', 'nivelamento', 'Nivelamento Diagnóstico PF (Linha de Base)', 'sorteado', 'todas',
+                              ?, ?, ?, 8, 7, 0, 1.0, 'concluida', ?, ?)
+                    """,
+                    (
+                        demo_id,
+                        json.dumps(niv_ids),
+                        len(niv_ids),
+                        len(niv_ids),
+                        (now - timedelta(days=21, minutes=28)).strftime("%Y-%m-%d %H:%M:%S"),
+                        (now - timedelta(days=21)).strftime("%Y-%m-%d %H:%M:%S"),
+                    ),
+                )
+                niv_sid = cur.lastrowid
+                for idx, qrow in enumerate(niv_q):
+                    ok = niv_outcomes[idx % len(niv_outcomes)]
+                    gab = qrow["gabarito"]
+                    resp_u = gab if ok else ("E" if gab == "C" else "C")
+                    cur.execute(
+                        """
+                        INSERT INTO usuario_respostas_questoes (
+                            sessao_id, user_id, questao_id, concurso_id, disciplina, banca,
+                            dificuldade, resposta_usuario, correta, em_branco, tempo_segundos, respondido_em
+                        ) VALUES (?, ?, ?, 'pf-2026', ?, ?, ?, ?, ?, 0, ?, ?)
+                        """,
+                        (
+                            niv_sid,
+                            demo_id,
+                            qrow["id"],
+                            qrow["disciplina"],
+                            qrow["banca"],
+                            qrow["dificuldade"],
+                            resp_u,
+                            ok,
+                            52,
+                            (now - timedelta(days=21)).strftime("%Y-%m-%d %H:%M:%S"),
+                        ),
+                    )
+
+                # Sessão 2: Treino há 14 dias (~62%)
+                s2_qs = pf_qs[:12]
+                s2_outcomes = [1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1]  # 8/12
+                cur.execute(
+                    """
+                    INSERT INTO sessoes_estudo_questoes (
+                        user_id, concurso_id, tipo_sessao, titulo, dificuldade_filtro, disciplina_filtro,
+                        questoes_ids_json, total_questoes, respondidas, acertos, erros, branco, escore_liquido,
+                        status, iniciado_em, finalizado_em
+                    ) VALUES (?, 'pf-2026', 'simulado_theo', 'Simulado Adaptativo · Ciclo Semana 2', 'sorteado', 'todas',
+                              ?, ?, ?, 8, 4, 0, 4.0, 'concluida', ?, ?)
+                    """,
+                    (
+                        demo_id,
+                        json.dumps([r["id"] for r in s2_qs]),
+                        len(s2_qs),
+                        len(s2_qs),
+                        (now - timedelta(days=14, minutes=20)).strftime("%Y-%m-%d %H:%M:%S"),
+                        (now - timedelta(days=14)).strftime("%Y-%m-%d %H:%M:%S"),
+                    ),
+                )
+                s2_sid = cur.lastrowid
+                for idx, qrow in enumerate(s2_qs):
+                    ok = s2_outcomes[idx % len(s2_outcomes)]
+                    gab = qrow["gabarito"]
+                    resp_u = gab if ok else ("E" if gab == "C" else "C")
+                    cur.execute(
+                        """
+                        INSERT INTO usuario_respostas_questoes (
+                            sessao_id, user_id, questao_id, concurso_id, disciplina, banca,
+                            dificuldade, resposta_usuario, correta, em_branco, tempo_segundos, respondido_em
+                        ) VALUES (?, ?, ?, 'pf-2026', ?, ?, ?, ?, ?, 0, ?, ?)
+                        """,
+                        (
+                            s2_sid,
+                            demo_id,
+                            qrow["id"],
+                            qrow["disciplina"],
+                            qrow["banca"],
+                            qrow["dificuldade"],
+                            resp_u,
+                            ok,
+                            46,
+                            (now - timedelta(days=14)).strftime("%Y-%m-%d %H:%M:%S"),
+                        ),
+                    )
+
+                # Sessão 3: Bateria há 7 dias (~67%) e Sessão 4: Ontem (~75%)
+                s3_qs = pf_qs[4:22] if len(pf_qs) >= 22 else pf_qs
+                # Ajusta acertos por disciplina para refletir evolução realista (~75% Inf, ~80% Por, ~58% Cont, ~72% Dir, ~55% RLM)
+                target_rate = {
+                    "Informática, Redes e Banco de Dados": 0.78,
+                    "Língua Portuguesa e Redação Oficial": 0.80,
+                    "Contabilidade Geral": 0.56,
+                    "Direito Administrativo, Constitucional e Penal": 0.72,
+                    "Raciocínio Lógico e Estatística": 0.55,
+                }
+                for days_ago, subset, label in [
+                    (7, pf_qs[:15], "Bateria Dirigida Cebraspe · Semana 3"),
+                    (1, pf_qs[:18], "Simulado Progressivo · Semana Atual"),
+                ]:
+                    ac_tot = 0
+                    er_tot = 0
+                    rows_ins = []
+                    for idx, qrow in enumerate(subset):
+                        r_target = target_rate.get(qrow["disciplina"], 0.65)
+                        ok = 1 if ((idx % 10) / 10.0) < r_target else 0
+                        if days_ago == 1 and qrow["disciplina"] in (
+                            "Informática, Redes e Banco de Dados",
+                            "Língua Portuguesa e Redação Oficial",
+                        ):
+                            ok = 1 if (idx % 5) != 4 else 0
+                        ac_tot += ok
+                        er_tot += (1 - ok)
+                        gab = qrow["gabarito"]
+                        resp_u = gab if ok else ("E" if gab == "C" else "C")
+                        rows_ins.append((qrow, resp_u, ok))
+                    cur.execute(
+                        """
+                        INSERT INTO sessoes_estudo_questoes (
+                            user_id, concurso_id, tipo_sessao, titulo, dificuldade_filtro, disciplina_filtro,
+                            questoes_ids_json, total_questoes, respondidas, acertos, erros, branco, escore_liquido,
+                            status, iniciado_em, finalizado_em
+                        ) VALUES (?, 'pf-2026', 'simulado_rapido', ?, 'sorteado', 'todas',
+                                  ?, ?, ?, ?, ?, 0, ?, 'concluida', ?, ?)
+                        """,
+                        (
+                            demo_id,
+                            label,
+                            json.dumps([r[0]["id"] for r in rows_ins]),
+                            len(rows_ins),
+                            len(rows_ins),
+                            ac_tot,
+                            er_tot,
+                            float(ac_tot - er_tot),
+                            (now - timedelta(days=days_ago, minutes=22)).strftime("%Y-%m-%d %H:%M:%S"),
+                            (now - timedelta(days=days_ago)).strftime("%Y-%m-%d %H:%M:%S"),
+                        ),
+                    )
+                    sid = cur.lastrowid
+                    for qrow, resp_u, ok in rows_ins:
+                        cur.execute(
+                            """
+                            INSERT INTO usuario_respostas_questoes (
+                                sessao_id, user_id, questao_id, concurso_id, disciplina, banca,
+                                dificuldade, resposta_usuario, correta, em_branco, tempo_segundos, respondido_em
+                            ) VALUES (?, ?, ?, 'pf-2026', ?, ?, ?, ?, ?, 0, ?, ?)
+                            """,
+                            (
+                                sid,
+                                demo_id,
+                                qrow["id"],
+                                qrow["disciplina"],
+                                qrow["banca"],
+                                qrow["dificuldade"],
+                                resp_u,
+                                ok,
+                                41,
+                                (now - timedelta(days=days_ago)).strftime("%Y-%m-%d %H:%M:%S"),
+                            ),
+                        )
+
+            # Blocos do cronograma semanal da conta demo (Seg a Sáb = 24h = 1440min; concluídos ~920min = 15h 20m)
+            cur.execute("DELETE FROM usuario_cronograma_blocos WHERE user_id = ? AND concurso_id = 'pf-2026'", (demo_id,))
+            blocos_demo = [
+                ("Seg", 1, "Informática, Redes e Banco de Dados", "Guia + Bateria", 120, 120, 1),
+                ("Seg", 2, "Língua Portuguesa e Redação Oficial", "Questões Cebraspe", 120, 120, 1),
+                ("Ter", 1, "Contabilidade Geral", "Teoria + Resumo", 120, 120, 1),
+                ("Ter", 2, "Direito Administrativo, Constitucional e Penal", "Lei Seca + Fixação", 120, 120, 1),
+                ("Qua", 1, "Informática, Redes e Banco de Dados", "SQL & Segurança TI", 120, 120, 1),
+                ("Qua", 2, "Raciocínio Lógico e Estatística", "Bateria Proposições", 120, 120, 1),
+                ("Qui", 1, "Contabilidade Geral", "CPC 00 & Balanço (20 qst)", 120, 120, 1),
+                ("Qui", 2, "Língua Portuguesa e Redação Oficial", "Crase e Sintaxe Foco", 120, 80, 0),
+                ("Sex", 1, "Direito Administrativo, Constitucional e Penal", "Direito Penal + Revisão", 120, 0, 0),
+                ("Sex", 2, "Informática, Redes e Banco de Dados", "Simulado TI 30 itens", 120, 0, 0),
+                ("Sáb", 1, "Contabilidade Geral", "Revisão Ativa de Erros", 120, 0, 0),
+                ("Sáb", 2, "Raciocínio Lógico e Estatística", "Estatística & Probabilidade", 120, 0, 0),
+            ]
+            semana_ref = now.strftime("%Y-W%W")
+            for dia, ordem, disc, tipo_b, min_p, min_r, conc in blocos_demo:
+                cur.execute(
+                    """
+                    INSERT INTO usuario_cronograma_blocos (
+                        user_id, concurso_id, semana_ref, dia_semana, ordem,
+                        disciplina, tipo_bloco, minutos_planejados, minutos_realizados, concluido
+                    ) VALUES (?, 'pf-2026', ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (demo_id, semana_ref, dia, ordem, disc, tipo_b, min_p, min_r, conc),
+                )
+
+        cur.execute(
+            "INSERT OR IGNORE INTO schema_flags (key, value) VALUES ('seed_questoes_e_orquestracao_v1', '1')"
+        )
+        conn.commit()
 
 
 def seed_database() -> None:
@@ -26,6 +382,8 @@ def seed_database() -> None:
 
     cur.execute("SELECT COUNT(*) as total FROM concursos")
     if cur.fetchone()["total"] > 0:
+        _ensure_user_tables_backfill(conn)
+        _ensure_v2_migrations(conn)
         conn.close()
         return
 
@@ -468,14 +826,14 @@ def seed_database() -> None:
     # Seed Materials linked to each specific Concurso
     materiais_data = [
         # PF
-        ("pf-2026", "Edital Verticalizado PF (Agente, Escrivão e Administrativo) — Checklist Completo", "Edital Verticalizado", "Geral / Planejamento", "28 págs", 1, 1, "Checklist tópico por tópico do edital oficial da Polícia Federal organizado por peso estatístico da Cebraspe."),
+        ("pf-2026", "Guia Completo do Edital PF (Agente, Escrivão e Administrativo) — Checklist por Tópico", "Guia do Edital", "Geral / Planejamento", "28 págs", 1, 1, "Checklist tópico por tópico do edital oficial da Polícia Federal organizado por peso estatístico da Cebraspe."),
         ("pf-2026", "Apostila Intensiva de Informática, Redes, Segurança e Banco de Dados (36 questões PF)", "Apostila PDF", "Informática & TI", "142 págs", 1, 1, "Cobre 100% do bloco de TI da PF: Redes TCP/IP, Linux/Windows, Python/SQL, Segurança da Informação e Cloud."),
         ("pf-2026", "Caderno das Últimas 3 Provas da Polícia Federal Comentadas Item a Item (Cebraspe)", "Prova Passada + Gabarito", "Provas Anteriores", "96 págs", 1, 0, "Provas oficiais de 2014, 2018 e 2021 com gabarito definitivo e comentários explicativos."),
         ("pf-2026", "Contabilidade Geral Esquematizada para Carreiras Policiais (CPC 00, Balanço e DRE)", "Apostila PDF", "Contabilidade Geral", "84 págs", 1, 0, "Focado nas 24 questões de Contabilidade cobradas pela Cebraspe na Polícia Federal."),
         ("pf-2026", "Mapas Mentais de Direito Penal, Processual Penal e Legislação Especial", "Mapa Mental", "Direito Policial", "54 págs", 1, 0, "Revisão visual rápida de Lei de Drogas, Crimes Hediondos, Abuso de Autoridade e Lavagem de Dinheiro."),
 
         # CAIXA
-        ("caixa-2026", "Edital Verticalizado Caixa Econômica Federal (Técnico Bancário Novo & TI)", "Edital Verticalizado", "Geral / Planejamento", "22 págs", 1, 1, "Quadro completo de matérias da Fundação Cesgranrio com metas diárias de leitura e resolução de questões."),
+        ("caixa-2026", "Guia Completo do Edital Caixa (Técnico Bancário Novo & TI) — Por Tópico", "Guia do Edital", "Geral / Planejamento", "22 págs", 1, 1, "Quadro completo de matérias da Fundação Cesgranrio com metas diárias de leitura e resolução de questões."),
         ("caixa-2026", "Apostila Completa de Conhecimentos Bancários, SFN, PIX e Open Finance", "Apostila PDF", "Conhecimentos Bancários", "118 págs", 1, 1, "Todo o conteúdo atualizado do Sistema Financeiro Nacional, CMN, BACEN, CVM, produtos bancários e garantias."),
         ("caixa-2026", "Guia de Atendimento Bancário, Comportamentos Digitais e Código de Ética Caixa", "Apostila PDF", "Atendimento & Ética", "65 págs", 1, 0, "Focado nas 15 questões de Atendimento e Compliance exigidas no edital da Caixa."),
         ("caixa-2026", "Caderno de 150 Questões Resolvidas de Matemática Financeira (Banca Cesgranrio)", "Caderno de Questões", "Matemática Financeira", "78 págs", 1, 0, "Juros simples e compostos, sistemas de amortização SAC/Price e desconto de títulos passo a passo."),
@@ -496,14 +854,14 @@ def seed_database() -> None:
         ("ibama-2026", "Última Prova Oficial do IBAMA (Cebraspe) Resolvida e Comentada + Padrão Discursiva", "Prova Passada + Gabarito", "Provas Anteriores", "48 págs", 1, 0, "Análise completa da última prova de Analista Ambiental e Analista Administrativo."),
 
         # BB PREVISTO
-        ("bb-previsto", "Plano de Estudo Antecipado Banco do Brasil (Pré-Edital 90 Dias) + Edital Verticalizado", "Edital Verticalizado", "Planejamento Pré-Edital", "24 págs", 1, 1, "Roteiro estratégico para fechar o edital do Banco do Brasil antes da publicação oficial."),
+        ("bb-previsto", "Plano de Estudo Antecipado Banco do Brasil (Pré-Edital 90 Dias) + Guia por Tópico", "Guia do Edital", "Planejamento Pré-Edital", "24 págs", 1, 1, "Roteiro estratégico para fechar o edital do Banco do Brasil antes da publicação oficial."),
         ("bb-previsto", "Apostila de Vendas e Negociação + Conhecimentos Bancários para o Banco do Brasil", "Apostila PDF", "Vendas & Bancários", "140 págs", 1, 1, "Foco nas duas matérias de maior peso eliminatório e classificatório da Cesgranrio no BB."),
         ("bb-previsto", "Acervo de Provas Anteriores do Banco do Brasil (Cesgranrio 2021 e 2023 — Cadernos A, B e C)", "Prova Passada + Gabarito", "Provas Anteriores", "112 págs", 1, 0, "Todas as provas aplicadas nos dois últimos concursos do BB com gabaritos oficiais."),
 
         # INSS PREVISTO
         ("inss-previsto", "Direito Previdenciário do Zero ao Avançado (Leis 8.212, 8.213 e EC 103 Atualizadas)", "Apostila PDF", "Direito Previdenciário", "195 págs", 1, 1, "Cobre os 70 itens de Seguridade Social que representam quase 60% da prova do INSS."),
         ("inss-previsto", "Última Prova Oficial do INSS (Cebraspe 2022) + Gabarito Comentado Item por Item", "Prova Passada + Gabarito", "Provas Anteriores", "64 págs", 1, 1, "Prova real aplicada pela Cebraspe com resolução detalhada de cada assertiva."),
-        ("inss-previsto", "Edital Verticalizado Pré-Edital INSS + Cronograma de Ciclos de Estudo", "Edital Verticalizado", "Planejamento Pré-Edital", "18 págs", 1, 0, "Organização semanal de estudos para quem tem de 2h a 4h disponíveis por dia."),
+        ("inss-previsto", "Guia Organizado por Tópico Pré-Edital INSS + Cronograma de Ciclos de Estudo", "Guia do Edital", "Planejamento Pré-Edital", "18 págs", 1, 0, "Organização semanal de estudos para quem tem de 2h a 4h disponíveis por dia."),
 
         # PRF PREVISTO
         ("prf-previsto", "Código de Trânsito Brasileiro (CTB Atualizado) + Resoluções do CONTRAN Esquematizadas", "Apostila PDF", "Legislação de Trânsito", "175 págs", 1, 1, "Disciplina mais importante da PRF (30 questões da prova objetiva)."),
@@ -515,7 +873,7 @@ def seed_database() -> None:
 
         # CNU HISTÓRICO
         ("cnu-historico", "Pacote Oficial de Provas Reais CNU (Blocos 1 a 8 — Manhã e Tarde) + Gabaritos Definitivos", "Prova Passada + Gabarito", "Provas Oficiais CNU", "320 págs", 1, 1, "Acervo histórico integral da 1ª edição do Concurso Nacional Unificado."),
-        ("cnu-historico", "Raio-X Estatístico de Notas de Corte e Relação Candidato/Vaga de Todos os Cargos do CNU", "Edital Verticalizado", "Estatísticas & Corte", "26 págs", 1, 1, "Comparativo completo das notas mínimas de aprovação na ampla concorrência e cotas."),
+        ("cnu-historico", "Raio-X Estatístico de Notas de Corte e Relação Candidato/Vaga de Todos os Cargos do CNU", "Guia do Edital", "Estatísticas & Corte", "26 págs", 1, 1, "Comparativo completo das notas mínimas de aprovação na ampla concorrência e cotas."),
 
         # TJ-SP HISTÓRICO
         ("tjsp-historico", "Última Prova Real TJ-SP Escrevente (100 Questões Vunesp) Comentada Alternativa por Alternativa", "Prova Passada + Gabarito", "Prova Real Vunesp", "82 págs", 1, 1, "As 100 questões do último concurso do TJ-SP resolvidas pelos professores."),
@@ -597,7 +955,7 @@ def seed_database() -> None:
     leads_seed = [
         ("Mariana Souza", "mariana.concurseira@email.com", "Bancária", "Alertas WhatsApp de Rumores e Editais", "R$ 29,90/mês"),
         ("Rafael Oliveira", "(11) 98765-4321", "Policial", "Cronograma Adaptativo por IA", "R$ 29,90/mês"),
-        ("Fernanda Lima", "fernanda.tribunais@email.com", "Tribunais", "Raio-X e Edital Verticalizado Automático", "R$ 49,90/mês")
+        ("Fernanda Lima", "fernanda.tribunais@email.com", "Tribunais", "Raio-X e Guia do Edital Automático", "R$ 37,90/mês")
     ]
     for l in leads_seed:
         cur.execute(
@@ -609,8 +967,8 @@ def seed_database() -> None:
         ("busca", "Filtro por status: aberto"),
         ("busca", "Pesquisa por: Polícia Federal"),
         ("busca", "Filtro por status: previsto"),
-        ("radar_view", "Visualização do Termômetro IA de Rumores"),
-        ("material_acesso", "Download: Edital Verticalizado PF"),
+        ("radar_view", "Visualização do Termômetro de Pré-Edital"),
+        ("material_acesso", "Download: Guia do Edital PF"),
         ("material_acesso", "Download: Apostila Conhecimentos Bancários Caixa"),
         ("material_acesso", "Download: Provas Passadas CNU"),
         ("chat_ia", "Consulta sobre INSS e Banco do Brasil")
@@ -619,5 +977,7 @@ def seed_database() -> None:
         cur.execute("INSERT INTO metricas_mvp (tipo_evento, detalhe) VALUES (?, ?)", ev)
 
     conn.commit()
+    _ensure_user_tables_backfill(conn)
+    _ensure_v2_migrations(conn)
     conn.close()
 

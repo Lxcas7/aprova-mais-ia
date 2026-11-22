@@ -1,7 +1,7 @@
 /**
- * Aprova+ IA — REST API Client + Gerenciador de Autenticação e Sessão de Usuário
+ * Aprova+ IA — REST API Client + Gerenciador de Autenticação, Isolamento por Usuário e Rascunho de Visitante
  * - Em ambiente local com servidor Python (127.0.0.1:8000): consome a API FastAPI + SQLite3 real.
- * - No GitHub Pages (github.io) ou modo estático: utiliza motor em memória com persistência em localStorage e gerador Blob para download real de apostilas.
+ * - No GitHub Pages (github.io) ou modo estático/offline: utiliza motor em memória com persistência em localStorage e gerador PDF 1.4 local.
  */
 (function () {
   const isGitHubPages = window.location.hostname.includes('github.io');
@@ -11,8 +11,10 @@
 
   let backendOnline = false;
 
-  const STORAGE_KEY = 'aprova_mais_mvp_state_v3';
+  const STORAGE_KEY = 'aprova_mais_mvp_state_v4';
   const USER_SESSION_KEY = 'aprova_mais_user_session_v1';
+  const GUEST_STATE_KEY = 'aprova_mais_guest_draft_v1';
+  const GUEST_ONBOARDING_KEY = 'aprova_mais_guest_onboarding_v1';
 
   function gerarIniciais(nome) {
     const partes = (nome || 'Usuário').trim().split(/\s+/).filter(Boolean);
@@ -21,12 +23,70 @@
     return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
   }
 
+  function getGuestDraft() {
+    try {
+      const raw = localStorage.getItem(GUEST_STATE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          salvos: Array.isArray(parsed?.salvos) ? parsed.salvos : [],
+          estudados: Array.isArray(parsed?.estudados) ? parsed.estudados : []
+        };
+      }
+    } catch (e) {}
+    return { salvos: [], estudados: [] };
+  }
+
+  function saveGuestDraft(draft) {
+    try {
+      localStorage.setItem(GUEST_STATE_KEY, JSON.stringify({
+        salvos: Array.from(new Set(draft.salvos || [])),
+        estudados: Array.from(new Set((draft.estudados || []).map(Number)))
+      }));
+    } catch (e) {}
+  }
+
+  function clearGuestDraft() {
+    try {
+      localStorage.removeItem(GUEST_STATE_KEY);
+    } catch (e) {}
+  }
+
+  function hashSenhaLocal(email, senha) {
+    const input = `aprovamais:${String(email || '').trim().toLowerCase()}:${String(senha || '')}`;
+    let h1 = 0x811c9dc5;
+    let h2 = 0x9e3779b9;
+    for (let i = 0; i < input.length; i++) {
+      const ch = input.charCodeAt(i);
+      h1 ^= ch;
+      h1 = Math.imul(h1, 0x01000193);
+      h2 ^= (ch + i);
+      h2 = Math.imul(h2, 0x85ebca6b);
+    }
+    h1 ^= h1 >>> 16;
+    h2 ^= h2 >>> 15;
+    return `local_v1$${(h1 >>> 0).toString(16).padStart(8, '0')}${(h2 >>> 0).toString(16).padStart(8, '0')}`;
+  }
+
   function getLocalState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && Array.isArray(parsed.concursos) && parsed.concursos.length >= 13) {
+          parsed.userData = parsed.userData || {};
+          if (Array.isArray(parsed.usuarios)) {
+            let migrated = false;
+            parsed.usuarios = parsed.usuarios.map(u => {
+              if (u && typeof u.senha === 'string') {
+                const { senha, ...rest } = u;
+                migrated = true;
+                return { ...rest, senha_hash: rest.senha_hash || hashSenhaLocal(rest.email, senha) };
+              }
+              return u;
+            });
+            if (migrated) saveLocalState(parsed);
+          }
           return parsed;
         }
       }
@@ -34,20 +94,29 @@
     const initial = {
       concursos: JSON.parse(JSON.stringify(window.AprovaFallback.concursos)),
       rumores: JSON.parse(JSON.stringify(window.AprovaFallback.rumores)),
+      questoes: JSON.parse(JSON.stringify(window.AprovaFallback.questoes || [])),
       usuarios: [
         {
           id: 1,
           nome: 'Carlos Lucas',
           email: 'carlos@aprovamais.com.br',
-          senha: '123456',
+          senha_hash: hashSenhaLocal('carlos@aprovamais.com.br', '123456'),
           carreira_foco: 'Policial',
           escolaridade: 'Superior',
           uf_interesse: 'Nacional',
+          ufs_interesse: ['Nacional'],
           horas_estudo_dia: 4,
-          plano: 'Gratuito',
+          plano: 'Pro',
+          concurso_alvo_id: 'pf-2026',
+          onboarding_concluido: true,
+          streak_dias: 12,
           iniciais: 'CL'
         }
       ],
+      userData: {},
+      sessoes: [],
+      respostas: [],
+      chamados: [],
       leads: []
     };
     saveLocalState(initial);
@@ -60,28 +129,83 @@
     } catch (e) {}
   }
 
-  async function request(endpoint, options = {}) {
-    if (isGitHubPages) {
-      throw new Error('GitHub Pages static mode');
+  function getLocalUserData(st, user) {
+    st.userData = st.userData || {};
+    const key = String(user.id);
+    if (!st.userData[key]) {
+      const isDemoUser = user.id === 1 || (user.email || '').toLowerCase() === 'carlos@aprovamais.com.br';
+      if (isDemoUser) {
+        const salvos = st.concursos.filter(c => c.salvo).map(c => c.id);
+        const estudados = [];
+        st.concursos.forEach(c => {
+          (c.materiais || []).forEach(m => {
+            if (m.estudado) estudados.push(m.id);
+          });
+        });
+        st.userData[key] = { salvos, estudados };
+      } else {
+        st.userData[key] = { salvos: [], estudados: [] };
+      }
+      saveLocalState(st);
     }
-    const url = `${API_BASE}${endpoint}`;
-    const res = await fetch(url, {
-      headers: { 'Content-Type': 'application/json' },
-      ...options
-    });
-    if (!res.ok) {
-      let errMsg = `HTTP ${res.status}`;
-      try {
-        const errJson = await res.json();
-        if (errJson.detail) errMsg = errJson.detail;
-      } catch (_) {}
-      const error = new Error(errMsg);
-      error.isApiError = true;
-      throw error;
+    return st.userData[key];
+  }
+
+  function getActiveUserSetsOffline(st) {
+    const user = window.AprovaAPI.obterUsuarioAtual();
+    if (!user) {
+      const g = getGuestDraft();
+      return { savedSet: new Set(g.salvos), studiedSet: new Set(g.estudados) };
     }
-    backendOnline = true;
-    updateStatusBadge(true);
-    return await res.json();
+    const uData = getLocalUserData(st, user);
+    return { savedSet: new Set(uData.salvos || []), studiedSet: new Set(uData.estudados || []) };
+  }
+
+  function overlayConcursoWithSets(c, savedSet, studiedSet) {
+    return {
+      ...c,
+      salvo: savedSet.has(c.id),
+      materiais: (c.materiais || []).map(m => ({
+        ...m,
+        estudado: studiedSet.has(m.id)
+      }))
+    };
+  }
+
+  function formatApiErrorDetail(detail, status) {
+    if (!detail) return `Erro ao processar solicitação (HTTP ${status}).`;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+      const fieldNames = {
+        nome: 'Nome',
+        email: 'E-mail',
+        senha: 'Senha',
+        contato: 'Contato',
+        orgao_sigla: 'Sigla do órgão',
+        titulo_noticia: 'Resumo da movimentação',
+        fonte_portal: 'Fonte documental',
+        carreira_foco: 'Carreira foco',
+        recurso_favorito: 'Recurso prioritário',
+        faixa_preco: 'Modalidade',
+        mensagem: 'Mensagem'
+      };
+      const msgs = detail.map(item => {
+        if (typeof item === 'string') return item;
+        const loc = Array.isArray(item?.loc) ? item.loc[item.loc.length - 1] : '';
+        const field = fieldNames[loc] || (loc ? String(loc) : 'Campo');
+        const rawMsg = String(item?.msg || 'valor inválido');
+        const minMatch = rawMsg.match(/at least (\d+) character/i);
+        if (minMatch) return `${field} deve ter pelo menos ${minMatch[1]} caracteres.`;
+        if (/valid email/i.test(rawMsg)) return `${field}: informe um e-mail válido.`;
+        if (/field required/i.test(rawMsg)) return `${field} é obrigatório.`;
+        return `${field}: ${rawMsg}`;
+      });
+      return msgs.join(' ');
+    }
+    if (typeof detail === 'object') {
+      return detail.mensagem || detail.message || detail.detail || `Erro ao processar solicitação (HTTP ${status}).`;
+    }
+    return String(detail);
   }
 
   function updateStatusBadge(isOnline) {
@@ -89,14 +213,283 @@
     if (!badge) return;
     if (isOnline) {
       badge.className = 'api-status-badge';
-      badge.textContent = 'Aprova+ IA Online · FastAPI + SQLite';
-    } else if (isGitHubPages) {
-      badge.className = 'api-status-badge';
-      badge.textContent = 'Aprova+ IA Online · Modo Estático';
+      badge.textContent = 'Sincronizado';
     } else {
-      badge.className = 'api-status-badge';
-      badge.textContent = 'Aprova+ IA Ativo · Base Local';
+      badge.className = 'api-status-badge offline';
+      badge.textContent = 'Modo Local';
     }
+  }
+
+  async function request(endpoint, options = {}) {
+    if (isGitHubPages) {
+      throw new Error('GitHub Pages static mode');
+    }
+    const url = `${API_BASE}${endpoint}`;
+    const user = window.AprovaAPI?.obterUsuarioAtual();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(user && user.id ? { 'X-User-Id': String(user.id) } : {}),
+      ...(user && user.token ? { 'Authorization': `Bearer ${user.token}` } : {}),
+      ...(options.headers || {})
+    };
+    const res = await fetch(url, {
+      ...options,
+      headers
+    });
+    if (!res.ok) {
+      let errMsg = `Erro HTTP ${res.status}`;
+      let rawDetail = null;
+      try {
+        const errJson = await res.json();
+        if (errJson && errJson.detail !== undefined) {
+          rawDetail = errJson.detail;
+          errMsg = formatApiErrorDetail(errJson.detail, res.status);
+        }
+      } catch (_) {}
+      const error = new Error(errMsg);
+      error.isApiError = true;
+      error.status = res.status;
+      error.detail = rawDetail;
+      error.code = rawDetail && typeof rawDetail === 'object' ? rawDetail.code : null;
+      throw error;
+    }
+    backendOnline = true;
+    updateStatusBadge(true);
+    return await res.json();
+  }
+
+  // ==================== BUILDER PDF 1.4 PURO (MODO OFFLINE / ESTÁTICO) ====================
+  function wrapText(text, width) {
+    const words = String(text || '').replace(/\s+/g, ' ').trim().split(' ');
+    const lines = [];
+    let current = '';
+    words.forEach(w => {
+      if (!w) return;
+      if (!current) {
+        current = w;
+      } else if ((current + ' ' + w).length <= width) {
+        current += ' ' + w;
+      } else {
+        lines.push(current);
+        current = w;
+      }
+    });
+    if (current) lines.push(current);
+    return lines.length ? lines : [''];
+  }
+
+  function pdfEscapeWinAnsi(text) {
+    const cp1252Extras = {
+      0x20AC: 0x80, 0x201A: 0x82, 0x0192: 0x83, 0x201E: 0x84, 0x2026: 0x85,
+      0x2020: 0x86, 0x2021: 0x87, 0x02C6: 0x88, 0x2030: 0x89, 0x0160: 0x8A,
+      0x2039: 0x8B, 0x0152: 0x8C, 0x017D: 0x8E, 0x2018: 0x91, 0x2019: 0x92,
+      0x201C: 0x93, 0x201D: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97,
+      0x02DC: 0x98, 0x2122: 0x99, 0x0161: 0x9A, 0x203A: 0x9B, 0x0153: 0x9C,
+      0x017E: 0x9E, 0x0178: 0x9F
+    };
+    const norm = String(text || '')
+      .replace(/→/g, '->')
+      .replace(/←/g, '<-')
+      .replace(/✓|✔/g, '[X]')
+      .replace(/☐/g, '[ ]')
+      .replace(/\u00a0/g, ' ')
+      .replace(/[\r\n]+/g, ' ');
+    let out = '';
+    for (let i = 0; i < norm.length; i++) {
+      const code = norm.charCodeAt(i);
+      let b;
+      if (code <= 0xFF) {
+        b = code;
+      } else if (cp1252Extras[code] !== undefined) {
+        b = cp1252Extras[code];
+      } else {
+        b = 0x3F; // '?'
+      }
+      if (b === 0x5C) out += '\\\\';
+      else if (b === 0x28) out += '\\(';
+      else if (b === 0x29) out += '\\)';
+      else if (b >= 32 && b <= 126) out += String.fromCharCode(b);
+      else if (b >= 128) out += '\\' + b.toString(8).padStart(3, '0');
+      else out += ' ';
+    }
+    return out;
+  }
+
+  function buildPdfBlob(concurso, material, usuario) {
+    const now = new Date();
+    const pad2 = n => String(n).padStart(2, '0');
+    const dataHoje = `${pad2(now.getDate())}/${pad2(now.getMonth() + 1)}/${now.getFullYear()} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+    const ownerName = (usuario && usuario.nome) ? usuario.nome : 'Aluno Aprova+';
+    const catClean = material.categoria === 'Edital Verticalizado' ? 'Guia do Edital' : (material.categoria || 'Guia');
+
+    const blocks = [
+      ['title', material.titulo],
+      ['subtitle', `${catClean}  ·  Disciplina: ${material.disciplina || 'Geral'}  ·  Formato: Organizado por Tópico (PDF A4)`],
+      ['spacer', ''],
+      ['section', '1. DADOS DO CONCURSO VINCULADO'],
+      ['bullet', `Concurso: ${concurso.titulo} (${concurso.sigla})`],
+      ['bullet', `Órgão: ${concurso.orgao}`],
+      ['bullet', `Status: ${concurso.status_label}  |  Banca: ${concurso.banca}`],
+      ['bullet', `Vagas: ${concurso.vagas}  |  Escolaridade: ${concurso.escolaridade}`],
+      ['bullet', `Remuneração: ${concurso.salario}`],
+      ['bullet', `Inscrições / Situação: ${concurso.prazo || ''}  |  Prova / Previsão: ${concurso.data_prova || ''}`],
+      ['bullet', `Corte anterior (${concurso.ultimo_concurso_ano || 'Último Edital'}): ${concurso.nota_corte_anterior || 'Consulte edital'}`],
+      ['spacer', ''],
+      ['section', '2. RAIO-X E ESTRATÉGIA APROVA+ IA'],
+      ['body', concurso.resumo_ia || ''],
+      ['bullet', `Fontes acompanhadas: ${concurso.fontes_internet || 'Diário Oficial e Banca'}`],
+      ['spacer', ''],
+      ['section', '3. ESCOPO DESTE GUIA DE ESTUDO'],
+      ['body', material.resumo_conteudo || ''],
+      ['spacer', ''],
+      ['section', `4. CONTEÚDO ORGANIZADO POR TÓPICO E PESO (${concurso.banca})`],
+      ['body', 'Marque com [X] conforme concluir Teoria, Revisão e Bateria de Questões:']
+    ];
+
+    (concurso.disciplinas || []).forEach((d, idx) => {
+      blocks.push([
+        'bullet',
+        `[ ] ${idx + 1}. ${d.nome} — ${d.questoes} questões (${d.peso}) | Prioridade: ${d.prioridade}`
+      ]);
+    });
+
+    blocks.push(
+      ['spacer', ''],
+      ['section', '5. ROTEIRO RECOMENDADO DE EXECUÇÃO'],
+      ['bullet', '1) Dedique 70% do seu tempo às disciplinas de Prioridade Crítica e Alta.'],
+      ['bullet', `2) Resolva no mínimo 50 questões anteriores da banca ${concurso.banca} por semana.`],
+      ['bullet', `3) Refaça a prova anterior (${concurso.ultimo_concurso_ano || 'Último Edital'}) simulando o tempo real.`]
+    );
+
+    const lines = [];
+    blocks.forEach(([kind, text]) => {
+      if (kind === 'spacer') {
+        lines.push(['spacer', '', 8]);
+      } else if (kind === 'title') {
+        wrapText(text, 64).forEach(w => lines.push(['title', w, 18]));
+      } else if (kind === 'subtitle') {
+        wrapText(text, 84).forEach(w => lines.push(['subtitle', w, 14]));
+      } else if (kind === 'section') {
+        lines.push(['section', text, 18]);
+      } else if (kind === 'body') {
+        wrapText(text, 86).forEach(w => lines.push(['body', w, 14]));
+      } else if (kind === 'bullet') {
+        const wrapped = wrapText(text, 80);
+        wrapped.forEach((w, idx) => {
+          const skipBullet = w.startsWith('[ ]') || /^[123]\)/.test(w);
+          const prefix = idx === 0 && !skipBullet ? '• ' : '  ';
+          lines.push(['bullet', `${prefix}${w}`, 14]);
+        });
+      }
+    });
+
+    const pagesCmds = [];
+    const bottomLimit = 64;
+
+    function startPage(pageIndex) {
+      const cmds = [];
+      cmds.push(`BT /F2 22 Tf 0.960 0.962 0.966 rg 110 420 Td (${pdfEscapeWinAnsi('Aprova+ IA · ' + ownerName)}) Tj ET`);
+      if (pageIndex === 0) {
+        cmds.push('0.063 0.137 0.220 rg');
+        cmds.push('0 762 595 80 re f');
+        cmds.push(`BT /F2 16 Tf 1 1 1 rg 44 804 Td (${pdfEscapeWinAnsi('APROVA+ IA')}) Tj ET`);
+        cmds.push(`BT /F1 9.5 Tf 0.84 0.89 0.94 rg 44 784 Td (${pdfEscapeWinAnsi(`Guia Organizado por Tópico do Edital (A4) · Preparado para ${ownerName}`)}) Tj ET`);
+        return [cmds, 738];
+      }
+      cmds.push('0.847 0.835 0.796 RG 0.8 w 44 806 m 551 806 l S');
+      cmds.push(`BT /F2 9 Tf 0.067 0.110 0.141 rg 44 814 Td (${pdfEscapeWinAnsi(`APROVA+ IA · ${concurso.sigla} · Caderno A4 de ${ownerName}`)}) Tj ET`);
+      return [cmds, 784];
+    }
+
+    let [curCmds, y] = startPage(0);
+    lines.forEach(([style, text, lh]) => {
+      if (y - lh < bottomLimit) {
+        pagesCmds.push(curCmds);
+        [curCmds, y] = startPage(pagesCmds.length);
+      }
+      if (style === 'spacer') {
+        y -= lh;
+        return;
+      }
+      if (style === 'title') {
+        curCmds.push(`BT /F2 13 Tf 0.067 0.110 0.141 rg 44 ${y} Td (${pdfEscapeWinAnsi(text)}) Tj ET`);
+      } else if (style === 'subtitle') {
+        curCmds.push(`BT /F1 9.5 Tf 0.290 0.365 0.439 rg 44 ${y} Td (${pdfEscapeWinAnsi(text)}) Tj ET`);
+      } else if (style === 'section') {
+        curCmds.push(`0.043 0.310 0.424 RG 0.8 w 44 ${y - 3} m 551 ${y - 3} l S`);
+        curCmds.push(`BT /F2 10.5 Tf 0.043 0.310 0.424 rg 44 ${y + 2} Td (${pdfEscapeWinAnsi(text)}) Tj ET`);
+        y -= 4;
+      } else {
+        curCmds.push(`BT /F1 10 Tf 0.176 0.243 0.306 rg 44 ${y} Td (${pdfEscapeWinAnsi(text)}) Tj ET`);
+      }
+      y -= lh;
+    });
+    pagesCmds.push(curCmds);
+
+    const totalPages = pagesCmds.length;
+    pagesCmds.forEach((cmds, idx) => {
+      cmds.push('0.847 0.835 0.796 RG 0.6 w 44 46 m 551 46 l S');
+      const footer = `Preparado para ${ownerName} · Uso pessoal · ${dataHoje}   |   Página ${idx + 1} de ${totalPages}`;
+      cmds.push(`BT /F1 8 Tf 0.290 0.365 0.439 rg 44 32 Td (${pdfEscapeWinAnsi(footer)}) Tj ET`);
+    });
+
+    const pageObjIds = pagesCmds.map((_, i) => 5 + i * 2);
+    const objects = [
+      '<< /Type /Catalog /Pages 2 0 R >>',
+      `<< /Type /Pages /Kids [${pageObjIds.map(id => `${id} 0 R`).join(' ')}] /Count ${totalPages} >>`,
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'
+    ];
+
+    pagesCmds.forEach((cmds, i) => {
+      const contentId = 6 + i * 2;
+      const streamStr = cmds.join('\n') + '\n';
+      objects.push(
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentId} 0 R >>`
+      );
+      objects.push(`<< /Length ${streamStr.length} >>\nstream\n${streamStr}endstream`);
+    });
+
+    const encoder = new TextEncoder();
+    const parts = [new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0x0A, 0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A])];
+    let byteLen = parts[0].length;
+    const offsets = [0];
+
+    objects.forEach((body, idx) => {
+      offsets.push(byteLen);
+      const chunk = encoder.encode(`${idx + 1} 0 obj\n${body}\nendobj\n`);
+      parts.push(chunk);
+      byteLen += chunk.length;
+    });
+
+    const xrefPos = byteLen;
+    let xrefStr = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+    offsets.slice(1).forEach(off => {
+      xrefStr += `${String(off).padStart(10, '0')} 00000 n \n`;
+    });
+    xrefStr += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF\n`;
+    parts.push(encoder.encode(xrefStr));
+
+    return new Blob(parts, { type: 'application/pdf' });
+  }
+
+  function safeFilenamePart(str) {
+    return String(str || '')
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Za-z0-9_-]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'Roteiro';
+  }
+
+  function triggerBlobDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   window.AprovaAPI = {
@@ -106,6 +499,40 @@
 
     isBackendOnline() {
       return backendOnline;
+    },
+
+    obterRascunhoVisitante() {
+      return getGuestDraft();
+    },
+
+    obterOnboardingVisitante() {
+      try {
+        const raw = localStorage.getItem(GUEST_ONBOARDING_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return null;
+    },
+
+    salvarOnboardingVisitante(data) {
+      try {
+        localStorage.setItem(GUEST_ONBOARDING_KEY, JSON.stringify({ ...data, concluido: true, atualizado_em: new Date().toISOString() }));
+      } catch (e) {}
+    },
+
+    apagarOnboardingVisitante() {
+      try {
+        localStorage.removeItem(GUEST_ONBOARDING_KEY);
+      } catch (e) {}
+    },
+
+    isOnboardingConcluido() {
+      const user = this.obterUsuarioAtual();
+      if (user) {
+        if (user.onboarding_concluido !== undefined) return Boolean(user.onboarding_concluido);
+        return true;
+      }
+      const g = this.obterOnboardingVisitante();
+      return Boolean(g && g.concluido);
     },
 
     // ==================== AUTENTICAÇÃO E SESSÃO DO USUÁRIO ====================
@@ -131,6 +558,35 @@
       } catch (e) {}
     },
 
+    async sincronizarRascunhoVisitante() {
+      const user = this.obterUsuarioAtual();
+      const draft = getGuestDraft();
+      if (!user || (!draft.salvos.length && !draft.estudados.length)) {
+        return { salvos_sincronizados: 0, estudados_sincronizados: 0 };
+      }
+      try {
+        const resp = await request(`/auth/usuarios/${user.id}/sincronizar-rascunho`, {
+          method: 'POST',
+          body: JSON.stringify(draft)
+        });
+        clearGuestDraft();
+        return resp;
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        const uData = getLocalUserData(st, user);
+        const sSet = new Set(uData.salvos || []);
+        const eSet = new Set(uData.estudados || []);
+        draft.salvos.forEach(id => sSet.add(id));
+        draft.estudados.forEach(id => eSet.add(Number(id)));
+        uData.salvos = Array.from(sSet);
+        uData.estudados = Array.from(eSet);
+        saveLocalState(st);
+        clearGuestDraft();
+        return { salvos_sincronizados: draft.salvos.length, estudados_sincronizados: draft.estudados.length };
+      }
+    },
+
     async loginUsuario(email, senha) {
       try {
         const resp = await request('/auth/login', {
@@ -138,20 +594,24 @@
           body: JSON.stringify({ email, senha })
         });
         this.salvarSessaoUsuario(resp.usuario);
+        await this.sincronizarRascunhoVisitante();
         return resp;
       } catch (e) {
         if (e.isApiError) throw e;
         const st = getLocalState();
         const emailLimpo = (email || '').trim().toLowerCase();
+        const expectedHash = hashSenhaLocal(emailLimpo, senha);
         const user = (st.usuarios || []).find(
-          u => u.email.toLowerCase() === emailLimpo && u.senha === senha
+          u => u.email.toLowerCase() === emailLimpo && (u.senha_hash ? u.senha_hash === expectedHash : u.senha === senha)
         );
         if (!user) {
           throw new Error('E-mail ou senha incorretos. Utilize a conta de demonstração ou crie uma conta gratuita.');
         }
-        const { senha: _, ...userSemSenha } = user;
+        const { senha: _, senha_hash: _sh, ...userSemSenha } = user;
         userSemSenha.iniciais = gerarIniciais(userSemSenha.nome);
+        userSemSenha.token = userSemSenha.token || `local.${userSemSenha.id}.${Date.now()}`;
         this.salvarSessaoUsuario(userSemSenha);
+        await this.sincronizarRascunhoVisitante();
         return {
           sucesso: true,
           mensagem: `Sessão iniciada: ${userSemSenha.nome}.`,
@@ -167,6 +627,7 @@
           body: JSON.stringify(payload)
         });
         this.salvarSessaoUsuario(resp.usuario);
+        await this.sincronizarRascunhoVisitante();
         return resp;
       } catch (e) {
         if (e.isApiError) throw e;
@@ -176,22 +637,30 @@
         if (st.usuarios.some(u => u.email.toLowerCase() === emailLimpo)) {
           throw new Error('Este e-mail já está cadastrado na plataforma.');
         }
+        const ufsList = window.AprovaUtils
+          ? window.AprovaUtils.parseUfsList(payload.uf_interesse)
+          : (Array.isArray(payload.uf_interesse) ? payload.uf_interesse : ['Nacional']);
+        const horasVal = Math.max(0.5, Math.min(16, parseFloat(String(payload.horas_estudo_dia || 4).replace(',', '.')) || 4));
+        const novoId = Date.now();
         const novo = {
-          id: Date.now(),
+          id: novoId,
           nome: payload.nome.trim(),
           email: emailLimpo,
-          senha: payload.senha,
+          senha_hash: hashSenhaLocal(emailLimpo, payload.senha),
           carreira_foco: payload.carreira_foco || 'Policial',
           escolaridade: payload.escolaridade || 'Superior',
-          uf_interesse: payload.uf_interesse || 'Nacional',
-          horas_estudo_dia: parseInt(payload.horas_estudo_dia || 4, 10),
+          uf_interesse: ufsList.join(', '),
+          ufs_interesse: ufsList,
+          horas_estudo_dia: horasVal,
           plano: 'Gratuito',
           iniciais: gerarIniciais(payload.nome)
         };
         st.usuarios.push(novo);
         saveLocalState(st);
-        const { senha: _, ...userSemSenha } = novo;
+        const { senha_hash: _sh, ...userSemSenha } = novo;
+        userSemSenha.token = `local.${novoId}.${Date.now()}`;
         this.salvarSessaoUsuario(userSemSenha);
+        await this.sincronizarRascunhoVisitante();
         return {
           sucesso: true,
           mensagem: `Conta criada com sucesso para ${novo.nome}.`,
@@ -212,16 +681,22 @@
         this.salvarSessaoUsuario(resp.usuario);
         return resp;
       } catch (e) {
+        if (e.isApiError) throw e;
         const st = getLocalState();
         st.usuarios = st.usuarios || [];
         const idx = st.usuarios.findIndex(u => u.id === atual.id || u.email === atual.email);
+        const ufsList = window.AprovaUtils
+          ? window.AprovaUtils.parseUfsList(payload.uf_interesse)
+          : (Array.isArray(payload.uf_interesse) ? payload.uf_interesse : ['Nacional']);
+        const horasVal = Math.max(0.5, Math.min(16, parseFloat(String(payload.horas_estudo_dia || 4).replace(',', '.')) || 4));
         const atualizado = {
           ...atual,
           nome: payload.nome.trim(),
           carreira_foco: payload.carreira_foco,
           escolaridade: payload.escolaridade,
-          uf_interesse: payload.uf_interesse,
-          horas_estudo_dia: parseInt(payload.horas_estudo_dia || 4, 10),
+          uf_interesse: ufsList.join(', '),
+          ufs_interesse: ufsList,
+          horas_estudo_dia: horasVal,
           plano: payload.plano || atual.plano || 'Gratuito',
           iniciais: gerarIniciais(payload.nome)
         };
@@ -250,6 +725,7 @@
     },
 
     async listarConcursos(params = {}) {
+      const user = this.obterUsuarioAtual();
       try {
         const qs = new URLSearchParams();
         if (params.status) qs.set('status', params.status);
@@ -257,28 +733,49 @@
         if (params.escolaridade) qs.set('escolaridade', params.escolaridade);
         if (params.uf) qs.set('uf', params.uf);
         if (params.q) qs.set('q', params.q);
-        if (params.apenas_salvos) qs.set('apenas_salvos', 'true');
-        return await request(`/concursos?${qs.toString()}`);
+        if (user && params.apenas_salvos) qs.set('apenas_salvos', 'true');
+
+        const resp = await request(`/concursos?${qs.toString()}`);
+        if (!user) {
+          const g = getGuestDraft();
+          const savedSet = new Set(g.salvos);
+          const studiedSet = new Set(g.estudados);
+          const hydrated = (resp.concursos || []).map(c => overlayConcursoWithSets(c, savedSet, studiedSet));
+          return {
+            resumo: {
+              ...(resp.resumo || {}),
+              salvos: savedSet.size
+            },
+            concursos: params.apenas_salvos ? hydrated.filter(c => c.salvo) : hydrated
+          };
+        }
+        return resp;
       } catch (e) {
+        if (e.isApiError) throw e;
+        backendOnline = false;
         updateStatusBadge(false);
         const st = getLocalState();
-        const list = st.concursos.filter(c => {
+        const { savedSet, studiedSet } = getActiveUserSetsOffline(st);
+        const all = st.concursos.map(c => overlayConcursoWithSets(c, savedSet, studiedSet));
+        const list = all.filter(c => {
           if (params.apenas_salvos && !c.salvo) return false;
           if (params.status && params.status !== 'todos' && c.status !== params.status) return false;
           if (params.area && params.area !== 'todas' && c.area.toLowerCase() !== params.area.toLowerCase()) return false;
           if (params.escolaridade && params.escolaridade !== 'todos' && !c.escolaridade.toLowerCase().includes(params.escolaridade.toLowerCase())) return false;
-          if (params.uf && params.uf !== 'todas' && c.uf.toLowerCase() !== params.uf.toLowerCase()) return false;
+          if (params.uf && params.uf !== 'todas') {
+            const ufsFilter = String(params.uf).split(',').map(u => u.trim().toLowerCase()).filter(Boolean);
+            if (ufsFilter.length && !ufsFilter.includes(c.uf.toLowerCase())) return false;
+          }
           if (params.q && !`${c.sigla} ${c.titulo} ${c.orgao} ${c.banca} ${c.area} ${c.resumo_ia}`.toLowerCase().includes(params.q.toLowerCase())) return false;
           return true;
         });
-        const all = st.concursos;
         return {
           resumo: {
             total: all.length,
             abertos: all.filter(x => x.status === 'aberto').length,
             previstos: all.filter(x => x.status === 'previsto').length,
             encerrados: all.filter(x => x.status === 'encerrado').length,
-            salvos: all.filter(x => x.salvo).length,
+            salvos: savedSet.size,
             vagas_abertas: all.filter(x => x.status === 'aberto').reduce((acc, x) => acc + (x.vagas_num || 0), 0)
           },
           concursos: list
@@ -287,32 +784,84 @@
     },
 
     async obterConcurso(id) {
+      const user = this.obterUsuarioAtual();
       try {
-        return await request(`/concursos/${id}`);
+        const c = await request(`/concursos/${id}`);
+        if (!user) {
+          const g = getGuestDraft();
+          return overlayConcursoWithSets(c, new Set(g.salvos), new Set(g.estudados));
+        }
+        return c;
       } catch (e) {
+        if (e.isApiError) throw e;
         const st = getLocalState();
-        return st.concursos.find(c => c.id === id) || st.concursos[0];
+        const found = st.concursos.find(c => c.id === id);
+        if (!found) return null;
+        const { savedSet, studiedSet } = getActiveUserSetsOffline(st);
+        return overlayConcursoWithSets(found, savedSet, studiedSet);
       }
     },
 
     async alternarFavorito(id) {
+      const user = this.obterUsuarioAtual();
+      if (!user) {
+        const g = getGuestDraft();
+        const set = new Set(g.salvos);
+        let salvo;
+        if (set.has(id)) {
+          set.delete(id);
+          salvo = false;
+        } else {
+          set.add(id);
+          salvo = true;
+        }
+        saveGuestDraft({ salvos: Array.from(set), estudados: g.estudados });
+        return { id, salvo, isGuest: true };
+      }
+
       try {
         return await request(`/concursos/${id}/favorito`, { method: 'POST' });
       } catch (e) {
+        if (e.isApiError) throw e;
         const st = getLocalState();
-        const c = st.concursos.find(x => x.id === id);
-        if (c) c.salvo = !c.salvo;
+        const uData = getLocalUserData(st, user);
+        const set = new Set(uData.salvos || []);
+        let salvo;
+        if (set.has(id)) {
+          set.delete(id);
+          salvo = false;
+        } else {
+          set.add(id);
+          salvo = true;
+        }
+        uData.salvos = Array.from(set);
         saveLocalState(st);
-        return { id, salvo: c ? c.salvo : false };
+        return { id, salvo };
       }
     },
 
     async listarMateriais(concursoId = 'todos', categoria = 'todas') {
+      const user = this.obterUsuarioAtual();
       try {
         const qs = new URLSearchParams({ concurso_id: concursoId, categoria });
-        return await request(`/materiais?${qs.toString()}`);
+        const resp = await request(`/materiais?${qs.toString()}`);
+        if (!user) {
+          const g = getGuestDraft();
+          const studiedSet = new Set(g.estudados);
+          const mats = (resp.materiais || []).map(m => ({ ...m, estudado: studiedSet.has(m.id) }));
+          const est = mats.filter(x => x.estudado).length;
+          return {
+            total: mats.length,
+            estudados: est,
+            progresso_pct: mats.length ? Math.round((est / mats.length) * 1000) / 10 : 0,
+            materiais: mats
+          };
+        }
+        return resp;
       } catch (e) {
+        if (e.isApiError) throw e;
         const st = getLocalState();
+        const { studiedSet } = getActiveUserSetsOffline(st);
         let mats = [];
         st.concursos.forEach(c => {
           if (concursoId === 'todos' || c.id === concursoId) {
@@ -320,6 +869,7 @@
               if (categoria === 'todas' || m.categoria === categoria) {
                 mats.push({
                   ...m,
+                  estudado: studiedSet.has(m.id),
                   concurso_id: c.id,
                   concurso_titulo: c.titulo,
                   concurso_sigla: c.sigla,
@@ -334,36 +884,146 @@
         return {
           total: mats.length,
           estudados: est,
-          progresso_pct: mats.length ? Math.round((est / mats.length) * 100) : 0,
+          progresso_pct: mats.length ? Math.round((est / mats.length) * 1000) / 10 : 0,
           materiais: mats
         };
       }
     },
 
     async alternarMaterialEstudado(materialId) {
+      const user = this.obterUsuarioAtual();
+      const mid = Number(materialId);
+      if (!user) {
+        const g = getGuestDraft();
+        const set = new Set((g.estudados || []).map(Number));
+        let estudado;
+        if (set.has(mid)) {
+          set.delete(mid);
+          estudado = false;
+        } else {
+          set.add(mid);
+          estudado = true;
+        }
+        saveGuestDraft({ salvos: g.salvos, estudados: Array.from(set) });
+        return { id: mid, estudado, isGuest: true };
+      }
+
       try {
-        return await request(`/materiais/${materialId}/estudado`, { method: 'POST' });
+        return await request(`/materiais/${mid}/estudado`, { method: 'POST' });
       } catch (e) {
+        if (e.isApiError) throw e;
         const st = getLocalState();
-        let novo = false;
-        st.concursos.forEach(c => {
-          c.materiais.forEach(m => {
-            if (m.id === materialId) {
-              m.estudado = !m.estudado;
-              novo = m.estudado;
-            }
-          });
-        });
+        const uData = getLocalUserData(st, user);
+        const set = new Set((uData.estudados || []).map(Number));
+        let estudado;
+        if (set.has(mid)) {
+          set.delete(mid);
+          estudado = false;
+        } else {
+          set.add(mid);
+          estudado = true;
+        }
+        uData.estudados = Array.from(set);
         saveLocalState(st);
-        return { id: materialId, estudado: novo };
+        return { id: mid, estudado };
       }
     },
 
-    baixarMaterial(materialId) {
+    async obterPreviewMaterial(materialId) {
+      try {
+        return await request(`/materiais/${materialId}/preview`);
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        let matEncontrado = null;
+        let concEncontrado = null;
+        st.concursos.forEach(c => {
+          c.materiais.forEach(m => {
+            if (m.id === Number(materialId)) {
+              matEncontrado = m;
+              concEncontrado = c;
+            }
+          });
+        });
+        if (!matEncontrado || !concEncontrado) {
+          throw new Error('Material não encontrado para pré-visualização.');
+        }
+        const banca = concEncontrado.banca || 'Oficial';
+        const ultimoAno = concEncontrado.ultimo_concurso_ano || 'Último Edital';
+        return {
+          id: matEncontrado.id,
+          titulo: matEncontrado.titulo,
+          categoria: matEncontrado.categoria,
+          disciplina: matEncontrado.disciplina || 'Geral',
+          formato: 'Guia Organizado por Tópico (PDF A4)',
+          concurso_id: concEncontrado.id,
+          concurso_sigla: concEncontrado.sigla,
+          concurso_titulo: concEncontrado.titulo,
+          orgao: concEncontrado.orgao,
+          banca,
+          salario: concEncontrado.salario,
+          vagas: concEncontrado.vagas,
+          status_label: concEncontrado.status_label,
+          prazo: concEncontrado.prazo,
+          data_prova: concEncontrado.data_prova,
+          nota_corte_anterior: concEncontrado.nota_corte_anterior || 'Consulte edital',
+          ultimo_concurso_ano: ultimoAno,
+          fontes_internet: concEncontrado.fontes_internet || 'Diário Oficial e Banca',
+          resumo_conteudo: matEncontrado.resumo_conteudo || '',
+          resumo_ia: concEncontrado.resumo_ia || '',
+          disciplinas: concEncontrado.disciplinas || [],
+          passos_estudo: [
+            'Dedique 70% do tempo às disciplinas marcadas com Prioridade Crítica e Alta.',
+            `Resolva no mínimo 50 questões recentes da banca ${banca} por semana.`,
+            `Refaça a prova anterior (${ultimoAno}) simulando o tempo oficial.`
+          ]
+        };
+      }
+    },
+
+    async baixarMaterial(materialId) {
+      const mid = Number(materialId);
+      const user = this.obterUsuarioAtual();
       if (backendOnline && !isGitHubPages) {
-        window.open(`${API_BASE}/materiais/${materialId}/download`, '_blank');
-        window.AprovaUtils.showToast('Emitindo guia de estudo verticalizado para download.');
-        setTimeout(() => window.AprovaApp.atualizarIndicadoresUsuario(), 700);
+        try {
+          const headers = {
+            ...(user && user.id ? { 'X-User-Id': String(user.id) } : {}),
+            ...(user && user.token ? { 'Authorization': `Bearer ${user.token}` } : {})
+          };
+          const res = await fetch(`${API_BASE}/materiais/${mid}/download`, { headers });
+          if (!res.ok) {
+            let errMsg = `Não foi possível exportar o PDF A4 (HTTP ${res.status}).`;
+            try {
+              const errJson = await res.json();
+              if (errJson?.detail) errMsg = formatApiErrorDetail(errJson.detail, res.status);
+            } catch (_) {}
+            window.AprovaUtils.showToast(errMsg, {
+              variant: 'error',
+              actionLabel: (res.status === 403 || res.status === 401) ? 'Ver planos' : undefined,
+              onAction: () => window.AprovaApp.switchView('premium')
+            });
+            return;
+          }
+          const blob = await res.blob();
+          const disp = res.headers.get('Content-Disposition') || '';
+          const match = disp.match(/filename="?([^";]+)"?/i);
+          const filename = match ? match[1] : `AprovaMais_Guia_${mid}.pdf`;
+          triggerBlobDownload(blob, filename);
+          window.AprovaUtils.showToast('Guia em PDF A4 baixado com sucesso.');
+          setTimeout(() => window.AprovaApp.atualizarIndicadoresUsuario(), 500);
+          return;
+        } catch (e) {
+          // Segue para fallback offline apenas em erro de rede
+        }
+      }
+
+      const planoAtual = (user?.plano || 'Gratuito').toLowerCase();
+      if (planoAtual !== 'pro' && planoAtual !== 'pro+') {
+        window.AprovaUtils.showToast('Exportação em PDF A4 liberada nos planos Pro e Pro+.', {
+          variant: 'error',
+          actionLabel: 'Ver planos',
+          onAction: () => window.AprovaApp.switchView('premium')
+        });
         return;
       }
 
@@ -372,65 +1032,23 @@
       let concEncontrado = null;
       st.concursos.forEach(c => {
         c.materiais.forEach(m => {
-          if (m.id === materialId) {
+          if (m.id === mid) {
             matEncontrado = m;
             concEncontrado = c;
           }
         });
       });
 
-      if (!matEncontrado || !concEncontrado) return;
+      if (!matEncontrado || !concEncontrado) {
+        window.AprovaUtils.showToast('Guia não encontrado para exportação.', { variant: 'error' });
+        return;
+      }
 
-      const disciplinasTxt = (concEncontrado.disciplinas || [])
-        .map((d, i) => `  [ ] ${i + 1}. ${d.nome} — Questões: ${d.questoes} | Peso: ${d.peso} | Prioridade IA: ${d.prioridade}`)
-        .join('\n');
+      const pdfBlob = buildPdfBlob(concEncontrado, matEncontrado, user);
+      const filename = `AprovaMais_${safeFilenamePart(concEncontrado.sigla)}_${safeFilenamePart(matEncontrado.categoria)}_${mid}.pdf`;
+      triggerBlobDownload(pdfBlob, filename);
 
-      const conteudo = [
-        '================================================================================',
-        'APROVA+ IA — CENTRAL DE CONCURSOS PÚBLICOS E MATERIAIS DIRECIONADOS',
-        '================================================================================',
-        '',
-        `MATERIAL: ${matEncontrado.titulo}`,
-        `CATEGORIA: ${matEncontrado.categoria} (${matEncontrado.disciplina || 'Geral'} · ${matEncontrado.paginas})`,
-        `CONCURSO VINCULADO: ${concEncontrado.sigla} — ${concEncontrado.titulo}`,
-        `ÓRGÃO: ${concEncontrado.orgao}`,
-        `BANCA ORGANIZADORA: ${concEncontrado.banca}`,
-        `REMUNERAÇÃO: ${concEncontrado.salario} | VAGAS: ${concEncontrado.vagas}`,
-        `STATUS ATUAL: ${concEncontrado.status_label}`,
-        '',
-        '--------------------------------------------------------------------------------',
-        '1. DIAGNÓSTICO E DIRECIONAMENTO APROVA+ IA',
-        '--------------------------------------------------------------------------------',
-        concEncontrado.resumo_ia,
-        '',
-        `Fontes Monitoradas: ${concEncontrado.fontes_internet || 'Diário Oficial e Banca'}`,
-        `Nota de Corte de Referência (${concEncontrado.ultimo_concurso_ano || 'Último Edital'}): ${concEncontrado.nota_corte_anterior || 'Consulte edital'}`,
-        '',
-        '--------------------------------------------------------------------------------',
-        '2. MATRIZ DE DISCIPLINAS VERTICALIZADAS POR PRIORIDADE',
-        '--------------------------------------------------------------------------------',
-        disciplinasTxt,
-        '',
-        '--------------------------------------------------------------------------------',
-        '3. ROTEIRO DE ESTUDO RECOMENDADO',
-        '--------------------------------------------------------------------------------',
-        '[ ] Passo 1: Estudar a teoria direcionada das disciplinas de Prioridade Crítica e Alta.',
-        `[ ] Passo 2: Resolver no mínimo 50 questões recentes da banca ${concEncontrado.banca}.`,
-        '[ ] Passo 3: Revisar os erros e marcar o material como Concluído na plataforma.',
-        '================================================================================'
-      ].join('\n');
-
-      const blob = new Blob([conteudo], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `AprovaMais_${concEncontrado.sigla}_Material_${materialId}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-
-      window.AprovaUtils.showToast(`Guia "${matEncontrado.titulo}" baixado com sucesso.`);
+      window.AprovaUtils.showToast(`Guia em PDF A4 "${matEncontrado.titulo}" baixado.`);
       window.AprovaApp.atualizarIndicadoresUsuario();
     },
 
@@ -438,6 +1056,7 @@
       try {
         return await request('/radar');
       } catch (e) {
+        if (e.isApiError) throw e;
         const st = getLocalState();
         return { total: st.rumores.length, rumores: st.rumores };
       }
@@ -447,6 +1066,7 @@
       try {
         return await request('/radar', { method: 'POST', body: JSON.stringify(payload) });
       } catch (e) {
+        if (e.isApiError) throw e;
         const st = getLocalState();
         const txt = `${payload.titulo_noticia} ${payload.fonte_portal}`.toLowerCase();
         let confianca = 64;
@@ -470,7 +1090,7 @@
           data_captura: 'Enviado agora (Cocriação)',
           estagio_maturidade: estagio,
           confianca_ia: confianca,
-          analise_ia: `Notícia classificada automaticamente pelo motor NLP como "${estagio}" (${confianca}% de confiança).`,
+          analise_ia: `Notícia classificada automaticamente como "${estagio}" (${confianca}% de confiança).`,
           votos_comunidade: 1
         };
         st.rumores.unshift(novo);
@@ -483,6 +1103,7 @@
       try {
         return await request(`/radar/${rumorId}/votar`, { method: 'POST' });
       } catch (e) {
+        if (e.isApiError) throw e;
         const st = getLocalState();
         const r = st.rumores.find(x => x.id === rumorId);
         if (r) r.votos_comunidade++;
@@ -495,6 +1116,7 @@
       try {
         return await request('/ia/chat', { method: 'POST', body: JSON.stringify({ mensagem }) });
       } catch (e) {
+        if (e.isApiError) throw e;
         const st = getLocalState();
         const q = mensagem.toLowerCase();
         for (const c of st.concursos) {
@@ -525,8 +1147,11 @@
       try {
         return await request('/ia/match-perfil', { method: 'POST', body: JSON.stringify(payload) });
       } catch (e) {
+        if (e.isApiError) throw e;
         const st = getLocalState();
-        const horasSem = (payload.horas_por_dia || 4) * 6;
+        const horasDia = Math.max(0.5, Math.min(16, Number(payload.horas_por_dia || 4)));
+        const diasSem = Math.max(1, Math.min(7, Number(payload.dias_por_semana || 6)));
+        const horasSem = horasDia * diasSem;
         const candidatos = st.concursos
           .filter(c => {
             if (payload.escolaridade === 'Médio' && !c.escolaridade.includes('Médio')) return false;
@@ -544,10 +1169,30 @@
               score += 12;
               motivos.push(`Compatível com escolaridade (${c.escolaridade})`);
             }
-            if ((payload.horas_por_dia || 4) >= 4 && c.salario_max >= 10000) {
+            if (horasDia >= 4 && c.salario_max >= 10000) {
               score += 8;
               motivos.push('Carga horária compatível com edital de alta complexidade');
             }
+            const discs = c.disciplinas || [];
+            const totalQuestoes = discs.reduce((acc, d) => acc + Math.max(Number(d.questoes) || 1, 1), 0) || 1;
+            let acumulado = 0;
+            const planoSemanal = discs.map((d, idx) => {
+              let fatia;
+              if (idx === discs.length - 1) {
+                fatia = Math.round(Math.max(0, horasSem - acumulado) * 10) / 10;
+              } else {
+                const qVal = Math.max(Number(d.questoes) || 1, 1);
+                fatia = Math.round(horasSem * (qVal / totalQuestoes) * 10) / 10;
+                acumulado += fatia;
+              }
+              return {
+                disciplina: d.nome,
+                prioridade: d.prioridade,
+                peso: d.peso,
+                horas_semanais: fatia,
+                horas_semana: `${fatia}h/sem`
+              };
+            });
             return {
               id: c.id,
               sigla: c.sigla,
@@ -559,15 +1204,7 @@
               vagas: c.vagas,
               match_score: Math.min(score, 98),
               motivos: motivos.length ? motivos : ['Oportunidade compatível com os parâmetros informados'],
-              plano_semanal: (c.disciplinas || []).map((d, idx) => {
-                const fatia = Math.round(horasSem * (idx === 0 ? 0.30 : (idx === 1 ? 0.25 : 0.15)) * 10) / 10;
-                return {
-                  disciplina: d.nome,
-                  prioridade: d.prioridade,
-                  peso: d.peso,
-                  horas_semana: `${fatia}h/sem`
-                };
-              })
+              plano_semanal: planoSemanal
             };
           })
           .sort((a, b) => b.match_score - a.match_score)
@@ -577,7 +1214,8 @@
           perfil_analisado: {
             escolaridade: payload.escolaridade,
             area: payload.area_interesse,
-            horas_por_dia: payload.horas_por_dia,
+            horas_por_dia: horasDia,
+            dias_por_semana: diasSem,
             horas_semanais_uteis: horasSem
           },
           top_recomendacoes: candidatos
@@ -590,23 +1228,390 @@
         const res = await request('/mvp/leads-premium', { method: 'POST', body: JSON.stringify(payload) });
         const user = this.obterUsuarioAtual();
         if (user) {
-          user.plano = 'Lista VIP PRO';
+          user.plano = 'Acesso Prioritário PRO';
           this.salvarSessaoUsuario(user);
         }
         return res;
       } catch (e) {
+        if (e.isApiError) throw e;
         const st = getLocalState();
         st.leads.unshift(payload);
         saveLocalState(st);
         const user = this.obterUsuarioAtual();
         if (user) {
-          user.plano = 'Lista VIP PRO';
+          user.plano = 'Acesso Prioritário PRO';
           this.salvarSessaoUsuario(user);
         }
         return {
           id: st.leads.length,
           sucesso: true,
-          mensagem: `Reserva VIP confirmada para ${payload.nome}. Prioridade registrada: ${payload.recurso_favorito}.`
+          mensagem: `Inscrição prioritária confirmada para ${payload.nome}. Recurso selecionado: ${payload.recurso_favorito}.`
+        };
+      }
+    },
+
+    // ==================== ORQUESTRAÇÃO V2: ONBOARDING, DASHBOARD, QUESTÕES & THEO ====================
+    async obterOnboarding() {
+      const user = this.obterUsuarioAtual();
+      if (!user) {
+        const g = this.obterOnboardingVisitante();
+        return {
+          concluido: Boolean(g && g.concluido),
+          dados: g || {
+            momento_jornada: 'estudando_edital',
+            concurso_alvo_id: 'pf-2026',
+            areas_interesse: ['Policial'],
+            horas_dia: 4,
+            dias_semana: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+            nivel_base: {},
+            estilo_estudo: 'equilibrado'
+          }
+        };
+      }
+      try {
+        return await request('/estudo/onboarding');
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const g = this.obterOnboardingVisitante();
+        return {
+          concluido: Boolean(user.onboarding_concluido),
+          dados: g || {
+            momento_jornada: 'estudando_edital',
+            concurso_alvo_id: user.concurso_alvo_id || 'pf-2026',
+            areas_interesse: [user.carreira_foco || 'Policial'],
+            ufs_interesse: user.ufs_interesse || ['Nacional'],
+            horas_dia: parseFloat(user.horas_estudo_dia || 4),
+            dias_semana: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+            nivel_base: {},
+            estilo_estudo: 'equilibrado'
+          }
+        };
+      }
+    },
+
+    async salvarOnboarding(payload) {
+      const user = this.obterUsuarioAtual();
+      this.salvarOnboardingVisitante(payload);
+      if (!user) {
+        return { sucesso: true, mensagem: 'Preferências calibradas neste dispositivo!' };
+      }
+      try {
+        const resp = await request('/estudo/onboarding', { method: 'PUT', body: JSON.stringify(payload) });
+        if (resp?.usuario) this.salvarSessaoUsuario(resp.usuario);
+        return resp;
+      } catch (e) {
+        if (e.isApiError) throw e;
+        user.concurso_alvo_id = payload.concurso_alvo_id || 'pf-2026';
+        user.horas_estudo_dia = parseFloat(payload.horas_dia || 4);
+        if (payload.ufs_interesse) {
+          user.ufs_interesse = payload.ufs_interesse;
+          user.uf_interesse = Array.isArray(payload.ufs_interesse) ? payload.ufs_interesse.join(', ') : payload.ufs_interesse;
+        }
+        user.onboarding_concluido = true;
+        this.salvarSessaoUsuario(user);
+        return { sucesso: true, mensagem: 'Plano inicial calibrado com sucesso!', usuario: user };
+      }
+    },
+
+    async apagarOnboarding() {
+      this.apagarOnboardingVisitante();
+      const user = this.obterUsuarioAtual();
+      if (!user) {
+        return { sucesso: true, mensagem: 'Preferências iniciais apagadas deste dispositivo.' };
+      }
+      try {
+        const resp = await request('/estudo/onboarding', { method: 'DELETE' });
+        if (resp?.usuario) this.salvarSessaoUsuario(resp.usuario);
+        return resp;
+      } catch (e) {
+        if (e.isApiError) throw e;
+        user.onboarding_concluido = false;
+        this.salvarSessaoUsuario(user);
+        return { sucesso: true, mensagem: 'Respostas de preferências iniciais apagadas.', usuario: user };
+      }
+    },
+
+    async obterDashboardEstudo(concursoIdOverride) {
+      const user = this.obterUsuarioAtual();
+      const guestOb = this.obterOnboardingVisitante();
+      const alvoId = concursoIdOverride || user?.concurso_alvo_id || guestOb?.concurso_alvo_id || 'pf-2026';
+      try {
+        const qs = alvoId ? `?concurso_id=${encodeURIComponent(alvoId)}` : '';
+        return await request(`/estudo/dashboard${qs}`);
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        const conc = st.concursos.find(c => c.id === alvoId) || st.concursos[0];
+        const resps = (st.respostas || []).filter(r => r.concurso_id === conc.id);
+        const discs = (conc.disciplinas || []).map(d => {
+          const dr = resps.filter(x => x.disciplina === d.nome);
+          const ok = dr.filter(x => x.correta).length;
+          const err = dr.filter(x => !x.correta && !x.em_branco).length;
+          const taxa = dr.length ? Math.round((ok / dr.length) * 1000) / 10 : 0;
+          return {
+            disciplina: d.nome,
+            nome_curto: d.nome.split('(')[0].split('—')[0].trim(),
+            questoes_edital: d.questoes || 10,
+            peso: d.peso || '',
+            peso_num: parseFloat(d.peso) || (d.questoes || 10),
+            prioridade: d.prioridade || 'Média',
+            nivelamento_pct: taxa,
+            taxa_atual_pct: taxa,
+            evolucao_pp: 0,
+            meta_pct: 75,
+            escore_liquido: ok - err,
+            questoes_resolvidas: dr.length,
+            acertos: ok,
+            erros: err,
+            branco: dr.filter(x => x.em_branco).length,
+            status_badge: dr.length === 0 ? 'Aguardando prática' : (taxa >= 75 ? 'Acima da meta' : 'Reforçar agora')
+          };
+        });
+        const totR = resps.length;
+        const totOk = resps.filter(x => x.correta).length;
+        const taxaG = totR ? Math.round((totOk / totR) * 1000) / 10 : 0;
+        const horasDia = Number(guestOb?.horas_dia || user?.horas_estudo_dia || 4);
+        const minsDia = Math.max(30, Math.round(horasDia * 60));
+        const durSlots = minsDia < 90 ? [minsDia] : [Math.floor(minsDia / 2), minsDia - Math.floor(minsDia / 2)];
+        const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const blocos = [];
+        dias.forEach((dia, di) => {
+          durSlots.forEach((dur, si) => {
+            const dItem = discs[(di + si) % Math.max(discs.length, 1)];
+            if (dItem) {
+              blocos.push({
+                id: di * 2 + si + 1,
+                dia_semana: dia,
+                ordem: si + 1,
+                disciplina: dItem.disciplina,
+                disciplina_curta: dItem.nome_curto,
+                tipo_bloco: si === 0 ? 'Guia + Questões' : 'Bateria Cronometrada',
+                minutos_planejados: dur,
+                minutos_realizados: 0,
+                concluido: false
+              });
+            }
+          });
+        });
+        const metaSemLabel = window.AprovaUtils ? window.AprovaUtils.formatHorasSemanais(horasDia * 6) : `${horasDia * 6}h`;
+        return {
+          concurso_alvo: conc,
+          meta_aprovacao: 75,
+          resumo_hero: {
+            taxa_atual_30d: taxaG,
+            taxa_nivelamento: taxaG,
+            evolucao_pp: 0,
+            meta_aprovacao: 75,
+            escore_liquido: totR ? Math.round(((totOk - (totR - totOk)) / totR) * 1200) / 10 : 0,
+            is_cebraspe: conc.banca.toLowerCase().includes('cebraspe'),
+            questoes_30d: totR,
+            acertos_30d: totOk,
+            erros_30d: totR - totOk,
+            streak_dias: user?.streak_dias || 0,
+            horas_semana_feitas: '0h',
+            horas_semana_meta: metaSemLabel,
+            blocos_concluidos: 0,
+            blocos_totais: blocos.length
+          },
+          desempenho_disciplinas: discs,
+          graficos_2b: {
+            evolucao_periodo: [{ label: 'Início', taxa_pct: taxaG, meta_pct: 75 }],
+            acertos_erros_area: discs.map(d => ({ disciplina: d.nome_curto, acertos: d.acertos, erros: d.erros, total: d.questoes_resolvidas, taxa_pct: d.taxa_atual_pct }))
+          },
+          cronograma_2c: {
+            minutos_planejados: minsDia * 6,
+            minutos_realizados: 0,
+            horas_feitas_label: '0h',
+            horas_meta_label: metaSemLabel,
+            percentual_semana: 0,
+            blocos,
+            proximas_atividades: blocos.slice(0, 3)
+          },
+          nivelamento_2d: {
+            taxa_inicial: taxaG,
+            taxa_atual: taxaG,
+            meta_aprovacao: 75,
+            evolucao_pp: 0,
+            radar_eixos: discs.slice(0, 5).map(d => ({ label: d.nome_curto, inicial: d.nivelamento_pct, atual: d.taxa_atual_pct, meta: 75 })),
+            historico_nivelamentos: []
+          },
+          sugestao_theo: {
+            concurso_id: conc.id,
+            sigla: conc.sigla,
+            banca: conc.banca,
+            titulo: `Simulado Dirigido do Theo · ${conc.sigla}`,
+            subtitulo: 'Foco automático no concurso como um todo · Dificuldade sorteada',
+            justificativa: `O Theo cruzou todo o edital ${conc.sigla} para priorizar suas disciplinas de maior peso.`,
+            quantidade: 20,
+            dificuldade: 'sorteado',
+            tipo_sessao: 'simulado_theo',
+            disciplinas_priorizadas: discs.slice(0, 3).map(d => ({ disciplina: d.disciplina, peso: d.peso, taxa_atual_pct: d.taxa_atual_pct, prioridade: d.prioridade }))
+          },
+          cotas_plano: { plano: user?.plano || 'Gratuito', pode_baixar_pdf: ['Pro', 'Pro+'].includes(user?.plano) },
+          sessoes_recentes: []
+        };
+      }
+    },
+
+    async definirConcursoAlvo(concursoId) {
+      const user = this.obterUsuarioAtual();
+      const guestOb = this.obterOnboardingVisitante() || {};
+      this.salvarOnboardingVisitante({ ...guestOb, concurso_alvo_id: concursoId });
+      if (!user) {
+        return { sucesso: true, mensagem: 'Concurso-alvo selecionado neste dispositivo.' };
+      }
+      try {
+        const resp = await request('/estudo/concurso-alvo', { method: 'POST', body: JSON.stringify({ concurso_id: concursoId }) });
+        if (resp?.usuario) this.salvarSessaoUsuario(resp.usuario);
+        return resp;
+      } catch (e) {
+        if (e.isApiError) throw e;
+        user.concurso_alvo_id = concursoId;
+        this.salvarSessaoUsuario(user);
+        return { sucesso: true, mensagem: 'Concurso-alvo atualizado.', usuario: user };
+      }
+    },
+
+    async alternarBlocoCronograma(blocoId) {
+      try {
+        return await request(`/estudo/cronograma/bloco/${blocoId}/toggle`, { method: 'POST' });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        return { id: blocoId, concluido: true };
+      }
+    },
+
+    async iniciarSessaoQuestoes(payload) {
+      try {
+        return await request('/questoes/sessoes/iniciar', { method: 'POST', body: JSON.stringify(payload) });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        const pool = (st.questoes || []).filter(q =>
+          (!payload.concurso_id || payload.concurso_id === 'todos' || q.concurso_id === payload.concurso_id) &&
+          (!payload.disciplina || payload.disciplina === 'todas' || q.disciplina === payload.disciplina) &&
+          (!payload.dificuldade || payload.dificuldade === 'sorteado' || q.dificuldade === payload.dificuldade)
+        );
+        const finalPool = pool.length ? pool : (st.questoes || []);
+        const selected = finalPool.slice(0, Math.min(payload.quantidade || 10, finalPool.length));
+        const sid = Date.now();
+        return {
+          sessao: {
+            id: sid,
+            concurso_id: payload.concurso_id || 'pf-2026',
+            concurso_sigla: 'PF',
+            banca: selected[0]?.banca || 'Cebraspe',
+            tipo_sessao: payload.tipo_sessao || 'simulado_rapido',
+            titulo: `Bateria Offline · ${payload.concurso_id || 'pf-2026'}`,
+            total_questoes: selected.length,
+            respondidas: 0,
+            acertos: 0,
+            erros: 0,
+            branco: 0,
+            escore_liquido: 0
+          },
+          questoes: selected.map(({ gabarito, comentario, ...pub }) => pub)
+        };
+      }
+    },
+
+    async responderQuestao(sessaoId, payload) {
+      try {
+        return await request(`/questoes/sessoes/${sessaoId}/responder`, { method: 'POST', body: JSON.stringify(payload) });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        const q = (st.questoes || []).find(x => x.id === payload.questao_id);
+        const correta = !payload.em_branco && q && payload.resposta_usuario === q.gabarito;
+        if (q) {
+          st.respostas = st.respostas || [];
+          st.respostas.push({
+            sessao_id: sessaoId,
+            questao_id: q.id,
+            concurso_id: q.concurso_id,
+            disciplina: q.disciplina,
+            correta: Boolean(correta),
+            em_branco: Boolean(payload.em_branco)
+          });
+          saveLocalState(st);
+        }
+        return {
+          questao_id: payload.questao_id,
+          correta,
+          em_branco: Boolean(payload.em_branco),
+          gabarito: q?.gabarito || 'C',
+          comentario: q?.comentario || 'Confira os fundamentos no Guia do Edital.',
+          sessao: { id: sessaoId }
+        };
+      }
+    },
+
+    async finalizarSessaoQuestoes(sessaoId) {
+      try {
+        return await request(`/questoes/sessoes/${sessaoId}/finalizar`, { method: 'POST' });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        return { sucesso: true, mensagem: 'Sessão finalizada!' };
+      }
+    },
+
+    async obterSugestaoTheo(concursoId) {
+      try {
+        const qs = concursoId ? `?concurso_id=${encodeURIComponent(concursoId)}` : '';
+        return await request(`/questoes/sugestao-theo${qs}`);
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const d = await this.obterDashboardEstudo(concursoId);
+        return d.sugestao_theo;
+      }
+    },
+
+    async listarProvasAnteriores(concursoId = 'todos') {
+      try {
+        const qs = `?concurso_id=${encodeURIComponent(concursoId)}`;
+        return await request(`/questoes/provas-anteriores${qs}`);
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        return {
+          provas: st.concursos.map(c => ({
+            concurso_id: c.id,
+            sigla: c.sigla,
+            titulo: `Prova Oficial ${c.sigla} · ${c.ultimo_concurso_ano}`,
+            orgao: c.orgao,
+            banca: c.banca,
+            area: c.area,
+            ano_label: c.ultimo_concurso_ano,
+            nota_corte_anterior: c.nota_corte_anterior,
+            questoes_disponiveis: 10
+          }))
+        };
+      }
+    },
+
+    async perguntarTheoSuporte(mensagem) {
+      try {
+        return await request('/suporte/theo', { method: 'POST', body: JSON.stringify({ mensagem }) });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const user = this.obterUsuarioAtual();
+        return {
+          sucesso: true,
+          usuario_reconhecido: user ? { nome: user.nome, plano: user.plano || 'Gratuito', concurso_alvo_sigla: 'PF' } : null,
+          resposta_html: 'Estou por aqui! Você pode consultar planos em <strong>Planos</strong>, treinar em <strong>Nivelamento &amp; IA</strong> ou clicar em <strong>Falar com um Atendente Humano →</strong>.'
+        };
+      }
+    },
+
+    async abrirChamadoSuporte(payload) {
+      try {
+        return await request('/suporte/chamado', { method: 'POST', body: JSON.stringify(payload) });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        return {
+          sucesso: true,
+          protocolo: `AP-${Math.floor(10000 + Math.random() * 89999)}`,
+          mensagem: 'Protocolo registrado com sucesso! Nossa equipe responderá por e-mail em breve.'
         };
       }
     }

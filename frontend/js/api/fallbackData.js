@@ -37,7 +37,7 @@ window.AprovaFallback = {
         { nome: "Raciocínio Lógico e Estatística", questoes: 12, peso: "10% da Prova", prioridade: "Média" }
       ],
       materiais: [
-        { id: 1, concurso_id: "pf-2026", titulo: "Edital Verticalizado PF (Agente, Escrivão e Administrativo) — Checklist Completo", categoria: "Edital Verticalizado", disciplina: "Geral / Planejamento", paginas: "28 págs", gratuito: true, destaque: true, resumo_conteudo: "Checklist tópico por tópico do edital oficial da Polícia Federal organizado por peso estatístico da Cebraspe.", estudado: false },
+        { id: 1, concurso_id: "pf-2026", titulo: "Guia Completo do Edital PF (Agente, Escrivão e Administrativo) — Checklist por Tópico", categoria: "Guia do Edital", disciplina: "Geral / Planejamento", paginas: "28 págs", gratuito: true, destaque: true, resumo_conteudo: "Checklist tópico por tópico do edital oficial da Polícia Federal organizado por peso estatístico da Cebraspe.", estudado: false },
         { id: 2, concurso_id: "pf-2026", titulo: "Apostila Intensiva de Informática, Redes, Segurança e Banco de Dados (36 questões PF)", categoria: "Apostila PDF", disciplina: "Informática & TI", paginas: "142 págs", gratuito: true, destaque: true, resumo_conteudo: "Cobre 100% do bloco de TI da PF: Redes TCP/IP, Linux/Windows, Python/SQL, Segurança da Informação e Cloud.", estudado: false },
         { id: 3, concurso_id: "pf-2026", titulo: "Caderno das Últimas 3 Provas da Polícia Federal Comentadas Item a Item (Cebraspe)", categoria: "Prova Passada + Gabarito", disciplina: "Provas Anteriores", paginas: "96 págs", gratuito: true, destaque: false, resumo_conteudo: "Provas oficiais de 2014, 2018 e 2021 com gabarito definitivo e comentários explicativos.", estudado: false },
         { id: 4, concurso_id: "pf-2026", titulo: "Contabilidade Geral Esquematizada para Carreiras Policiais (CPC 00, Balanço e DRE)", categoria: "Apostila PDF", disciplina: "Contabilidade Geral", paginas: "84 págs", gratuito: true, destaque: false, resumo_conteudo: "Focado nas 24 questões de Contabilidade cobradas pela Cebraspe na Polícia Federal.", estudado: false },
@@ -76,7 +76,7 @@ window.AprovaFallback = {
         { nome: "Língua Portuguesa e Inglês Básico", questoes: 10, peso: "16% da Prova", prioridade: "Média" }
       ],
       materiais: [
-        { id: 6, concurso_id: "caixa-2026", titulo: "Edital Verticalizado Caixa Econômica Federal (Técnico Bancário Novo & TI)", categoria: "Edital Verticalizado", disciplina: "Geral / Planejamento", paginas: "22 págs", gratuito: true, destaque: true, resumo_conteudo: "Quadro completo de matérias da Fundação Cesgranrio com metas diárias de leitura e resolução de questões.", estudado: false },
+        { id: 6, concurso_id: "caixa-2026", titulo: "Guia Completo do Edital Caixa (Técnico Bancário Novo & TI) — Por Tópico", categoria: "Guia do Edital", disciplina: "Geral / Planejamento", paginas: "22 págs", gratuito: true, destaque: true, resumo_conteudo: "Quadro completo de matérias da Fundação Cesgranrio com metas diárias de leitura e resolução de questões.", estudado: false },
         { id: 7, concurso_id: "caixa-2026", titulo: "Apostila Completa de Conhecimentos Bancários, SFN, PIX e Open Finance", categoria: "Apostila PDF", disciplina: "Conhecimentos Bancários", paginas: "118 págs", gratuito: true, destaque: true, resumo_conteudo: "Todo o conteúdo atualizado do Sistema Financeiro Nacional, CMN, BACEN, CVM, produtos bancários e garantias.", estudado: false },
         { id: 8, concurso_id: "caixa-2026", titulo: "Guia de Atendimento Bancário, Comportamentos Digitais e Código de Ética Caixa", categoria: "Apostila PDF", disciplina: "Atendimento & Ética", paginas: "65 págs", gratuito: true, destaque: false, resumo_conteudo: "Focado nas 15 questões de Atendimento e Compliance exigidas no edital da Caixa.", estudado: false },
         { id: 9, concurso_id: "caixa-2026", titulo: "Caderno de 150 Questões Resolvidas de Matemática Financeira (Banca Cesgranrio)", categoria: "Caderno de Questões", disciplina: "Matemática Financeira", paginas: "78 págs", gratuito: true, destaque: false, resumo_conteudo: "Juros simples e compostos, sistemas de amortização SAC/Price e desconto de títulos passo a passo.", estudado: false },
@@ -227,7 +227,7 @@ window.AprovaFallback = {
         { nome: "Atualidades do Mercado Financeiro e Inglês", questoes: 15, peso: "17,5 pontos", prioridade: "Média" }
       ],
       materiais: [
-        { id: 19, concurso_id: "bb-previsto", titulo: "Plano de Estudo Antecipado Banco do Brasil (Pré-Edital 90 Dias) + Edital Verticalizado", categoria: "Edital Verticalizado", disciplina: "Planejamento Pré-Edital", paginas: "24 págs", gratuito: true, destaque: true, resumo_conteudo: "Roteiro estratégico para fechar o edital do Banco do Brasil antes da publicação oficial.", estudado: false },
+        { id: 19, concurso_id: "bb-previsto", titulo: "Plano de Estudo Antecipado Banco do Brasil (Pré-Edital 90 Dias) + Guia por Tópico", categoria: "Guia do Edital", disciplina: "Planejamento Pré-Edital", paginas: "24 págs", gratuito: true, destaque: true, resumo_conteudo: "Roteiro estratégico para fechar o edital do Banco do Brasil antes da publicação oficial.", estudado: false },
         { id: 20, concurso_id: "bb-previsto", titulo: "Apostila de Vendas e Negociação + Conhecimentos Bancários para o Banco do Brasil", categoria: "Apostila PDF", disciplina: "Vendas & Bancários", paginas: "140 págs", gratuito: true, destaque: true, resumo_conteudo: "Foco nas duas matérias de maior peso eliminatório e classificatório da Cesgranrio no BB.", estudado: false },
         { id: 21, concurso_id: "bb-previsto", titulo: "Acervo de Provas Anteriores do Banco do Brasil (Cesgranrio 2021 e 2023 — Cadernos A, B e C)", categoria: "Prova Passada + Gabarito", disciplina: "Provas Anteriores", paginas: "112 págs", gratuito: true, destaque: false, resumo_conteudo: "Todas as provas aplicadas nos dois últimos concursos do BB com gabaritos oficiais.", estudado: false }
       ]
@@ -266,7 +266,7 @@ window.AprovaFallback = {
       materiais: [
         { id: 22, concurso_id: "inss-previsto", titulo: "Direito Previdenciário do Zero ao Avançado (Leis 8.212, 8.213 e EC 103 Atualizadas)", categoria: "Apostila PDF", disciplina: "Direito Previdenciário", paginas: "195 págs", gratuito: true, destaque: true, resumo_conteudo: "Cobre os 70 itens de Seguridade Social que representam quase 60% da prova do INSS.", estudado: false },
         { id: 23, concurso_id: "inss-previsto", titulo: "Última Prova Oficial do INSS (Cebraspe 2022) + Gabarito Comentado Item por Item", categoria: "Prova Passada + Gabarito", disciplina: "Provas Anteriores", paginas: "64 págs", gratuito: true, destaque: true, resumo_conteudo: "Prova real aplicada pela Cebraspe com resolução detalhada de cada assertiva.", estudado: false },
-        { id: 24, concurso_id: "inss-previsto", titulo: "Edital Verticalizado Pré-Edital INSS + Cronograma de Ciclos de Estudo", categoria: "Edital Verticalizado", disciplina: "Planejamento Pré-Edital", paginas: "18 págs", gratuito: true, destaque: false, resumo_conteudo: "Organização semanal de estudos para quem tem de 2h a 4h disponíveis por dia.", estudado: false }
+        { id: 24, concurso_id: "inss-previsto", titulo: "Guia Organizado por Tópico Pré-Edital INSS + Cronograma de Ciclos de Estudo", categoria: "Guia do Edital", disciplina: "Planejamento Pré-Edital", paginas: "18 págs", gratuito: true, destaque: false, resumo_conteudo: "Organização semanal de estudos para quem tem de 2h a 4h disponíveis por dia.", estudado: false }
       ]
     },
     {
@@ -374,7 +374,7 @@ window.AprovaFallback = {
       ],
       materiais: [
         { id: 29, concurso_id: "cnu-historico", titulo: "Pacote Oficial de Provas Reais CNU (Blocos 1 a 8 — Manhã e Tarde) + Gabaritos Definitivos", categoria: "Prova Passada + Gabarito", disciplina: "Provas Oficiais CNU", paginas: "320 págs", gratuito: true, destaque: true, resumo_conteudo: "Acervo histórico integral da 1ª edição do Concurso Nacional Unificado.", estudado: false },
-        { id: 30, concurso_id: "cnu-historico", titulo: "Raio-X Estatístico de Notas de Corte e Relação Candidato/Vaga de Todos os Cargos do CNU", categoria: "Edital Verticalizado", disciplina: "Estatísticas & Corte", paginas: "26 págs", gratuito: true, destaque: true, resumo_conteudo: "Comparativo completo das notas mínimas de aprovação na ampla concorrência e cotas.", estudado: false }
+        { id: 30, concurso_id: "cnu-historico", titulo: "Raio-X Estatístico de Notas de Corte e Relação Candidato/Vaga de Todos os Cargos do CNU", categoria: "Guia do Edital", disciplina: "Estatísticas & Corte", paginas: "26 págs", gratuito: true, destaque: true, resumo_conteudo: "Comparativo completo das notas mínimas de aprovação na ampla concorrência e cotas.", estudado: false }
       ]
     },
     {
@@ -526,6 +526,68 @@ window.AprovaFallback = {
       confianca_ia: 71,
       analise_ia: "Confiabilidade moderada: Concurso de preparação longa (12 a 18 meses de estudo necessários); recomendado iniciar base em Direito Tributário e Contabilidade.",
       votos_comunidade: 29
+    }
+  ],
+  questoes: [
+    {
+      id: 9001, concurso_id: "pf-2026", banca: "Cebraspe", ano: 2021, disciplina: "Informática, Redes e Banco de Dados", assunto: "Redes TCP/IP", dificuldade: "facil", tipo_questao: "certo_errado", is_prova_anterior: true, prova_titulo: "Prova Oficial PF 2021 · Agente (Cebraspe)",
+      enunciado: "No modelo de referência TCP/IP, o protocolo TCP atua na camada de transporte, garantindo entrega ordenada e orientada à conexão por meio do mecanismo conhecido como three-way handshake.",
+      alternativas: [{ letra: "C", texto: "Certo" }, { letra: "E", texto: "Errado" }],
+      gabarito: "C", comentario: "Certo. O TCP atua na camada de transporte e utiliza SYN, SYN-ACK e ACK para estabelecer conexão confiável."
+    },
+    {
+      id: 9002, concurso_id: "pf-2026", banca: "Cebraspe", ano: 2021, disciplina: "Informática, Redes e Banco de Dados", assunto: "Banco de Dados SQL", dificuldade: "intermediario", tipo_questao: "certo_errado", is_prova_anterior: true, prova_titulo: "Prova Oficial PF 2021 · Escrivão (Cebraspe)",
+      enunciado: "Em bancos de dados relacionais, a cláusula HAVING é empregada em conjunto com GROUP BY para filtrar grupos de registros após a aplicação de funções de agregação.",
+      alternativas: [{ letra: "C", texto: "Certo" }, { letra: "E", texto: "Errado" }],
+      gabarito: "C", comentario: "Certo. HAVING filtra grupos resultantes de GROUP BY, diferentemente de WHERE."
+    },
+    {
+      id: 9003, concurso_id: "pf-2026", banca: "Cebraspe", ano: 2024, disciplina: "Língua Portuguesa e Redação Oficial", assunto: "Concordância Verbal", dificuldade: "intermediario", tipo_questao: "certo_errado", is_prova_anterior: true, prova_titulo: "Prova Oficial PF 2021 · Agente (Cebraspe)",
+      enunciado: "Na oração 'Tratam-se de inquéritos sigilosos sobre crimes cibernéticos', a flexão do verbo 'tratar' no plural está gramaticalmente correta.",
+      alternativas: [{ letra: "C", texto: "Certo" }, { letra: "E", texto: "Errado" }],
+      gabarito: "E", comentario: "Errado. O verbo com índice de indeterminação do sujeito permanece no singular: 'Trata-se de inquéritos...'."
+    },
+    {
+      id: 9004, concurso_id: "pf-2026", banca: "Cebraspe", ano: 2021, disciplina: "Contabilidade Geral", assunto: "Patrimônio e Partidas Dobradas", dificuldade: "facil", tipo_questao: "certo_errado", is_prova_anterior: true, prova_titulo: "Prova Oficial PF 2021 · Agente (Cebraspe)",
+      enunciado: "O pagamento de uma dívida bancária com recursos do caixa constitui fato contábil permutativo, não alterando o valor do patrimônio líquido.",
+      alternativas: [{ letra: "C", texto: "Certo" }, { letra: "E", texto: "Errado" }],
+      gabarito: "C", comentario: "Certo. Há redução equivalente de Ativo (Caixa) e Passivo (Empréstimos), sem alterar o Patrimônio Líquido."
+    },
+    {
+      id: 9005, concurso_id: "pf-2026", banca: "Cebraspe", ano: 2024, disciplina: "Direito Administrativo, Constitucional e Penal", assunto: "Competência da Polícia Federal", dificuldade: "dificil", tipo_questao: "certo_errado", is_prova_anterior: false, prova_titulo: "",
+      enunciado: "À Polícia Federal incumbe exercer, com exclusividade, as funções de polícia judiciária da União, excetuando-se o patrulhamento ostensivo das rodovias federais.",
+      alternativas: [{ letra: "C", texto: "Certo" }, { letra: "E", texto: "Errado" }],
+      gabarito: "C", comentario: "Certo. Conforme art. 144, §§ 1º e 2º da CF/88, o patrulhamento ostensivo das rodovias federais compete à PRF."
+    },
+    {
+      id: 9006, concurso_id: "pf-2026", banca: "Cebraspe", ano: 2021, disciplina: "Raciocínio Lógico e Estatística", assunto: "Variância e Dispersão", dificuldade: "intermediario", tipo_questao: "certo_errado", is_prova_anterior: true, prova_titulo: "Prova Oficial PF 2021 · Escrivão (Cebraspe)",
+      enunciado: "Se multiplicarmos cada observação de um conjunto numérico por 3, a variância do novo conjunto será igualmente multiplicada por 3.",
+      alternativas: [{ letra: "C", texto: "Certo" }, { letra: "E", texto: "Errado" }],
+      gabarito: "E", comentario: "Errado. A variância é multiplicada pelo quadrado da constante (3² = 9)."
+    },
+    {
+      id: 9007, concurso_id: "caixa-2026", banca: "Cesgranrio", ano: 2024, disciplina: "Conhecimentos Bancários e SFN", assunto: "CMN", dificuldade: "facil", tipo_questao: "multipla_escolha", is_prova_anterior: true, prova_titulo: "Prova Oficial Caixa 2024 (Cesgranrio)",
+      enunciado: "No Sistema Financeiro Nacional, qual órgão tem caráter exclusivamente normativo máximo para formular a política da moeda e do crédito?",
+      alternativas: [
+        { letra: "A", texto: "Banco Central do Brasil (BACEN)" },
+        { letra: "B", texto: "Conselho Monetário Nacional (CMN)" },
+        { letra: "C", texto: "Comissão de Valores Mobiliários (CVM)" },
+        { letra: "D", texto: "Banco do Brasil S.A." },
+        { letra: "E", texto: "Caixa Econômica Federal (CEF)" }
+      ],
+      gabarito: "B", comentario: "O CMN é o órgão normativo superior do SFN; BACEN e CVM exercem funções supervisoras/executoras."
+    },
+    {
+      id: 9008, concurso_id: "caixa-2026", banca: "Cesgranrio", ano: 2024, disciplina: "Matemática Financeira", assunto: "Sistemas de Amortização", dificuldade: "dificil", tipo_questao: "multipla_escolha", is_prova_anterior: true, prova_titulo: "Prova Oficial Caixa 2024 (Cesgranrio)",
+      enunciado: "Em um financiamento contratado pelo Sistema de Amortização Constante (SAC) sem correção monetária, ao longo do prazo observa-se que:",
+      alternativas: [
+        { letra: "A", texto: "As prestações são constantes do início ao fim" },
+        { letra: "B", texto: "A cota de amortização cresce exponencialmente" },
+        { letra: "C", texto: "A amortização é constante e as prestações são decrescentes" },
+        { letra: "D", texto: "Os juros crescem proporcionalmente ao prazo" },
+        { letra: "E", texto: "O saldo devedor só reduz na parcela final" }
+      ],
+      gabarito: "C", comentario: "No SAC a amortização permanece fixa, reduzindo juros e prestação a cada período."
     }
   ]
 };

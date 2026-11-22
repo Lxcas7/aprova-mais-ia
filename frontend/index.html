@@ -3,108 +3,108 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Aprova+ IA · Plataforma Centralizada de Concursos, Radar Web e Materiais</title>
+  <title>Aprova+ IA · Orquestração de Estudo e Nivelamento por Banca</title>
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/components.css" />
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
 
-  <!-- Barra Superior de Telemetria do Concurseiro -->
-  <div class="top-status-bar">
-    <div class="top-status-inner">
-      <div class="top-status-left">
-        <span id="api-conn-badge" class="api-status-badge">Aprova+ IA Online</span>
-        <span class="top-status-caption">Monitoramento de Editais, Rumores da Internet e Acervo Direcionado</span>
-      </div>
-      <div class="telemetry-pills">
-        <span>Concursos Salvos: <strong id="top-salvos-count">2</strong></span>
-        <span>Materiais Estudados: <strong id="top-estudados-count">0/34</strong></span>
-        <span>Progresso Geral: <strong id="top-progresso-pct">0%</strong></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cabeçalho, Navegação Principal e Área de Login / Usuário -->
+  <!-- Single-Source-of-Truth Header (Navbar Matematicamente Centralizada + Perfil Único) -->
   <header class="app-header">
     <div class="nav-container">
-      <button type="button" class="brand" onclick="window.AprovaApp.switchView('explorar')">
-        <div class="brand-logo">A+</div>
+      <button type="button" class="brand" onclick="window.AprovaApp.switchView('estudo')">
+        <img src="assets/aprova-logo-mark.svg" alt="" class="brand-logo-svg" width="38" height="38" />
         <div>
           <div class="brand-name">Aprova<span>+ IA</span></div>
-          <span class="brand-tagline">Central de Concursos · Radar da Internet · Materiais</span>
+          <span class="brand-tagline">Preparação orientada a resultado</span>
         </div>
       </button>
 
       <nav class="nav-menu" aria-label="Navegação Principal">
-        <button type="button" class="nav-btn active" data-view="explorar" onclick="window.AprovaApp.switchView('explorar')">
-          Concursos (3 Status)
-        </button>
-        <button type="button" class="nav-btn" data-view="radar" onclick="window.AprovaApp.switchView('radar')">
-          Radar IA (Na Internet)
+        <button type="button" class="nav-btn" data-view="estudo" onclick="window.AprovaApp.switchView('estudo')">
+          Meu Estudo
         </button>
         <button type="button" class="nav-btn" data-view="materiais" onclick="window.AprovaApp.switchView('materiais')">
-          Materiais por Concurso
+          Guias &amp; Caderno
         </button>
         <button type="button" class="nav-btn" data-view="ia" onclick="window.AprovaApp.switchView('ia')">
-          Copiloto e Match IA
+          Nivelamento &amp; IA
         </button>
-        <button type="button" class="nav-btn nav-premium" data-view="premium" onclick="window.AprovaApp.switchView('premium')">
-          Plano PRO
+        <button type="button" class="nav-btn" data-view="explorar" onclick="window.AprovaApp.switchView('explorar')">
+          Concursos
         </button>
-        <button type="button" class="nav-btn" data-view="conta" onclick="window.AprovaApp.switchView('conta')">
-          Minha Conta
+        <button type="button" class="nav-btn" data-view="radar" onclick="window.AprovaApp.switchView('radar')">
+          Radar
+        </button>
+        <button type="button" class="nav-btn" data-view="premium" onclick="window.AprovaApp.switchView('premium')">
+          Planos
         </button>
       </nav>
 
-      <!-- Área Dinâmica de Login / Perfil do Usuário Logado -->
+      <!-- Widget Único de Perfil / Entrar & Criar Conta -->
       <div id="header-user-area"></div>
     </div>
   </header>
 
-  <!-- Hero Workspace & Filtros Inteligentes (Exibido na visão principal Explorar) -->
-  <section id="hero-workspace" class="hero-banner">
-    <div class="hero-container">
-      <div class="hero-grid">
+  <!-- Conteúdo Principal (Telas 1 a 8) -->
+  <main id="main-content" tabindex="-1" class="main-container">
+
+    <!-- TELA 1: PESQUISA INICIAL DE PERSONALIZAÇÃO -->
+    <section id="view-onboarding" class="view-pane" hidden aria-label="Pesquisa Inicial de Personalização">
+      <div id="onboarding-survey-container"></div>
+    </section>
+
+    <!-- TELA 2 (2A, 2B, 2C, 2D): MEU ESTUDO -->
+    <section id="view-estudo" class="view-pane" hidden aria-label="Meu Estudo e Evolução">
+      <div id="meu-estudo-container"></div>
+    </section>
+
+    <!-- TELA 4: GUIAS & CADERNO (FOLHA A4 + LEITURA FLUIDA + PDF) -->
+    <section id="view-materiais" class="view-pane" hidden aria-label="Guias do Edital e Caderno A4">
+      <div id="materiais-hub-container"></div>
+    </section>
+
+    <!-- TELA 3: NIVELAMENTO & IA (SIMULADOS, BANCO DE QUESTÕES & SUGESTÃO DO THEO) -->
+    <section id="view-ia" class="view-pane" hidden aria-label="Central de Simulados, Nivelamento e Questões">
+      <div id="ia-assistant-container"></div>
+    </section>
+
+    <!-- TELA 6: EXPLORAR CONCURSOS (3 HORIZONTES + SINERGIA) -->
+    <section id="view-explorar" class="view-pane" hidden aria-label="Concursos Abertos, Previstos e Históricos">
+      <div class="concursos-hero-strip">
         <div>
-          <h1 class="hero-title">
-            Concursos Ativos, Previstos na Web e Passados com o Material Certo.
-          </h1>
-          <p class="hero-desc">
-            Monitoramento contínuo de Diários Oficiais, dispensas de licitação e movimentações na internet para centralizar editais abertos, estimar a probabilidade dos próximos certames e vincular apostilas, editais verticalizados e provas anteriores a cada concurso.
+          <h1 class="estudo-hero-title">Concursos com Sinergia para o seu Edital</h1>
+          <p class="estudo-hero-sub" style="margin-bottom:0;">
+            Compare editais abertos, certames em previsão de edital e provas históricas. Defina seu concurso-alvo ou resolva provas oficiais diretamente no banco de questões.
           </p>
         </div>
-
-        <!-- Painel Tipográfico Plano para Filtrar Rápido pelos 3 Status -->
-        <div class="hero-ledger" role="group" aria-label="Resumo por horizonte de concurso">
-          <button type="button" class="ledger-item" data-ledger-status="aberto" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('aberto')" title="Filtrar Concursos com Edital Aberto">
-            <span class="ledger-label">Com Edital Aberto</span>
-            <span class="ledger-number" id="kpi-abertos-count">5</span>
-            <span class="ledger-sub">9.625 vagas imediatas</span>
+        <div class="hero-ledger-3" role="group" aria-label="Resumo por horizonte de concurso">
+          <button type="button" class="ledger-item" data-ledger-status="aberto" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('aberto')">
+            <span class="ledger-label">Edital Aberto</span>
+            <span class="ledger-number" id="kpi-abertos-count">—</span>
           </button>
-          <button type="button" class="ledger-item" data-ledger-status="previsto" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('previsto')" title="Filtrar Concursos Previstos na Internet">
-            <span class="ledger-label">Previstos (Radar IA)</span>
-            <span class="ledger-number" id="kpi-previstos-count">4</span>
-            <span class="ledger-sub">Monitorados na web</span>
+          <button type="button" class="ledger-item" data-ledger-status="previsto" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('previsto')">
+            <span class="ledger-label">Previsão de edital</span>
+            <span class="ledger-number" id="kpi-previstos-count">—</span>
           </button>
-          <button type="button" class="ledger-item" data-ledger-status="encerrado" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('encerrado')" title="Filtrar Concursos Passados e Provas">
-            <span class="ledger-label">Já Aconteceram</span>
-            <span class="ledger-number" id="kpi-encerrados-count">4</span>
-            <span class="ledger-sub">Provas e notas de corte</span>
+          <button type="button" class="ledger-item" data-ledger-status="encerrado" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('encerrado')">
+            <span class="ledger-label">Histórico · Provas</span>
+            <span class="ledger-number" id="kpi-encerrados-count">—</span>
           </button>
         </div>
       </div>
 
-      <!-- Barra de Pesquisa e Filtros (Exibida na aba Explorar) -->
-      <div id="hero-filter-bar" class="filter-bar" role="search">
+      <div class="filter-bar" role="search">
         <div class="field-group">
-          <label for="filter-q">Buscar por Sigla, Órgão, Cargo ou Banca</label>
+          <label for="filter-q">Buscar por Sigla, Órgão, Cargo ou Banca (Atalho: /)</label>
           <input
-            type="text"
+            type="search"
             id="filter-q"
             class="field-input"
             placeholder="Ex: PF, INSS, Caixa, Banco do Brasil, Cebraspe, FGV..."
-            oninput="window.AprovaApp.aplicarFiltrosDaBarra()"
+            oninput="window.AprovaApp.onSearchInput()"
           />
         </div>
         <div class="field-group">
@@ -128,172 +128,124 @@
           </select>
         </div>
         <div class="field-group">
-          <label for="filter-uf">Abrangência / UF</label>
-          <select id="filter-uf" class="field-input" onchange="window.AprovaApp.aplicarFiltrosDaBarra()">
-            <option value="todas">Nacional e Estados</option>
-            <option value="Nacional">Nacional (Todo o Brasil)</option>
-            <option value="DF">Distrito Federal (DF)</option>
-            <option value="SP">São Paulo (SP)</option>
-          </select>
+          <label for="filter-uf-trigger">Abrangência / UFs</label>
+          <div id="filter-uf-mount"></div>
         </div>
         <button type="button" class="btn btn-outline" onclick="window.AprovaApp.limparFiltros()">
-          Limpar Filtros
+          Limpar
         </button>
       </div>
-    </div>
-  </section>
 
-  <!-- Conteúdo Principal (6 Views do Concurseiro) -->
-  <main class="main-container">
-
-    <!-- VIEW 1: EXPLORAR CONCURSOS (ATIVOS, PREVISTOS NA INTERNET E ENCERRADOS) -->
-    <section id="view-explorar" class="view-pane active" aria-label="Painel Central de Concursos e Editais">
       <div class="status-toolbar">
-        <div class="status-pills" role="group" aria-label="Filtrar por status do concurso">
+        <div class="status-pills" role="group" aria-label="Filtrar por situação">
           <button type="button" class="status-pill active-todos" data-status="todos" aria-pressed="true" onclick="window.AprovaApp.setStatusFilter('todos')">
-            <span>Todos (<span id="pill-count-todos">13</span>)</span>
+            Todos (<span id="pill-count-todos">—</span>)
           </button>
           <button type="button" class="status-pill" data-status="aberto" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('aberto')">
-            <span>Ativos / Com Edital (<span id="pill-count-aberto">5</span>)</span>
+            Edital Aberto (<span id="pill-count-aberto">—</span>)
           </button>
           <button type="button" class="status-pill" data-status="previsto" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('previsto')">
-            <span>Previstos na Internet (<span id="pill-count-previsto">4</span>)</span>
+            Previsão de edital (<span id="pill-count-previsto">—</span>)
           </button>
           <button type="button" class="status-pill" data-status="encerrado" aria-pressed="false" onclick="window.AprovaApp.setStatusFilter('encerrado')">
-            <span>Já Aconteceram / Provas (<span id="pill-count-encerrado">4</span>)</span>
+            Histórico · Provas (<span id="pill-count-encerrado">—</span>)
           </button>
         </div>
 
-        <div class="toolbar-right-controls">
-          <span id="results-summary-text" class="toolbar-results-count">13 de 13 editais</span>
-          <div class="sort-control">
-            <label for="filter-sort">Ordenar:</label>
-            <select id="filter-sort" onchange="window.AprovaApp.setSortOrder(this.value)">
-              <option value="padrao">Prioridade de Status</option>
-              <option value="salario">Maior Remuneração</option>
-              <option value="vagas">Maior Nº de Vagas</option>
-              <option value="probabilidade">Índice de Confiança IA</option>
-            </select>
-          </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span id="results-summary-text" class="text-caption-muted">Carregando...</span>
+          <select id="filter-sort" class="field-input" style="width:auto; height:36px;" onchange="window.AprovaApp.setSortOrder(this.value)" aria-label="Ordenar concursos">
+            <option value="padrao">Prioridade</option>
+            <option value="salario">Maior Salário</option>
+            <option value="vagas">Mais Vagas</option>
+            <option value="probabilidade">Índice Radar</option>
+          </select>
           <button type="button" id="btn-filtro-salvos" class="btn btn-outline btn-sm" aria-pressed="false" onclick="window.AprovaApp.toggleApenasSalvos()">
-            <span>Salvos no Caderno (<span id="count-salvos-badge">0</span>)</span>
+            Salvos (<span id="count-salvos-badge">—</span>)
           </button>
         </div>
       </div>
 
+      <div id="explorar-active-chips" class="active-filter-chips" hidden></div>
       <div id="concursos-grid" class="cards-grid"></div>
     </section>
 
-    <!-- VIEW 2: RADAR IA (O QUE ESTÃO FALANDO NA INTERNET SOBRE CONCURSOS PREVISTOS) -->
-    <section id="view-radar" class="view-pane">
+    <!-- TELA 7: RADAR PRÉ-EDITAL -->
+    <section id="view-radar" class="view-pane" hidden aria-label="Radar de Movimentações Pré-Edital">
       <div class="section-banner">
         <div>
-          <h2>Radar IA: Movimentações e Rumores na Internet</h2>
-          <p>Rastreamento de processos no Ministério da Gestão (MGI), dispensas de licitação de bancas, notas sindicais e portais especializados para separar movimentações reais de boatos.</p>
+          <h1>Radar de Movimentações Pré-Edital</h1>
+          <p>Acompanhamento de processos no MGI, escolhas de banca e notas oficiais com indicador de sinergia em relação ao seu concurso-alvo.</p>
         </div>
-        <div class="section-meta-Summary">Termômetro de Maturidade Pré-Edital</div>
+        <span class="badge badge-previsto">Termômetro Pré-Edital</span>
       </div>
       <div id="radar-feed-container"></div>
     </section>
 
-    <!-- VIEW 3: CENTRAL DE MATERIAIS POR CONCURSO -->
-    <section id="view-materiais" class="view-pane">
-      <div class="section-banner">
-        <div>
-          <h2>Acervo de Materiais Vinculados por Edital</h2>
-          <p>Baixe Editais Verticalizados, Apostilas PDF direcionadas à banca, Cadernos de Questões e Provas Anteriores com Gabarito. Marque os itens concluídos para atualizar seu progresso.</p>
-        </div>
-        <div class="section-meta-Summary">34 Guias e Provas Indexados</div>
-      </div>
-      <div id="materiais-hub-container"></div>
-    </section>
-
-    <!-- VIEW 4: COPILOTO & MATCH IA -->
-    <section id="view-ia" class="view-pane">
-      <div class="section-banner">
-        <div>
-          <h2>Copiloto Aprova+ IA: Compatibilidade de Perfil e Cronograma</h2>
-          <p>Cruze sua escolaridade, carreira foco e carga horária diária para identificar os certames mais compatíveis e distribuir suas horas semanais por peso de disciplina.</p>
-        </div>
-        <div class="section-meta-Summary">Motor de Alocação por Peso de Prova</div>
-      </div>
-      <div id="ia-assistant-container"></div>
-    </section>
-
-    <!-- VIEW 5: PLANO PREMIUM (APROVA+ PRO) -->
-    <section id="view-premium" class="view-pane">
-      <div class="section-banner">
-        <div>
-          <h2>Plano Aprova+ PRO: Alertas em Tempo Real e Recursos Avançados</h2>
-          <p>A busca nos 3 status, o Radar IA e o acervo base são gratuitos. Conheça a especificação da Fase 2 (Aprova+ PRO) e registre seu interesse na Lista VIP com desconto vitalício de pré-lançamento.</p>
-        </div>
-        <div class="section-meta-Summary">Validação Fase 2 · Lista VIP</div>
-      </div>
+    <!-- TELA 5: PLANOS (GRATUITO, BÁSICO, PRO, PRO+) -->
+    <section id="view-premium" class="view-pane" hidden aria-label="Planos e Assinaturas">
       <div id="premium-smoke-container"></div>
     </section>
 
-    <!-- VIEW 6: MINHA CONTA & PAINEL DE ESTUDOS DO USUÁRIO -->
-    <section id="view-conta" class="view-pane">
-      <div class="section-banner">
-        <div>
-          <h2>Minha Conta, Preferências e Caderno de Estudos</h2>
-          <p>Gerencie seus parâmetros de estudo, consulte seus concursos favoritados e revise o histórico de apostilas e provas concluídas.</p>
-        </div>
-        <div class="section-meta-Summary">Sincronizado com o Copiloto IA</div>
-      </div>
+    <!-- TELA 8: MINHA CONTA & CENTRAL DO THEO -->
+    <section id="view-conta" class="view-pane" hidden aria-label="Minha Conta e Preferências">
       <div id="user-dashboard-container"></div>
     </section>
 
   </main>
 
-  <!-- Modal de Detalhes / Raio-X do Concurso e Materiais -->
-  <div id="concurso-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Raio-X do Concurso e Materiais">
+  <!-- Modal de Detalhes / Raio-X do Concurso -->
+  <div id="concurso-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="concurso-modal-title">
     <div class="modal-window">
-      <button type="button" class="modal-close-btn" onclick="window.AprovaComponents.closeConcursoModal()" aria-label="Fechar janela" title="Fechar (Esc)">
+      <button type="button" class="modal-close-btn" onclick="window.AprovaComponents.closeConcursoModal()" aria-label="Fechar janela">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
       <div id="concurso-modal-body"></div>
     </div>
   </div>
 
-  <!-- Modal de Login e Cadastro de Usuário -->
-  <div id="auth-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Autenticação de Usuário">
+  <!-- Modal de Login e Cadastro -->
+  <div id="auth-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="auth-modal-title">
     <div class="modal-window modal-window-sm">
-      <button type="button" class="modal-close-btn" onclick="window.AprovaComponents.closeAuthModal()" aria-label="Fechar janela" title="Fechar (Esc)">
+      <button type="button" class="modal-close-btn" onclick="window.AprovaComponents.closeAuthModal()" aria-label="Fechar janela">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
       <div id="auth-modal-body"></div>
     </div>
   </div>
 
-  <!-- Container de Notificações Toast -->
   <div id="toast-container" role="status" aria-live="polite"></div>
 
-  <!-- Rodapé -->
+  <!-- Single-Source-of-Truth Footer + Acionador do Theo em Fluxo Flex -->
   <footer class="app-footer">
     <div class="footer-inner">
-      <p><strong>Aprova+ IA</strong> · Plataforma Centralizada de Concursos Ativos, Previstos na Internet e Históricos com Materiais Direcionados.</p>
-      <div class="footer-links">
-        <button type="button" onclick="window.AprovaApp.switchView('explorar')">Concursos (3 Status)</button>
-        <button type="button" onclick="window.AprovaApp.switchView('radar')">Radar IA</button>
-        <button type="button" onclick="window.AprovaApp.switchView('materiais')">Acervo de Materiais</button>
-        <button type="button" onclick="window.AprovaApp.switchView('ia')">Copiloto IA</button>
-        <button type="button" onclick="window.AprovaApp.switchView('premium')">Plano PRO</button>
-      </div>
+      <p class="footer-copy"><strong>Aprova+ IA</strong> · Preparação Estratégica &nbsp;|&nbsp; © 2026 Aprova+ IA</p>
+      <button type="button" id="theo-footer-trigger" class="theo-footer-btn" aria-expanded="false" aria-controls="theo-support-panel">
+        <span class="theo-online-dot" aria-hidden="true"></span>
+        <span>Theo · Suporte A+</span>
+        <span class="theo-footer-sub">Dúvidas e atendimento</span>
+      </button>
     </div>
   </footer>
 
-  <!-- Scripts Modulares do Frontend -->
+  <!-- Painel de Atendimento do Theo ancorado acima do rodapé -->
+  <div id="theo-support-root"></div>
+
+  <!-- Scripts Modulares -->
   <script src="js/utils/formatters.js"></script>
   <script src="js/api/fallbackData.js"></script>
   <script src="js/api/client.js"></script>
+  <script src="js/components/onboardingSurvey.js"></script>
+  <script src="js/components/meuEstudoDashboard.js"></script>
+  <script src="js/components/questionPlayer.js"></script>
+  <script src="js/components/iaAssistant.js"></script>
+  <script src="js/components/materiaisHub.js"></script>
+  <script src="js/components/smokeTestPremium.js"></script>
   <script src="js/components/concursoCard.js"></script>
   <script src="js/components/modalDetalhes.js"></script>
   <script src="js/components/radarFeed.js"></script>
-  <script src="js/components/materiaisHub.js"></script>
-  <script src="js/components/iaAssistant.js"></script>
-  <script src="js/components/smokeTestPremium.js"></script>
   <script src="js/components/userAccount.js"></script>
+  <script src="js/components/supportBot.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
