@@ -10,6 +10,8 @@ from backend.models.schemas import (
     UsuarioLoginInput,
     UsuarioAtualizarPerfilInput,
     SincronizarRascunhoInput,
+    parse_ufs_list,
+    format_ufs_storage,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticação e Usuário"])
@@ -91,18 +93,27 @@ def _iniciais(nome: str) -> str:
     return (partes[0][0] + partes[-1][0]).upper()
 
 
+from backend.services.desempenho_engine import garantir_cronograma_usuario, normalize_plano
+
 def _formatar_usuario(row) -> dict:
+    keys = row.keys()
+    ufs = parse_ufs_list(row["uf_interesse"])
+    horas_val = row["horas_estudo_dia"] if row["horas_estudo_dia"] is not None else 4.0
     return {
         "id": row["id"],
         "nome": row["nome"],
         "email": row["email"],
         "carreira_foco": row["carreira_foco"],
         "escolaridade": row["escolaridade"],
-        "uf_interesse": row["uf_interesse"],
-        "horas_estudo_dia": row["horas_estudo_dia"],
-        "plano": row["plano"],
+        "uf_interesse": ", ".join(ufs),
+        "ufs_interesse": ufs,
+        "horas_estudo_dia": round(float(horas_val), 2),
+        "plano": normalize_plano(row["plano"]),
+        "concurso_alvo_id": row["concurso_alvo_id"] if "concurso_alvo_id" in keys and row["concurso_alvo_id"] else "pf-2026",
+        "onboarding_concluido": bool(row["onboarding_concluido"]) if "onboarding_concluido" in keys else False,
+        "streak_dias": int(row["streak_dias"] or 0) if "streak_dias" in keys else 0,
         "iniciais": _iniciais(row["nome"]),
-        "token": gerar_token_usuario(row["id"])
+        "token": gerar_token_usuario(row["id"]),
     }
 
 
@@ -117,10 +128,13 @@ def registrar_usuario(payload: UsuarioRegistroInput):
         conn.close()
         raise HTTPException(status_code=400, detail="Este e-mail já está cadastrado na plataforma.")
 
+    alvo = payload.concurso_alvo_id or "pf-2026"
+    uf_str = format_ufs_storage(payload.uf_interesse)
+    horas_val = round(float(payload.horas_estudo_dia), 2)
     cur.execute(
         """
-        INSERT INTO usuarios (nome, email, senha_hash, carreira_foco, escolaridade, uf_interesse, horas_estudo_dia, plano)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'Gratuito')
+        INSERT INTO usuarios (nome, email, senha_hash, carreira_foco, escolaridade, uf_interesse, horas_estudo_dia, plano, concurso_alvo_id, onboarding_concluido, streak_dias)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'Gratuito', ?, 0, 0)
         """,
         (
             payload.nome.strip(),
@@ -128,8 +142,9 @@ def registrar_usuario(payload: UsuarioRegistroInput):
             _hash_senha(payload.senha),
             payload.carreira_foco,
             payload.escolaridade,
-            payload.uf_interesse,
-            payload.horas_estudo_dia,
+            uf_str,
+            horas_val,
+            alvo,
         ),
     )
     novo_id = cur.lastrowid
@@ -189,27 +204,42 @@ def atualizar_perfil(
     cur = conn.cursor()
 
     cur.execute("SELECT * FROM usuarios WHERE id = ?", (user_id,))
-    if not cur.fetchone():
+    existing = cur.fetchone()
+    if not existing:
         conn.close()
         raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    plano_norm = normalize_plano(payload.plano if payload.plano else existing["plano"])
+    alvo_id = payload.concurso_alvo_id or (existing["concurso_alvo_id"] or "pf-2026")
+    uf_str = format_ufs_storage(payload.uf_interesse)
+    horas_novo = round(float(payload.horas_estudo_dia), 2)
+    horas_antigo = float(existing["horas_estudo_dia"] if existing["horas_estudo_dia"] is not None else 4.0)
 
     cur.execute(
         """
         UPDATE usuarios
-        SET nome = ?, carreira_foco = ?, escolaridade = ?, uf_interesse = ?, horas_estudo_dia = ?, plano = ?
+        SET nome = ?, carreira_foco = ?, escolaridade = ?, uf_interesse = ?, horas_estudo_dia = ?, plano = ?, concurso_alvo_id = ?
         WHERE id = ?
         """,
         (
             payload.nome.strip(),
             payload.carreira_foco,
             payload.escolaridade,
-            payload.uf_interesse,
-            payload.horas_estudo_dia,
-            payload.plano or "Gratuito",
+            uf_str,
+            horas_novo,
+            plano_norm,
+            alvo_id,
             user_id,
         ),
     )
+    cur.execute(
+        "UPDATE usuario_onboarding SET horas_dia = ?, atualizado_em = CURRENT_TIMESTAMP WHERE user_id = ?",
+        (horas_novo, user_id),
+    )
     conn.commit()
+
+    if abs(horas_novo - horas_antigo) > 0.01:
+        garantir_cronograma_usuario(conn, user_id, alvo_id, horas_dia=horas_novo, reset=True)
 
     cur.execute("SELECT * FROM usuarios WHERE id = ?", (user_id,))
     row = cur.fetchone()

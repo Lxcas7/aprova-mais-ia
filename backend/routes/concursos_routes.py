@@ -70,8 +70,10 @@ def listar_concursos(
             continue
         if escolaridade and escolaridade != "todos" and escolaridade.lower() not in c["escolaridade"].lower():
             continue
-        if uf and uf != "todas" and c["uf"].lower() != uf.lower():
-            continue
+        if uf and uf != "todas":
+            ufs_filter = {u.strip().lower() for u in uf.split(",") if u.strip()}
+            if ufs_filter and c["uf"].lower() not in ufs_filter:
+                continue
         if q:
             termo = q.lower().strip()
             texto_busca = f"{c['sigla']} {c['titulo']} {c['orgao']} {c['banca']} {c['area']} {c['resumo_ia']}".lower()

@@ -1,9 +1,9 @@
 /**
- * Aprova+ IA — Controlador Principal da Aplicação Frontend (SPA Modular, Histórico Hash, Filtros Combináveis)
+ * Aprova+ IA — Controlador Principal da Aplicação SPA
  */
 window.AprovaApp = {
   state: {
-    currentView: 'explorar',
+    currentView: 'onboarding',
     status: 'todos',
     area: 'todas',
     escolaridade: 'todos',
@@ -15,12 +15,12 @@ window.AprovaApp = {
 
   _searchTimer: null,
   _concursosReqSeq: 0,
-  _validViews: ['explorar', 'radar', 'materiais', 'ia', 'premium', 'conta'],
+  _validViews: ['onboarding', 'estudo', 'materiais', 'ia', 'explorar', 'radar', 'premium', 'conta'],
 
   async init() {
     window.AprovaComponents.renderHeaderUserWidget();
-    this._initHeaderHeightObserver();
-    this._initScrollAffordances();
+    window.AprovaComponents.initSupportBot();
+    this._renderFilterUfControl([]);
 
     const concursoModal = document.getElementById('concurso-modal');
     if (concursoModal) {
@@ -37,6 +37,12 @@ window.AprovaApp = {
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        document.querySelectorAll('.uf-popover.open').forEach(pop => {
+          pop.classList.remove('open');
+          pop.hidden = true;
+          const trig = pop.closest('.uf-multiselect')?.querySelector('.uf-chips-trigger');
+          if (trig) trig.setAttribute('aria-expanded', 'false');
+        });
         window.AprovaComponents.closeConcursoModal();
         window.AprovaComponents.closeAuthModal();
         return;
@@ -62,7 +68,6 @@ window.AprovaApp = {
 
     await window.AprovaAPI.checkHealth();
     await this._applyHashRoute(true);
-    await this.atualizarIndicadoresUsuario();
   },
 
   async _applyHashRoute(isInitial = false) {
@@ -83,51 +88,30 @@ window.AprovaApp = {
       window.AprovaUtils.closeAccessibleModal('concurso-modal');
     }
 
-    const targetView = this._validViews.includes(rawHash) ? rawHash : 'explorar';
+    if (rawHash.startsWith('estudo/')) {
+      const sub = rawHash.split('/')[1] || 'hoje';
+      this.switchView('estudo', { pushHash: false, subtab: sub });
+      return;
+    }
+
+    let targetView = this._validViews.includes(rawHash) ? rawHash : null;
+    if (!targetView) {
+      targetView = window.AprovaAPI.isOnboardingConcluido() ? 'estudo' : 'onboarding';
+    }
+
     if (isInitial || targetView !== this.state.currentView) {
       this.switchView(targetView, { pushHash: false });
     }
   },
 
-  _initHeaderHeightObserver() {
-    const header = document.querySelector('.app-header');
-    if (!header) return;
-    const syncHeight = () => {
-      document.documentElement.style.setProperty('--header-height', `${header.offsetHeight}px`);
-    };
-    syncHeight();
-    if (typeof ResizeObserver !== 'undefined') {
-      new ResizeObserver(syncHeight).observe(header);
-    }
-    window.addEventListener('resize', syncHeight);
-  },
-
-  _initScrollAffordances() {
-    const bindScroller = (selector) => {
-      const el = document.querySelector(selector);
-      if (!el) return;
-      const update = () => {
-        const maxScroll = el.scrollWidth - el.clientWidth;
-        el.classList.toggle('can-scroll-left', el.scrollLeft > 4);
-        el.classList.toggle('can-scroll-right', maxScroll > 4 && el.scrollLeft < maxScroll - 4);
-      };
-      update();
-      el.addEventListener('scroll', update, { passive: true });
-      window.addEventListener('resize', update);
-      if (typeof ResizeObserver !== 'undefined') {
-        new ResizeObserver(update).observe(el);
-      }
-    };
-    bindScroller('.nav-menu');
-    bindScroller('.status-pills');
-  },
-
   switchView(viewName, options = {}) {
-    const target = this._validViews.includes(viewName) ? viewName : 'explorar';
+    const target = this._validViews.includes(viewName) ? viewName : 'estudo';
     this.state.currentView = target;
 
     if (options.pushHash !== false) {
-      const desiredHash = `#${target}`;
+      const desiredHash = target === 'estudo' && options.subtab && options.subtab !== 'hoje'
+        ? `#estudo/${options.subtab}`
+        : `#${target}`;
       if (window.location.hash !== desiredHash) {
         history.pushState({ view: target }, '', desiredHash);
       }
@@ -151,28 +135,23 @@ window.AprovaApp = {
       pane.hidden = !isActive;
     });
 
-    const heroWorkspace = document.getElementById('hero-workspace');
-    if (heroWorkspace) {
-      const showHero = target === 'explorar';
-      heroWorkspace.style.display = showHero ? 'block' : 'none';
-      heroWorkspace.hidden = !showHero;
-    }
-
-    if (target === 'explorar') {
-      this.carregarConcursos();
-    } else if (target === 'radar') {
-      window.AprovaComponents.renderRadar();
+    if (target === 'onboarding') {
+      window.AprovaComponents.renderOnboardingSurvey();
+    } else if (target === 'estudo') {
+      window.AprovaComponents.renderMeuEstudo(options.subtab);
     } else if (target === 'materiais') {
       window.AprovaComponents.renderMateriaisHub();
     } else if (target === 'ia') {
       window.AprovaComponents.renderIAAssistant();
+    } else if (target === 'explorar') {
+      this.carregarConcursos();
+    } else if (target === 'radar') {
+      window.AprovaComponents.renderRadar();
     } else if (target === 'premium') {
       window.AprovaComponents.renderPremiumView();
     } else if (target === 'conta') {
       window.AprovaComponents.renderUserDashboard();
     }
-
-    this.atualizarIndicadoresUsuario();
   },
 
   setStatusFilter(novoStatus) {
@@ -194,9 +173,7 @@ window.AprovaApp = {
       const s = pill.dataset.status;
       pill.className = 'status-pill';
       const isCurrent = s === targetStatus;
-      if (isCurrent) {
-        pill.classList.add(`active-${s}`);
-      }
+      if (isCurrent) pill.classList.add(`active-${s}`);
       pill.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
     });
 
@@ -222,11 +199,22 @@ window.AprovaApp = {
     }, 250);
   },
 
+  _renderFilterUfControl(selected = []) {
+    const mount = document.getElementById('filter-uf-mount');
+    if (!mount || !window.AprovaUtils?.renderUfMultiSelect) return;
+    mount.innerHTML = window.AprovaUtils.renderUfMultiSelect('filter-uf', selected, {
+      allowEmpty: true,
+      placeholder: 'Todas as UFs (Nacional e Estados)',
+      onChange: 'AprovaApp.aplicarFiltrosDaBarra'
+    });
+  },
+
   aplicarFiltrosDaBarra() {
     this.state.q = document.getElementById('filter-q')?.value.trim() || '';
     this.state.area = document.getElementById('filter-area')?.value || 'todas';
     this.state.escolaridade = document.getElementById('filter-escolaridade')?.value || 'todos';
-    this.state.uf = document.getElementById('filter-uf')?.value || 'todas';
+    const ufs = window.AprovaUtils?.getUfMultiSelectValues ? window.AprovaUtils.getUfMultiSelectValues('filter-uf') : [];
+    this.state.uf = ufs.length ? ufs.join(',') : 'todas';
     this.carregarConcursos();
   },
 
@@ -250,7 +238,7 @@ window.AprovaApp = {
       if (document.getElementById('filter-escolaridade')) document.getElementById('filter-escolaridade').value = 'todos';
     } else if (chave === 'uf') {
       this.state.uf = 'todas';
-      if (document.getElementById('filter-uf')) document.getElementById('filter-uf').value = 'todas';
+      this._renderFilterUfControl([]);
     }
     this.carregarConcursos();
   },
@@ -267,7 +255,7 @@ window.AprovaApp = {
     if (document.getElementById('filter-q')) document.getElementById('filter-q').value = '';
     if (document.getElementById('filter-area')) document.getElementById('filter-area').value = 'todas';
     if (document.getElementById('filter-escolaridade')) document.getElementById('filter-escolaridade').value = 'todos';
-    if (document.getElementById('filter-uf')) document.getElementById('filter-uf').value = 'todas';
+    this._renderFilterUfControl([]);
     if (document.getElementById('filter-sort')) document.getElementById('filter-sort').value = 'padrao';
 
     const btnSalvos = document.getElementById('btn-filtro-salvos');
@@ -294,21 +282,14 @@ window.AprovaApp = {
     if (this.state.status !== 'todos') {
       chips.push({ key: 'status', label: `Situação: ${window.AprovaUtils.getShortStatusLabel(this.state.status)}` });
     }
-    if (this.state.q) {
-      chips.push({ key: 'q', label: `Busca: "${this.state.q}"` });
-    }
-    if (this.state.area !== 'todas') {
-      chips.push({ key: 'area', label: `Área: ${this.state.area}` });
-    }
-    if (this.state.escolaridade !== 'todos') {
-      chips.push({ key: 'escolaridade', label: `Escolaridade: ${this.state.escolaridade}` });
-    }
+    if (this.state.q) chips.push({ key: 'q', label: `Busca: "${this.state.q}"` });
+    if (this.state.area !== 'todas') chips.push({ key: 'area', label: `Área: ${this.state.area}` });
+    if (this.state.escolaridade !== 'todos') chips.push({ key: 'escolaridade', label: `Escolaridade: ${this.state.escolaridade}` });
     if (this.state.uf !== 'todas') {
-      chips.push({ key: 'uf', label: `UF: ${this.state.uf}` });
+      const ufParts = this.state.uf.split(',').map(s => s.trim()).filter(Boolean);
+      chips.push({ key: 'uf', label: `${ufParts.length > 1 ? 'UFs' : 'UF'}: ${ufParts.join(', ')}` });
     }
-    if (this.state.apenas_salvos) {
-      chips.push({ key: 'apenas_salvos', label: 'Apenas salvos no caderno' });
-    }
+    if (this.state.apenas_salvos) chips.push({ key: 'apenas_salvos', label: 'Apenas salvos' });
     return chips;
   },
 
@@ -325,71 +306,23 @@ window.AprovaApp = {
     const esc = (v) => window.AprovaUtils.escapeHtml(v);
     container.hidden = false;
     container.innerHTML = `
-      <span class="active-chips-label">Filtros ativos:</span>
+      <span class="text-caption-muted">Filtros ativos:</span>
       ${chips.map(c => `
-        <button type="button" class="filter-chip-btn" onclick="window.AprovaApp.removerFiltroIndividual('${esc(c.key)}')" title="Remover filtro ${esc(c.label)}">
+        <button type="button" class="filter-chip-btn" onclick="window.AprovaApp.removerFiltroIndividual('${esc(c.key)}')">
           <span>${esc(c.label)}</span>
           ${window.AprovaUtils.icon('x')}
         </button>
       `).join('')}
-      ${chips.length >= 2 ? `
-        <button type="button" class="filter-chip-clear" onclick="window.AprovaApp.limparFiltros()">
-          Limpar tudo
-        </button>
-      ` : ''}
-    `;
-  },
-
-  renderContinueStudyStrip(salvos) {
-    const strip = document.getElementById('continue-study-strip');
-    if (!strip) return;
-    if (!salvos || !salvos.length) {
-      strip.hidden = true;
-      strip.innerHTML = '';
-      return;
-    }
-    const safe = (v) => window.AprovaUtils.safeText(v);
-    const esc = (v) => window.AprovaUtils.escapeHtml(v);
-    const itemsHtml = salvos.slice(0, 3).map(c => {
-      const mats = c.materiais || [];
-      const feitos = mats.filter(m => m.estudado).length;
-      return `
-        <button type="button" class="continue-study-pill" onclick="window.AprovaComponents.openConcursoModal('${esc(c.id)}', this)">
-          <strong>${safe(c.sigla)}</strong>
-          <span>${feitos}/${mats.length} materiais</span>
-        </button>
-      `;
-    }).join('');
-    const extraCount = salvos.length > 3 ? ` +${salvos.length - 3}` : '';
-    strip.hidden = false;
-    strip.innerHTML = `
-      <div class="continue-study-left">
-        <span class="continue-study-title">Retomar preparação${extraCount ? ` (${salvos.length} editais no caderno)` : ''}:</span>
-        <div class="continue-study-pills">${itemsHtml}</div>
-      </div>
-      <div class="continue-study-actions">
-        <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaApp.switchView('ia')">
-          Montar cronograma IA
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaApp.switchView('conta')">
-          Meu caderno
-        </button>
-      </div>
+      ${chips.length >= 2 ? `<button type="button" class="btn btn-outline btn-sm" onclick="window.AprovaApp.limparFiltros()">Limpar tudo</button>` : ''}
     `;
   },
 
   ordenarLista(lista) {
     const copia = [...lista];
     const modo = this.state.sortBy;
-    if (modo === 'salario') {
-      return copia.sort((a, b) => (b.salario_max || 0) - (a.salario_max || 0));
-    }
-    if (modo === 'vagas') {
-      return copia.sort((a, b) => (b.vagas_num || 0) - (a.vagas_num || 0));
-    }
-    if (modo === 'probabilidade') {
-      return copia.sort((a, b) => (b.prob_ia || 0) - (a.prob_ia || 0));
-    }
+    if (modo === 'salario') return copia.sort((a, b) => (b.salario_max || 0) - (a.salario_max || 0));
+    if (modo === 'vagas') return copia.sort((a, b) => (b.vagas_num || 0) - (a.vagas_num || 0));
+    if (modo === 'probabilidade') return copia.sort((a, b) => (b.prob_ia || 0) - (a.prob_ia || 0));
     return copia;
   },
 
@@ -410,11 +343,8 @@ window.AprovaApp = {
       grid.innerHTML = `
         <div class="empty-state-sheet" role="alert">
           <h3>Não foi possível carregar os concursos</h3>
-          <p>${window.AprovaUtils.escapeHtml(err.message || 'Erro ao consultar a lista de editais.')}</p>
-          <button type="button" class="btn btn-primary" onclick="window.AprovaApp.carregarConcursos()">
-            ${window.AprovaUtils.icon('reset')}
-            <span>Tentar novamente</span>
-          </button>
+          <p>${window.AprovaUtils.escapeHtml(err.message || 'Erro ao consultar editais.')}</p>
+          <button type="button" class="btn btn-primary" onclick="window.AprovaApp.carregarConcursos()">Tentar novamente</button>
         </div>
       `;
       return;
@@ -439,64 +369,56 @@ window.AprovaApp = {
     setTxt('pill-count-previsto', resumo.previstos);
     setTxt('pill-count-encerrado', resumo.encerrados);
     setTxt('count-salvos-badge', resumo.salvos);
-    setTxt('top-salvos-count', resumo.salvos);
 
     const summaryEl = document.getElementById('results-summary-text');
-    if (summaryEl) {
-      summaryEl.textContent = `${lista.length} de ${totalBase} editais`;
-    }
+    if (summaryEl) summaryEl.textContent = `${lista.length} de ${totalBase} editais`;
 
     if (lista.length === 0) {
-      const chips = this._getActiveFilterDescriptors();
-      const esc = (v) => window.AprovaUtils.escapeHtml(v);
-      const chipsRecovery = chips.length
-        ? `<div class="empty-state-actions" style="margin-bottom: 14px;">
-            ${chips.map(c => `
-              <button type="button" class="filter-chip-btn" onclick="window.AprovaApp.removerFiltroIndividual('${esc(c.key)}')">
-                <span>Remover: ${esc(c.label)}</span>
-                ${window.AprovaUtils.icon('x')}
-              </button>
-            `).join('')}
-          </div>`
-        : '';
       grid.innerHTML = `
         <div class="empty-state-sheet">
           <h3>Nenhum concurso corresponde aos filtros selecionados</h3>
-          <p>${chips.length ? 'A combinação atual de filtros não encontrou editais. Remova um filtro específico abaixo ou restaure todos os concursos:' : 'Nenhum edital disponível no momento.'}</p>
-          ${chipsRecovery}
+          <p>Ajuste os filtros ou restaure todos os ${totalBase} editais disponíveis.</p>
           <button type="button" class="btn btn-primary" onclick="window.AprovaApp.limparFiltros()">
-            ${window.AprovaUtils.icon('reset')}
-            <span>Restaurar todos os ${totalBase} concursos</span>
+            Restaurar todos os ${totalBase} concursos
           </button>
         </div>
       `;
       return;
     }
 
-    grid.innerHTML = lista.map(c => window.AprovaComponents.renderConcursoCard(c)).join('');
+    const user = window.AprovaAPI.obterUsuarioAtual();
+    const guestOb = window.AprovaAPI.obterOnboardingVisitante();
+    const alvoId = user?.concurso_alvo_id || guestOb?.concurso_alvo_id || 'pf-2026';
+    const alvoObj = lista.find(x => x.id === alvoId) || null;
+
+    grid.innerHTML = lista.map(c => window.AprovaComponents.renderConcursoCard(c, alvoObj)).join('');
   },
 
   async toggleFavorito(concursoId) {
     try {
       const res = await window.AprovaAPI.alternarFavorito(concursoId);
       if (!res.salvo) {
-        window.AprovaUtils.showToast('Concurso removido do seu caderno.', {
-          actionLabel: 'Desfazer',
-          onAction: () => window.AprovaApp.toggleFavorito(concursoId)
-        });
+        window.AprovaUtils.showToast('Concurso removido do seu caderno.');
       } else {
         window.AprovaUtils.showToast(
-          res.isGuest
-            ? 'Salvo neste dispositivo. Entre ou crie conta para sincronizar.'
-            : 'Concurso salvo no seu caderno de estudos.'
+          res.isGuest ? 'Salvo neste dispositivo. Entre para sincronizar.' : 'Concurso salvo no seu caderno de estudos.'
         );
       }
       this.carregarConcursos();
-      this.atualizarIndicadoresUsuario();
       return res;
     } catch (err) {
       window.AprovaUtils.showToast(err.message || 'Erro ao atualizar favorito.', { variant: 'error' });
       return null;
+    }
+  },
+
+  async escolherConcursoAlvo(concursoId) {
+    try {
+      const resp = await window.AprovaAPI.definirConcursoAlvo(concursoId);
+      window.AprovaUtils.showToast(resp?.mensagem || 'Concurso-alvo atualizado!');
+      this.carregarConcursos();
+    } catch (err) {
+      window.AprovaUtils.showToast(err.message || 'Não foi possível definir concurso-alvo.', { variant: 'error' });
     }
   },
 
@@ -506,30 +428,12 @@ window.AprovaApp = {
     window.AprovaComponents.estadoMateriais.statusEstudo = 'todos';
     window.AprovaComponents.estadoMateriais.busca = '';
     this.switchView('materiais');
-    window.AprovaUtils.showToast('Exibindo acervo de materiais filtrado para este concurso.');
+    window.AprovaUtils.showToast('Exibindo guias filtrados para este concurso.');
   },
 
-  async atualizarIndicadoresUsuario() {
-    try {
-      const [concResp, matResp] = await Promise.all([
-        window.AprovaAPI.listarConcursos(),
-        window.AprovaAPI.listarMateriais('todos', 'todas')
-      ]);
-      const resumo = concResp.resumo || {};
-      const salvos = (concResp.concursos || []).filter(c => c.salvo);
-      const setTxt = (id, val) => {
-        const el = document.getElementById(id);
-        if (el && val !== undefined) el.textContent = val;
-      };
-      setTxt('top-salvos-count', resumo.salvos ?? salvos.length);
-      setTxt('top-estudados-count', `${matResp.estudados ?? 0}/${matResp.total ?? 0}`);
-      setTxt('top-progresso-pct', `${matResp.progresso_pct ?? 0}%`);
-      this.renderContinueStudyStrip(salvos);
-    } catch (e) {}
-  },
-
-  atualizarTelemetriaTopo() {
-    return this.atualizarIndicadoresUsuario();
+  atualizarIndicadoresUsuario() {
+    // Indicadores atualizados diretamente nas views ativas
+    return Promise.resolve();
   }
 };
 

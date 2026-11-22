@@ -11,9 +11,10 @@
 
   let backendOnline = false;
 
-  const STORAGE_KEY = 'aprova_mais_mvp_state_v3';
+  const STORAGE_KEY = 'aprova_mais_mvp_state_v4';
   const USER_SESSION_KEY = 'aprova_mais_user_session_v1';
   const GUEST_STATE_KEY = 'aprova_mais_guest_draft_v1';
+  const GUEST_ONBOARDING_KEY = 'aprova_mais_guest_onboarding_v1';
 
   function gerarIniciais(nome) {
     const partes = (nome || 'Usuário').trim().split(/\s+/).filter(Boolean);
@@ -93,6 +94,7 @@
     const initial = {
       concursos: JSON.parse(JSON.stringify(window.AprovaFallback.concursos)),
       rumores: JSON.parse(JSON.stringify(window.AprovaFallback.rumores)),
+      questoes: JSON.parse(JSON.stringify(window.AprovaFallback.questoes || [])),
       usuarios: [
         {
           id: 1,
@@ -102,12 +104,19 @@
           carreira_foco: 'Policial',
           escolaridade: 'Superior',
           uf_interesse: 'Nacional',
+          ufs_interesse: ['Nacional'],
           horas_estudo_dia: 4,
-          plano: 'Gratuito',
+          plano: 'Pro',
+          concurso_alvo_id: 'pf-2026',
+          onboarding_concluido: true,
+          streak_dias: 12,
           iniciais: 'CL'
         }
       ],
       userData: {},
+      sessoes: [],
+      respostas: [],
+      chamados: [],
       leads: []
     };
     saveLocalState(initial);
@@ -194,7 +203,7 @@
       return msgs.join(' ');
     }
     if (typeof detail === 'object') {
-      return detail.message || detail.detail || `Erro ao processar solicitação (HTTP ${status}).`;
+      return detail.mensagem || detail.message || detail.detail || `Erro ao processar solicitação (HTTP ${status}).`;
     }
     return String(detail);
   }
@@ -205,12 +214,9 @@
     if (isOnline) {
       badge.className = 'api-status-badge';
       badge.textContent = 'Sincronizado';
-    } else if (isGitHubPages) {
-      badge.className = 'api-status-badge';
-      badge.textContent = 'Modo Estático (Navegador)';
     } else {
       badge.className = 'api-status-badge offline';
-      badge.textContent = 'Modo Local (Offline)';
+      badge.textContent = 'Modo Local';
     }
   }
 
@@ -232,15 +238,19 @@
     });
     if (!res.ok) {
       let errMsg = `Erro HTTP ${res.status}`;
+      let rawDetail = null;
       try {
         const errJson = await res.json();
         if (errJson && errJson.detail !== undefined) {
+          rawDetail = errJson.detail;
           errMsg = formatApiErrorDetail(errJson.detail, res.status);
         }
       } catch (_) {}
       const error = new Error(errMsg);
       error.isApiError = true;
       error.status = res.status;
+      error.detail = rawDetail;
+      error.code = rawDetail && typeof rawDetail === 'object' ? rawDetail.code : null;
       throw error;
     }
     backendOnline = true;
@@ -305,14 +315,16 @@
     return out;
   }
 
-  function buildPdfBlob(concurso, material) {
+  function buildPdfBlob(concurso, material, usuario) {
     const now = new Date();
     const pad2 = n => String(n).padStart(2, '0');
     const dataHoje = `${pad2(now.getDate())}/${pad2(now.getMonth() + 1)}/${now.getFullYear()} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+    const ownerName = (usuario && usuario.nome) ? usuario.nome : 'Aluno Aprova+';
+    const catClean = material.categoria === 'Edital Verticalizado' ? 'Guia do Edital' : (material.categoria || 'Guia');
 
     const blocks = [
       ['title', material.titulo],
-      ['subtitle', `${material.categoria}  ·  Disciplina: ${material.disciplina || 'Geral'}  ·  Formato: Roteiro Verticalizado (PDF)`],
+      ['subtitle', `${catClean}  ·  Disciplina: ${material.disciplina || 'Geral'}  ·  Formato: Organizado por Tópico (PDF A4)`],
       ['spacer', ''],
       ['section', '1. DADOS DO CONCURSO VINCULADO'],
       ['bullet', `Concurso: ${concurso.titulo} (${concurso.sigla})`],
@@ -325,12 +337,12 @@
       ['spacer', ''],
       ['section', '2. RAIO-X E ESTRATÉGIA APROVA+ IA'],
       ['body', concurso.resumo_ia || ''],
-      ['bullet', `Fontes monitoradas: ${concurso.fontes_internet || 'Diário Oficial e Banca'}`],
+      ['bullet', `Fontes acompanhadas: ${concurso.fontes_internet || 'Diário Oficial e Banca'}`],
       ['spacer', ''],
-      ['section', '3. ESCOPO DESTE ROTEIRO'],
+      ['section', '3. ESCOPO DESTE GUIA DE ESTUDO'],
       ['body', material.resumo_conteudo || ''],
       ['spacer', ''],
-      ['section', `4. EDITAL VERTICALIZADO E CHECKLIST POR PESO (${concurso.banca})`],
+      ['section', `4. CONTEÚDO ORGANIZADO POR TÓPICO E PESO (${concurso.banca})`],
       ['body', 'Marque com [X] conforme concluir Teoria, Revisão e Bateria de Questões:']
     ];
 
@@ -376,15 +388,16 @@
 
     function startPage(pageIndex) {
       const cmds = [];
+      cmds.push(`BT /F2 22 Tf 0.960 0.962 0.966 rg 110 420 Td (${pdfEscapeWinAnsi('Aprova+ IA · ' + ownerName)}) Tj ET`);
       if (pageIndex === 0) {
         cmds.push('0.063 0.137 0.220 rg');
         cmds.push('0 762 595 80 re f');
         cmds.push(`BT /F2 16 Tf 1 1 1 rg 44 804 Td (${pdfEscapeWinAnsi('APROVA+ IA')}) Tj ET`);
-        cmds.push(`BT /F1 10 Tf 0.84 0.89 0.94 rg 44 784 Td (${pdfEscapeWinAnsi('Roteiro de Estudo Verticalizado e Checklist Oficial (PDF)')}) Tj ET`);
+        cmds.push(`BT /F1 9.5 Tf 0.84 0.89 0.94 rg 44 784 Td (${pdfEscapeWinAnsi(`Guia Organizado por Tópico do Edital (A4) · Preparado para ${ownerName}`)}) Tj ET`);
         return [cmds, 738];
       }
       cmds.push('0.847 0.835 0.796 RG 0.8 w 44 806 m 551 806 l S');
-      cmds.push(`BT /F2 9 Tf 0.067 0.110 0.141 rg 44 814 Td (${pdfEscapeWinAnsi(`APROVA+ IA · ${concurso.sigla} · Roteiro de Estudo`)}) Tj ET`);
+      cmds.push(`BT /F2 9 Tf 0.067 0.110 0.141 rg 44 814 Td (${pdfEscapeWinAnsi(`APROVA+ IA · ${concurso.sigla} · Caderno A4 de ${ownerName}`)}) Tj ET`);
       return [cmds, 784];
     }
 
@@ -416,8 +429,8 @@
     const totalPages = pagesCmds.length;
     pagesCmds.forEach((cmds, idx) => {
       cmds.push('0.847 0.835 0.796 RG 0.6 w 44 46 m 551 46 l S');
-      const footer = `Aprova+ IA · Gerado em ${dataHoje}   |   Página ${idx + 1} de ${totalPages}`;
-      cmds.push(`BT /F1 8.5 Tf 0.290 0.365 0.439 rg 44 32 Td (${pdfEscapeWinAnsi(footer)}) Tj ET`);
+      const footer = `Preparado para ${ownerName} · Uso pessoal · ${dataHoje}   |   Página ${idx + 1} de ${totalPages}`;
+      cmds.push(`BT /F1 8 Tf 0.290 0.365 0.439 rg 44 32 Td (${pdfEscapeWinAnsi(footer)}) Tj ET`);
     });
 
     const pageObjIds = pagesCmds.map((_, i) => 5 + i * 2);
@@ -490,6 +503,36 @@
 
     obterRascunhoVisitante() {
       return getGuestDraft();
+    },
+
+    obterOnboardingVisitante() {
+      try {
+        const raw = localStorage.getItem(GUEST_ONBOARDING_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return null;
+    },
+
+    salvarOnboardingVisitante(data) {
+      try {
+        localStorage.setItem(GUEST_ONBOARDING_KEY, JSON.stringify({ ...data, concluido: true, atualizado_em: new Date().toISOString() }));
+      } catch (e) {}
+    },
+
+    apagarOnboardingVisitante() {
+      try {
+        localStorage.removeItem(GUEST_ONBOARDING_KEY);
+      } catch (e) {}
+    },
+
+    isOnboardingConcluido() {
+      const user = this.obterUsuarioAtual();
+      if (user) {
+        if (user.onboarding_concluido !== undefined) return Boolean(user.onboarding_concluido);
+        return true;
+      }
+      const g = this.obterOnboardingVisitante();
+      return Boolean(g && g.concluido);
     },
 
     // ==================== AUTENTICAÇÃO E SESSÃO DO USUÁRIO ====================
@@ -594,6 +637,10 @@
         if (st.usuarios.some(u => u.email.toLowerCase() === emailLimpo)) {
           throw new Error('Este e-mail já está cadastrado na plataforma.');
         }
+        const ufsList = window.AprovaUtils
+          ? window.AprovaUtils.parseUfsList(payload.uf_interesse)
+          : (Array.isArray(payload.uf_interesse) ? payload.uf_interesse : ['Nacional']);
+        const horasVal = Math.max(0.5, Math.min(16, parseFloat(String(payload.horas_estudo_dia || 4).replace(',', '.')) || 4));
         const novoId = Date.now();
         const novo = {
           id: novoId,
@@ -602,8 +649,9 @@
           senha_hash: hashSenhaLocal(emailLimpo, payload.senha),
           carreira_foco: payload.carreira_foco || 'Policial',
           escolaridade: payload.escolaridade || 'Superior',
-          uf_interesse: payload.uf_interesse || 'Nacional',
-          horas_estudo_dia: parseInt(payload.horas_estudo_dia || 4, 10),
+          uf_interesse: ufsList.join(', '),
+          ufs_interesse: ufsList,
+          horas_estudo_dia: horasVal,
           plano: 'Gratuito',
           iniciais: gerarIniciais(payload.nome)
         };
@@ -637,13 +685,18 @@
         const st = getLocalState();
         st.usuarios = st.usuarios || [];
         const idx = st.usuarios.findIndex(u => u.id === atual.id || u.email === atual.email);
+        const ufsList = window.AprovaUtils
+          ? window.AprovaUtils.parseUfsList(payload.uf_interesse)
+          : (Array.isArray(payload.uf_interesse) ? payload.uf_interesse : ['Nacional']);
+        const horasVal = Math.max(0.5, Math.min(16, parseFloat(String(payload.horas_estudo_dia || 4).replace(',', '.')) || 4));
         const atualizado = {
           ...atual,
           nome: payload.nome.trim(),
           carreira_foco: payload.carreira_foco,
           escolaridade: payload.escolaridade,
-          uf_interesse: payload.uf_interesse,
-          horas_estudo_dia: parseInt(payload.horas_estudo_dia || 4, 10),
+          uf_interesse: ufsList.join(', '),
+          ufs_interesse: ufsList,
+          horas_estudo_dia: horasVal,
           plano: payload.plano || atual.plano || 'Gratuito',
           iniciais: gerarIniciais(payload.nome)
         };
@@ -709,7 +762,10 @@
           if (params.status && params.status !== 'todos' && c.status !== params.status) return false;
           if (params.area && params.area !== 'todas' && c.area.toLowerCase() !== params.area.toLowerCase()) return false;
           if (params.escolaridade && params.escolaridade !== 'todos' && !c.escolaridade.toLowerCase().includes(params.escolaridade.toLowerCase())) return false;
-          if (params.uf && params.uf !== 'todas' && c.uf.toLowerCase() !== params.uf.toLowerCase()) return false;
+          if (params.uf && params.uf !== 'todas') {
+            const ufsFilter = String(params.uf).split(',').map(u => u.trim().toLowerCase()).filter(Boolean);
+            if (ufsFilter.length && !ufsFilter.includes(c.uf.toLowerCase())) return false;
+          }
           if (params.q && !`${c.sigla} ${c.titulo} ${c.orgao} ${c.banca} ${c.area} ${c.resumo_ia}`.toLowerCase().includes(params.q.toLowerCase())) return false;
           return true;
         });
@@ -899,7 +955,7 @@
           titulo: matEncontrado.titulo,
           categoria: matEncontrado.categoria,
           disciplina: matEncontrado.disciplina || 'Geral',
-          formato: 'Roteiro Verticalizado (PDF)',
+          formato: 'Guia Organizado por Tópico (PDF A4)',
           concurso_id: concEncontrado.id,
           concurso_sigla: concEncontrado.sigla,
           concurso_titulo: concEncontrado.titulo,
@@ -927,29 +983,48 @@
 
     async baixarMaterial(materialId) {
       const mid = Number(materialId);
+      const user = this.obterUsuarioAtual();
       if (backendOnline && !isGitHubPages) {
         try {
-          const res = await fetch(`${API_BASE}/materiais/${mid}/download`);
+          const headers = {
+            ...(user && user.id ? { 'X-User-Id': String(user.id) } : {}),
+            ...(user && user.token ? { 'Authorization': `Bearer ${user.token}` } : {})
+          };
+          const res = await fetch(`${API_BASE}/materiais/${mid}/download`, { headers });
           if (!res.ok) {
-            let errMsg = `Não foi possível baixar o PDF (HTTP ${res.status}).`;
+            let errMsg = `Não foi possível exportar o PDF A4 (HTTP ${res.status}).`;
             try {
               const errJson = await res.json();
               if (errJson?.detail) errMsg = formatApiErrorDetail(errJson.detail, res.status);
             } catch (_) {}
-            window.AprovaUtils.showToast(errMsg, { variant: 'error' });
+            window.AprovaUtils.showToast(errMsg, {
+              variant: 'error',
+              actionLabel: (res.status === 403 || res.status === 401) ? 'Ver planos' : undefined,
+              onAction: () => window.AprovaApp.switchView('premium')
+            });
             return;
           }
           const blob = await res.blob();
           const disp = res.headers.get('Content-Disposition') || '';
           const match = disp.match(/filename="?([^";]+)"?/i);
-          const filename = match ? match[1] : `AprovaMais_Material_${mid}.pdf`;
+          const filename = match ? match[1] : `AprovaMais_Guia_${mid}.pdf`;
           triggerBlobDownload(blob, filename);
-          window.AprovaUtils.showToast('Roteiro verticalizado em PDF baixado.');
+          window.AprovaUtils.showToast('Guia em PDF A4 baixado com sucesso.');
           setTimeout(() => window.AprovaApp.atualizarIndicadoresUsuario(), 500);
           return;
         } catch (e) {
-          // Segue para fallback PDF local apenas em erro de rede
+          // Segue para fallback offline apenas em erro de rede
         }
+      }
+
+      const planoAtual = (user?.plano || 'Gratuito').toLowerCase();
+      if (planoAtual !== 'pro' && planoAtual !== 'pro+') {
+        window.AprovaUtils.showToast('Exportação em PDF A4 liberada nos planos Pro e Pro+.', {
+          variant: 'error',
+          actionLabel: 'Ver planos',
+          onAction: () => window.AprovaApp.switchView('premium')
+        });
+        return;
       }
 
       const st = getLocalState();
@@ -965,15 +1040,15 @@
       });
 
       if (!matEncontrado || !concEncontrado) {
-        window.AprovaUtils.showToast('Material não encontrado para download.', { variant: 'error' });
+        window.AprovaUtils.showToast('Guia não encontrado para exportação.', { variant: 'error' });
         return;
       }
 
-      const pdfBlob = buildPdfBlob(concEncontrado, matEncontrado);
+      const pdfBlob = buildPdfBlob(concEncontrado, matEncontrado, user);
       const filename = `AprovaMais_${safeFilenamePart(concEncontrado.sigla)}_${safeFilenamePart(matEncontrado.categoria)}_${mid}.pdf`;
       triggerBlobDownload(pdfBlob, filename);
 
-      window.AprovaUtils.showToast(`Roteiro em PDF "${matEncontrado.titulo}" baixado.`);
+      window.AprovaUtils.showToast(`Guia em PDF A4 "${matEncontrado.titulo}" baixado.`);
       window.AprovaApp.atualizarIndicadoresUsuario();
     },
 
@@ -1074,7 +1149,7 @@
       } catch (e) {
         if (e.isApiError) throw e;
         const st = getLocalState();
-        const horasDia = Math.max(1, Math.min(16, Number(payload.horas_por_dia || 4)));
+        const horasDia = Math.max(0.5, Math.min(16, Number(payload.horas_por_dia || 4)));
         const diasSem = Math.max(1, Math.min(7, Number(payload.dias_por_semana || 6)));
         const horasSem = horasDia * diasSem;
         const candidatos = st.concursos
@@ -1171,6 +1246,372 @@
           id: st.leads.length,
           sucesso: true,
           mensagem: `Inscrição prioritária confirmada para ${payload.nome}. Recurso selecionado: ${payload.recurso_favorito}.`
+        };
+      }
+    },
+
+    // ==================== ORQUESTRAÇÃO V2: ONBOARDING, DASHBOARD, QUESTÕES & THEO ====================
+    async obterOnboarding() {
+      const user = this.obterUsuarioAtual();
+      if (!user) {
+        const g = this.obterOnboardingVisitante();
+        return {
+          concluido: Boolean(g && g.concluido),
+          dados: g || {
+            momento_jornada: 'estudando_edital',
+            concurso_alvo_id: 'pf-2026',
+            areas_interesse: ['Policial'],
+            horas_dia: 4,
+            dias_semana: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+            nivel_base: {},
+            estilo_estudo: 'equilibrado'
+          }
+        };
+      }
+      try {
+        return await request('/estudo/onboarding');
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const g = this.obterOnboardingVisitante();
+        return {
+          concluido: Boolean(user.onboarding_concluido),
+          dados: g || {
+            momento_jornada: 'estudando_edital',
+            concurso_alvo_id: user.concurso_alvo_id || 'pf-2026',
+            areas_interesse: [user.carreira_foco || 'Policial'],
+            ufs_interesse: user.ufs_interesse || ['Nacional'],
+            horas_dia: parseFloat(user.horas_estudo_dia || 4),
+            dias_semana: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+            nivel_base: {},
+            estilo_estudo: 'equilibrado'
+          }
+        };
+      }
+    },
+
+    async salvarOnboarding(payload) {
+      const user = this.obterUsuarioAtual();
+      this.salvarOnboardingVisitante(payload);
+      if (!user) {
+        return { sucesso: true, mensagem: 'Preferências calibradas neste dispositivo!' };
+      }
+      try {
+        const resp = await request('/estudo/onboarding', { method: 'PUT', body: JSON.stringify(payload) });
+        if (resp?.usuario) this.salvarSessaoUsuario(resp.usuario);
+        return resp;
+      } catch (e) {
+        if (e.isApiError) throw e;
+        user.concurso_alvo_id = payload.concurso_alvo_id || 'pf-2026';
+        user.horas_estudo_dia = parseFloat(payload.horas_dia || 4);
+        if (payload.ufs_interesse) {
+          user.ufs_interesse = payload.ufs_interesse;
+          user.uf_interesse = Array.isArray(payload.ufs_interesse) ? payload.ufs_interesse.join(', ') : payload.ufs_interesse;
+        }
+        user.onboarding_concluido = true;
+        this.salvarSessaoUsuario(user);
+        return { sucesso: true, mensagem: 'Plano inicial calibrado com sucesso!', usuario: user };
+      }
+    },
+
+    async apagarOnboarding() {
+      this.apagarOnboardingVisitante();
+      const user = this.obterUsuarioAtual();
+      if (!user) {
+        return { sucesso: true, mensagem: 'Preferências iniciais apagadas deste dispositivo.' };
+      }
+      try {
+        const resp = await request('/estudo/onboarding', { method: 'DELETE' });
+        if (resp?.usuario) this.salvarSessaoUsuario(resp.usuario);
+        return resp;
+      } catch (e) {
+        if (e.isApiError) throw e;
+        user.onboarding_concluido = false;
+        this.salvarSessaoUsuario(user);
+        return { sucesso: true, mensagem: 'Respostas de preferências iniciais apagadas.', usuario: user };
+      }
+    },
+
+    async obterDashboardEstudo(concursoIdOverride) {
+      const user = this.obterUsuarioAtual();
+      const guestOb = this.obterOnboardingVisitante();
+      const alvoId = concursoIdOverride || user?.concurso_alvo_id || guestOb?.concurso_alvo_id || 'pf-2026';
+      try {
+        const qs = alvoId ? `?concurso_id=${encodeURIComponent(alvoId)}` : '';
+        return await request(`/estudo/dashboard${qs}`);
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        const conc = st.concursos.find(c => c.id === alvoId) || st.concursos[0];
+        const resps = (st.respostas || []).filter(r => r.concurso_id === conc.id);
+        const discs = (conc.disciplinas || []).map(d => {
+          const dr = resps.filter(x => x.disciplina === d.nome);
+          const ok = dr.filter(x => x.correta).length;
+          const err = dr.filter(x => !x.correta && !x.em_branco).length;
+          const taxa = dr.length ? Math.round((ok / dr.length) * 1000) / 10 : 0;
+          return {
+            disciplina: d.nome,
+            nome_curto: d.nome.split('(')[0].split('—')[0].trim(),
+            questoes_edital: d.questoes || 10,
+            peso: d.peso || '',
+            peso_num: parseFloat(d.peso) || (d.questoes || 10),
+            prioridade: d.prioridade || 'Média',
+            nivelamento_pct: taxa,
+            taxa_atual_pct: taxa,
+            evolucao_pp: 0,
+            meta_pct: 75,
+            escore_liquido: ok - err,
+            questoes_resolvidas: dr.length,
+            acertos: ok,
+            erros: err,
+            branco: dr.filter(x => x.em_branco).length,
+            status_badge: dr.length === 0 ? 'Aguardando prática' : (taxa >= 75 ? 'Acima da meta' : 'Reforçar agora')
+          };
+        });
+        const totR = resps.length;
+        const totOk = resps.filter(x => x.correta).length;
+        const taxaG = totR ? Math.round((totOk / totR) * 1000) / 10 : 0;
+        const horasDia = Number(guestOb?.horas_dia || user?.horas_estudo_dia || 4);
+        const minsDia = Math.max(30, Math.round(horasDia * 60));
+        const durSlots = minsDia < 90 ? [minsDia] : [Math.floor(minsDia / 2), minsDia - Math.floor(minsDia / 2)];
+        const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const blocos = [];
+        dias.forEach((dia, di) => {
+          durSlots.forEach((dur, si) => {
+            const dItem = discs[(di + si) % Math.max(discs.length, 1)];
+            if (dItem) {
+              blocos.push({
+                id: di * 2 + si + 1,
+                dia_semana: dia,
+                ordem: si + 1,
+                disciplina: dItem.disciplina,
+                disciplina_curta: dItem.nome_curto,
+                tipo_bloco: si === 0 ? 'Guia + Questões' : 'Bateria Cronometrada',
+                minutos_planejados: dur,
+                minutos_realizados: 0,
+                concluido: false
+              });
+            }
+          });
+        });
+        const metaSemLabel = window.AprovaUtils ? window.AprovaUtils.formatHorasSemanais(horasDia * 6) : `${horasDia * 6}h`;
+        return {
+          concurso_alvo: conc,
+          meta_aprovacao: 75,
+          resumo_hero: {
+            taxa_atual_30d: taxaG,
+            taxa_nivelamento: taxaG,
+            evolucao_pp: 0,
+            meta_aprovacao: 75,
+            escore_liquido: totR ? Math.round(((totOk - (totR - totOk)) / totR) * 1200) / 10 : 0,
+            is_cebraspe: conc.banca.toLowerCase().includes('cebraspe'),
+            questoes_30d: totR,
+            acertos_30d: totOk,
+            erros_30d: totR - totOk,
+            streak_dias: user?.streak_dias || 0,
+            horas_semana_feitas: '0h',
+            horas_semana_meta: metaSemLabel,
+            blocos_concluidos: 0,
+            blocos_totais: blocos.length
+          },
+          desempenho_disciplinas: discs,
+          graficos_2b: {
+            evolucao_periodo: [{ label: 'Início', taxa_pct: taxaG, meta_pct: 75 }],
+            acertos_erros_area: discs.map(d => ({ disciplina: d.nome_curto, acertos: d.acertos, erros: d.erros, total: d.questoes_resolvidas, taxa_pct: d.taxa_atual_pct }))
+          },
+          cronograma_2c: {
+            minutos_planejados: minsDia * 6,
+            minutos_realizados: 0,
+            horas_feitas_label: '0h',
+            horas_meta_label: metaSemLabel,
+            percentual_semana: 0,
+            blocos,
+            proximas_atividades: blocos.slice(0, 3)
+          },
+          nivelamento_2d: {
+            taxa_inicial: taxaG,
+            taxa_atual: taxaG,
+            meta_aprovacao: 75,
+            evolucao_pp: 0,
+            radar_eixos: discs.slice(0, 5).map(d => ({ label: d.nome_curto, inicial: d.nivelamento_pct, atual: d.taxa_atual_pct, meta: 75 })),
+            historico_nivelamentos: []
+          },
+          sugestao_theo: {
+            concurso_id: conc.id,
+            sigla: conc.sigla,
+            banca: conc.banca,
+            titulo: `Simulado Dirigido do Theo · ${conc.sigla}`,
+            subtitulo: 'Foco automático no concurso como um todo · Dificuldade sorteada',
+            justificativa: `O Theo cruzou todo o edital ${conc.sigla} para priorizar suas disciplinas de maior peso.`,
+            quantidade: 20,
+            dificuldade: 'sorteado',
+            tipo_sessao: 'simulado_theo',
+            disciplinas_priorizadas: discs.slice(0, 3).map(d => ({ disciplina: d.disciplina, peso: d.peso, taxa_atual_pct: d.taxa_atual_pct, prioridade: d.prioridade }))
+          },
+          cotas_plano: { plano: user?.plano || 'Gratuito', pode_baixar_pdf: ['Pro', 'Pro+'].includes(user?.plano) },
+          sessoes_recentes: []
+        };
+      }
+    },
+
+    async definirConcursoAlvo(concursoId) {
+      const user = this.obterUsuarioAtual();
+      const guestOb = this.obterOnboardingVisitante() || {};
+      this.salvarOnboardingVisitante({ ...guestOb, concurso_alvo_id: concursoId });
+      if (!user) {
+        return { sucesso: true, mensagem: 'Concurso-alvo selecionado neste dispositivo.' };
+      }
+      try {
+        const resp = await request('/estudo/concurso-alvo', { method: 'POST', body: JSON.stringify({ concurso_id: concursoId }) });
+        if (resp?.usuario) this.salvarSessaoUsuario(resp.usuario);
+        return resp;
+      } catch (e) {
+        if (e.isApiError) throw e;
+        user.concurso_alvo_id = concursoId;
+        this.salvarSessaoUsuario(user);
+        return { sucesso: true, mensagem: 'Concurso-alvo atualizado.', usuario: user };
+      }
+    },
+
+    async alternarBlocoCronograma(blocoId) {
+      try {
+        return await request(`/estudo/cronograma/bloco/${blocoId}/toggle`, { method: 'POST' });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        return { id: blocoId, concluido: true };
+      }
+    },
+
+    async iniciarSessaoQuestoes(payload) {
+      try {
+        return await request('/questoes/sessoes/iniciar', { method: 'POST', body: JSON.stringify(payload) });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        const pool = (st.questoes || []).filter(q =>
+          (!payload.concurso_id || payload.concurso_id === 'todos' || q.concurso_id === payload.concurso_id) &&
+          (!payload.disciplina || payload.disciplina === 'todas' || q.disciplina === payload.disciplina) &&
+          (!payload.dificuldade || payload.dificuldade === 'sorteado' || q.dificuldade === payload.dificuldade)
+        );
+        const finalPool = pool.length ? pool : (st.questoes || []);
+        const selected = finalPool.slice(0, Math.min(payload.quantidade || 10, finalPool.length));
+        const sid = Date.now();
+        return {
+          sessao: {
+            id: sid,
+            concurso_id: payload.concurso_id || 'pf-2026',
+            concurso_sigla: 'PF',
+            banca: selected[0]?.banca || 'Cebraspe',
+            tipo_sessao: payload.tipo_sessao || 'simulado_rapido',
+            titulo: `Bateria Offline · ${payload.concurso_id || 'pf-2026'}`,
+            total_questoes: selected.length,
+            respondidas: 0,
+            acertos: 0,
+            erros: 0,
+            branco: 0,
+            escore_liquido: 0
+          },
+          questoes: selected.map(({ gabarito, comentario, ...pub }) => pub)
+        };
+      }
+    },
+
+    async responderQuestao(sessaoId, payload) {
+      try {
+        return await request(`/questoes/sessoes/${sessaoId}/responder`, { method: 'POST', body: JSON.stringify(payload) });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        const q = (st.questoes || []).find(x => x.id === payload.questao_id);
+        const correta = !payload.em_branco && q && payload.resposta_usuario === q.gabarito;
+        if (q) {
+          st.respostas = st.respostas || [];
+          st.respostas.push({
+            sessao_id: sessaoId,
+            questao_id: q.id,
+            concurso_id: q.concurso_id,
+            disciplina: q.disciplina,
+            correta: Boolean(correta),
+            em_branco: Boolean(payload.em_branco)
+          });
+          saveLocalState(st);
+        }
+        return {
+          questao_id: payload.questao_id,
+          correta,
+          em_branco: Boolean(payload.em_branco),
+          gabarito: q?.gabarito || 'C',
+          comentario: q?.comentario || 'Confira os fundamentos no Guia do Edital.',
+          sessao: { id: sessaoId }
+        };
+      }
+    },
+
+    async finalizarSessaoQuestoes(sessaoId) {
+      try {
+        return await request(`/questoes/sessoes/${sessaoId}/finalizar`, { method: 'POST' });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        return { sucesso: true, mensagem: 'Sessão finalizada!' };
+      }
+    },
+
+    async obterSugestaoTheo(concursoId) {
+      try {
+        const qs = concursoId ? `?concurso_id=${encodeURIComponent(concursoId)}` : '';
+        return await request(`/questoes/sugestao-theo${qs}`);
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const d = await this.obterDashboardEstudo(concursoId);
+        return d.sugestao_theo;
+      }
+    },
+
+    async listarProvasAnteriores(concursoId = 'todos') {
+      try {
+        const qs = `?concurso_id=${encodeURIComponent(concursoId)}`;
+        return await request(`/questoes/provas-anteriores${qs}`);
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const st = getLocalState();
+        return {
+          provas: st.concursos.map(c => ({
+            concurso_id: c.id,
+            sigla: c.sigla,
+            titulo: `Prova Oficial ${c.sigla} · ${c.ultimo_concurso_ano}`,
+            orgao: c.orgao,
+            banca: c.banca,
+            area: c.area,
+            ano_label: c.ultimo_concurso_ano,
+            nota_corte_anterior: c.nota_corte_anterior,
+            questoes_disponiveis: 10
+          }))
+        };
+      }
+    },
+
+    async perguntarTheoSuporte(mensagem) {
+      try {
+        return await request('/suporte/theo', { method: 'POST', body: JSON.stringify({ mensagem }) });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        const user = this.obterUsuarioAtual();
+        return {
+          sucesso: true,
+          usuario_reconhecido: user ? { nome: user.nome, plano: user.plano || 'Gratuito', concurso_alvo_sigla: 'PF' } : null,
+          resposta_html: 'Estou por aqui! Você pode consultar planos em <strong>Planos</strong>, treinar em <strong>Nivelamento &amp; IA</strong> ou clicar em <strong>Falar com um Atendente Humano →</strong>.'
+        };
+      }
+    },
+
+    async abrirChamadoSuporte(payload) {
+      try {
+        return await request('/suporte/chamado', { method: 'POST', body: JSON.stringify(payload) });
+      } catch (e) {
+        if (e.isApiError) throw e;
+        return {
+          sucesso: true,
+          protocolo: `AP-${Math.floor(10000 + Math.random() * 89999)}`,
+          mensagem: 'Protocolo registrado com sucesso! Nossa equipe responderá por e-mail em breve.'
         };
       }
     }

@@ -182,20 +182,19 @@ window.AprovaComponents.openConcursoModal = async function (concursoId, triggerE
     </div>
 
     <div class="modal-section-block">
-      <h3 class="modal-section-title">
-        Matriz de Disciplinas e Pesos (Edital Verticalizado)
-      </h3>
-      <details class="domain-glossary">
-        <summary>
-          ${utils.icon('help')}
-          <span>Entenda os termos desta matriz (Prioridade, Pontos Líquidos e Edital Verticalizado)</span>
-        </summary>
-        <p>
-          <strong>Prioridade IA:</strong> calculada pelo peso percentual da disciplina na nota final. Foque ~70% do tempo nas matérias <em>Crítica</em> e <em>Alta</em>.
-          <strong>Pontos Líquidos (Cebraspe):</strong> itens errados podem anular acertos.
-          <strong>Edital Verticalizado:</strong> distribuição estruturada para você acompanhar o estudo por bloco.
-        </p>
-      </details>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+        <h3 class="modal-section-title" style="margin-bottom:0;">
+          Matriz de Disciplinas e Pesos por Tópico
+        </h3>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-soft btn-sm" onclick="window.AprovaComponents.closeConcursoModal(); window.AprovaApp.escolherConcursoAlvo('${safeId}')">
+            ★ Definir como Alvo
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="window.AprovaComponents.closeConcursoModal(); window.AprovaComponents.iniciarPraticaDirecionada({ concurso_id: '${safeId}', disciplina: 'todas', dificuldade: 'sorteado', quantidade: 10, tipo_sessao: 'simulado_rapido' })">
+            Praticar Questões
+          </button>
+        </div>
+      </div>
       <div class="table-scroll-wrap">
         <table class="data-table" aria-label="Matriz de Disciplinas e Pesos">
           <thead>
@@ -203,7 +202,7 @@ window.AprovaComponents.openConcursoModal = async function (concursoId, triggerE
               <th scope="col">Disciplina / Bloco Temático</th>
               <th scope="col">Itens / Questões</th>
               <th scope="col">Peso na Nota</th>
-              <th scope="col">Prioridade IA</th>
+              <th scope="col">Prioridade</th>
             </tr>
           </thead>
           <tbody>
@@ -216,9 +215,9 @@ window.AprovaComponents.openConcursoModal = async function (concursoId, triggerE
     <div>
       <div class="match-result-head">
         <h3 class="modal-section-title">
-          Acervo de Estudo Vinculado (${(c.materiais || []).length} roteiros disponíveis)
+          Guias de Estudo Vinculados (${(c.materiais || []).length})
         </h3>
-        <span class="text-caption-muted">Pré-visualize inline ou baixe o roteiro verticalizado em PDF</span>
+        <span class="text-caption-muted">Pré-visualize na tela ou exporte o caderno organizado por tópico em PDF A4</span>
       </div>
       <div>
         ${materiaisHtml}

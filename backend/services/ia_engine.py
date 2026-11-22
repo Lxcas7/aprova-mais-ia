@@ -110,7 +110,7 @@ def responder_chat(mensagem: str) -> Dict[str, Any]:
 def calcular_match_perfil(
     escolaridade: str,
     area: str,
-    horas_dia: int,
+    horas_dia: float,
     foco_status: str,
     dias_semana: int = 6,
 ) -> Dict[str, Any]:
@@ -121,8 +121,8 @@ def calcular_match_perfil(
     conn.close()
 
     dias_validos = max(1, min(7, int(dias_semana or 6)))
-    horas_dia_validas = max(1, min(16, int(horas_dia or 4)))
-    horas_semanais = float(horas_dia_validas * dias_validos)
+    horas_dia_validas = max(0.5, min(16.0, float(horas_dia or 4.0)))
+    horas_semanais = round(horas_dia_validas * dias_validos, 1)
 
     recomendados = []
     for c in rows:
@@ -193,7 +193,7 @@ def calcular_match_perfil(
             "area": area,
             "horas_por_dia": horas_dia_validas,
             "dias_por_semana": dias_validos,
-            "horas_semanais_uteis": int(horas_semanais)
+            "horas_semanais_uteis": horas_semanais
         },
         "top_recomendacoes": recomendados[:4]
     }

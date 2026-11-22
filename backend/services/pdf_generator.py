@@ -1,7 +1,7 @@
 import json
 import textwrap
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Any, Dict, List, Optional
 
 
 def _parse_disciplinas(concurso: dict) -> List[Dict[str, Any]]:
@@ -14,17 +14,33 @@ def _parse_disciplinas(concurso: dict) -> List[Dict[str, Any]]:
         return []
 
 
+def _mask_email(email: str) -> str:
+    if not email or "@" not in email:
+        return ""
+    local, domain = email.split("@", 1)
+    if len(local) <= 2:
+        masked_local = local[0] + "*"
+    else:
+        masked_local = local[:2] + "***" + local[-1]
+    return f"{masked_local}@{domain}"
+
+
 def gerar_preview_material(concurso: dict, material: dict) -> dict:
-    """Retorna estrutura padronizada para pré-visualização inline do roteiro antes do download em PDF."""
+    """Retorna estrutura padronizada para pré-visualização inline do guia de estudo antes da exportação em PDF A4."""
     disciplinas = _parse_disciplinas(concurso)
     banca = concurso.get("banca", "Oficial")
     ultimo_ano = concurso.get("ultimo_concurso_ano") or "Último Edital"
+    categoria = (
+        "Guia do Edital"
+        if material.get("categoria") == "Edital Verticalizado"
+        else material.get("categoria", "Guia de Estudo")
+    )
     return {
         "id": material["id"],
         "titulo": material["titulo"],
-        "categoria": material["categoria"],
+        "categoria": categoria,
         "disciplina": material.get("disciplina") or "Geral",
-        "formato": "Roteiro Verticalizado (PDF)",
+        "formato": "Guia Organizado por Tópico do Edital (PDF A4)",
         "concurso_id": concurso["id"],
         "concurso_sigla": concurso["sigla"],
         "concurso_titulo": concurso["titulo"],
@@ -43,69 +59,10 @@ def gerar_preview_material(concurso: dict, material: dict) -> dict:
         "disciplinas": disciplinas,
         "passos_estudo": [
             "Dedique 70% do tempo às disciplinas marcadas com Prioridade Crítica e Alta.",
-            f"Resolva no mínimo 50 questões recentes da banca {banca} por semana.",
+            f"Resolva no mínimo 50 questões recentes da banca {banca} por semana na aba Nivelamento & IA.",
             f"Refaça a prova anterior ({ultimo_ano}) simulando o tempo oficial.",
         ],
     }
-
-
-def gerar_conteudo_material_download(concurso: dict, material: dict) -> str:
-    disciplinas = _parse_disciplinas(concurso)
-    linhas_disc = "\n".join([
-        f"  [ ] {idx+1}. {d['nome']} — {d['questoes']} questões ({d['peso']}) | Prioridade: {d['prioridade']}"
-        for idx, d in enumerate(disciplinas)
-    ])
-
-    data_hoje = datetime.now().strftime("%d/%m/%Y %H:%M")
-    return f"""================================================================================
-APROVA+ IA — CENTRAL INTELIGENTE DE CONCURSOS PÚBLICOS (ROTEIRO DE ESTUDO)
-================================================================================
-MATERIAL: {material['titulo']}
-CATEGORIA: {material['categoria']} | DISCIPLINA: {material['disciplina']} | FORMATO: PDF
-GERADO EM: {data_hoje}
---------------------------------------------------------------------------------
-1. DADOS DO CONCURSO VINCULADO
---------------------------------------------------------------------------------
-• Concurso: {concurso['titulo']} ({concurso['sigla']})
-• Órgão: {concurso['orgao']}
-• Status Atual: {concurso['status_label']}
-• Banca Organizadora: {concurso['banca']}
-• Vagas: {concurso['vagas']}
-• Remuneração: {concurso['salario']}
-• Escolaridade Exigida: {concurso['escolaridade']}
-• Cronograma / Situação: {concurso['prazo']} ({concurso['data_prova']})
-• Histórico de Corte Anterior ({concurso['ultimo_concurso_ano']}): {concurso['nota_corte_anterior']}
-
---------------------------------------------------------------------------------
-2. RAIO-X E DIRECIONAMENTO DA INTELIGÊNCIA ARTIFICIAL (APROVA+ IA)
---------------------------------------------------------------------------------
-{concurso['resumo_ia']}
-
-Fontes Monitoradas pela IA: {concurso['fontes_internet']}
-
---------------------------------------------------------------------------------
-3. RESUMO EXECUTIVO DESTE MATERIAL
---------------------------------------------------------------------------------
-{material['resumo_conteudo']}
-
---------------------------------------------------------------------------------
-4. EDITAL VERTICALIZADO & CHECKLIST DE ESTUDO POR PESO DA BANCA ({concurso['banca']})
---------------------------------------------------------------------------------
-Marque com [X] conforme concluir a Teoria, Revisão e Bateria de Questões:
-
-{linhas_disc}
-
---------------------------------------------------------------------------------
-5. ESTRATÉGIA DE APROVAÇÃO RECOMENDADA PELA IA
---------------------------------------------------------------------------------
-1) Dedique 70% do seu tempo às disciplinas marcadas com Prioridade CRÍTICA e ALTA.
-2) Resolva no mínimo 50 questões anteriores da banca {concurso['banca']} por semana.
-3) Refaça a última prova realizada ({concurso['ultimo_concurso_ano']}) simulando o tempo real.
-
-================================================================================
-Aprova+ IA — Plataforma Centralizada de Busca de Concursos e Materiais
-================================================================================
-"""
 
 
 def _pdf_escape_winansi(text: str) -> str:
@@ -139,16 +96,31 @@ def _pdf_escape_winansi(text: str) -> str:
     return "".join(out)
 
 
-def gerar_pdf_material_download(concurso: dict, material: dict) -> bytes:
-    """Gera arquivo PDF 1.4 multi-página real (sem dependências externas) para o roteiro de estudo."""
+def gerar_pdf_material_download(
+    concurso: dict,
+    material: dict,
+    usuario: Optional[dict] = None,
+) -> bytes:
+    """Gera arquivo PDF 1.4 multi-página A4 (595x842) personalizado para o aluno."""
     disciplinas = _parse_disciplinas(concurso)
     data_hoje = datetime.now().strftime("%d/%m/%Y %H:%M")
 
-    # Cada item: (kind, text)
-    # kinds: 'title', 'subtitle', 'section', 'body', 'bullet', 'rule', 'spacer'
+    categoria = (
+        "Guia do Edital"
+        if material.get("categoria") == "Edital Verticalizado"
+        else material.get("categoria", "Guia de Estudo")
+    )
+
+    owner_nome = (usuario or {}).get("nome") or "Aluno Aprova+"
+    owner_email = _mask_email((usuario or {}).get("email") or "")
+    owner_tag = f"{owner_nome} ({owner_email})" if owner_email else owner_nome
+
     blocks: List[tuple[str, str]] = [
         ("title", material["titulo"]),
-        ("subtitle", f"{material['categoria']}  ·  Disciplina: {material.get('disciplina') or 'Geral'}  ·  Formato: Roteiro Verticalizado (PDF)"),
+        (
+            "subtitle",
+            f"{categoria}  ·  Disciplina: {material.get('disciplina') or 'Geral'}  ·  Formato: Guia Organizado por Tópico (PDF A4)",
+        ),
         ("spacer", ""),
         ("section", "1. DADOS DO CONCURSO VINCULADO"),
         ("bullet", f"Concurso: {concurso['titulo']} ({concurso['sigla']})"),
@@ -159,14 +131,14 @@ def gerar_pdf_material_download(concurso: dict, material: dict) -> bytes:
         ("bullet", f"Inscrições / Situação: {concurso['prazo']}  |  Prova / Previsão: {concurso['data_prova']}"),
         ("bullet", f"Corte anterior ({concurso['ultimo_concurso_ano']}): {concurso['nota_corte_anterior']}"),
         ("spacer", ""),
-        ("section", "2. RAIO-X E ESTRATÉGIA APROVA+ IA"),
+        ("section", "2. RAIO-X E DIRECIONAMENTO DE ESTUDO"),
         ("body", concurso.get("resumo_ia") or ""),
-        ("bullet", f"Fontes monitoradas: {concurso.get('fontes_internet') or 'Diário Oficial e Banca'}"),
+        ("bullet", f"Fontes oficiais acompanhadas: {concurso.get('fontes_internet') or 'Diário Oficial e Banca'}"),
         ("spacer", ""),
-        ("section", "3. ESCOPO DESTE ROTEIRO"),
+        ("section", "3. ESCOPO DESTE GUIA DE ESTUDO"),
         ("body", material.get("resumo_conteudo") or ""),
         ("spacer", ""),
-        ("section", f"4. EDITAL VERTICALIZADO E CHECKLIST POR PESO ({concurso['banca']})"),
+        ("section", f"4. CONTEÚDO DO EDITAL ORGANIZADO POR TÓPICO ({concurso['banca']})"),
         ("body", "Marque com [X] conforme concluir Teoria, Revisão e Bateria de Questões:"),
     ]
 
@@ -181,11 +153,10 @@ def gerar_pdf_material_download(concurso: dict, material: dict) -> bytes:
         ("section", "5. ROTEIRO RECOMENDADO DE EXECUÇÃO"),
         ("bullet", "1) Dedique 70% do seu tempo às disciplinas de Prioridade Crítica e Alta."),
         ("bullet", f"2) Resolva no mínimo 50 questões anteriores da banca {concurso['banca']} por semana."),
-        ("bullet", f"3) Refaça a prova anterior ({concurso['ultimo_concurso_ano']}) simulando o tempo real."),
+        ("bullet", f"3) Refaça a prova anterior ({concurso['ultimo_concurso_ano']}) simulando o tempo oficial."),
     ])
 
-    # Expand blocks into wrapped drawing lines
-    lines: List[tuple[str, str, int]] = []  # (style, text, line_height)
+    lines: List[tuple[str, str, int]] = []
     for kind, text in blocks:
         if kind == "spacer":
             lines.append(("spacer", "", 8))
@@ -203,7 +174,7 @@ def gerar_pdf_material_download(concurso: dict, material: dict) -> bytes:
         elif kind == "bullet":
             wrapped = textwrap.wrap(text, width=82, subsequent_indent="   ") or [text]
             for idx, w in enumerate(wrapped):
-                prefix = "• " if idx == 0 and not w.startswith("[ ]") and not w.startswith("1)") and not w.startswith("2)") and not w.startswith("3)") else "  "
+                prefix = "• " if idx == 0 and not w.startswith("[ ]") and not w.startswith(("1)", "2)", "3)")) else "  "
                 lines.append(("bullet", f"{prefix}{w}", 14))
 
     pages_cmds: List[List[str]] = []
@@ -211,16 +182,27 @@ def gerar_pdf_material_download(concurso: dict, material: dict) -> bytes:
 
     def start_page(page_index: int) -> tuple[List[str], int]:
         cmds: List[str] = []
+        # Subtle low-contrast personal study watermark across center of page (equivalent ~2.5% ink visibility)
+        cmds.append(
+            f"BT /F2 22 Tf 0.960 0.962 0.966 rg 110 420 Td ({_pdf_escape_winansi('Aprova+ IA · ' + owner_nome)}) Tj ET"
+        )
         if page_index == 0:
-            # Civic navy header band
             cmds.append("0.063 0.137 0.220 rg")
             cmds.append("0 762 595 80 re f")
             cmds.append("BT /F2 16 Tf 1 1 1 rg 44 804 Td (" + _pdf_escape_winansi("APROVA+ IA") + ") Tj ET")
-            cmds.append("BT /F1 10 Tf 0.84 0.89 0.94 rg 44 784 Td (" + _pdf_escape_winansi("Roteiro de Estudo Verticalizado e Checklist Oficial (PDF)") + ") Tj ET")
+            cmds.append(
+                "BT /F1 9.5 Tf 0.84 0.89 0.94 rg 44 784 Td ("
+                + _pdf_escape_winansi(f"Guia Organizado por Tópico do Edital (A4) · Preparado para {owner_nome}")
+                + ") Tj ET"
+            )
             return cmds, 738
         else:
             cmds.append("0.847 0.835 0.796 RG 0.8 w 44 806 m 551 806 l S")
-            cmds.append("BT /F2 9 Tf 0.067 0.110 0.141 rg 44 814 Td (" + _pdf_escape_winansi(f"APROVA+ IA · {concurso['sigla']} · Roteiro de Estudo") + ") Tj ET")
+            cmds.append(
+                "BT /F2 9 Tf 0.067 0.110 0.141 rg 44 814 Td ("
+                + _pdf_escape_winansi(f"APROVA+ IA · {concurso['sigla']} · Caderno A4 de {owner_nome}")
+                + ") Tj ET"
+            )
             return cmds, 784
 
     cur_cmds, y = start_page(0)
@@ -248,11 +230,9 @@ def gerar_pdf_material_download(concurso: dict, material: dict) -> bytes:
     total_pages = len(pages_cmds)
     for idx, cmds in enumerate(pages_cmds):
         cmds.append("0.847 0.835 0.796 RG 0.6 w 44 46 m 551 46 l S")
-        footer = f"Aprova+ IA · Gerado em {data_hoje}   |   Página {idx + 1} de {total_pages}"
-        cmds.append(f"BT /F1 8.5 Tf 0.290 0.365 0.439 rg 44 32 Td ({_pdf_escape_winansi(footer)}) Tj ET")
+        footer = f"Preparado para {owner_tag} · Uso pessoal · {data_hoje}   |   Página {idx + 1} de {total_pages}"
+        cmds.append(f"BT /F1 8 Tf 0.290 0.365 0.439 rg 44 32 Td ({_pdf_escape_winansi(footer)}) Tj ET")
 
-    # Assemble PDF objects
-    # 1: Catalog, 2: Pages, 3: Font Helvetica, 4: Font Helvetica-Bold
     objects: List[bytes] = []
     page_obj_ids = [5 + i * 2 for i in range(total_pages)]
     kids_str = " ".join(f"{pid} 0 R" for pid in page_obj_ids)
@@ -296,5 +276,3 @@ def gerar_pdf_material_download(concurso: dict, material: dict) -> bytes:
         f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref_pos}\n%%EOF\n".encode("ascii")
     )
     return bytes(buf)
-
-

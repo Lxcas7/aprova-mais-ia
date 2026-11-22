@@ -11,6 +11,20 @@ def get_db_connection() -> sqlite3.Connection:
     return conn
 
 
+def _ensure_usuario_columns(cur: sqlite3.Cursor) -> None:
+    cur.execute("PRAGMA table_info(usuarios)")
+    existing_cols = {row["name"] for row in cur.fetchall()}
+    migrations = [
+        ("concurso_alvo_id", "TEXT DEFAULT 'pf-2026'"),
+        ("onboarding_concluido", "INTEGER DEFAULT 0"),
+        ("streak_dias", "INTEGER DEFAULT 0"),
+        ("ultimo_estudo_em", "TEXT"),
+    ]
+    for col_name, col_def in migrations:
+        if col_name not in existing_cols:
+            cur.execute(f"ALTER TABLE usuarios ADD COLUMN {col_name} {col_def}")
+
+
 def init_db() -> None:
     conn = get_db_connection()
     cur = conn.cursor()
@@ -96,8 +110,12 @@ def init_db() -> None:
             carreira_foco TEXT DEFAULT 'Policial',
             escolaridade TEXT DEFAULT 'Superior',
             uf_interesse TEXT DEFAULT 'Nacional',
-            horas_estudo_dia INTEGER DEFAULT 4,
+            horas_estudo_dia REAL DEFAULT 4.0,
             plano TEXT DEFAULT 'Gratuito',
+            concurso_alvo_id TEXT DEFAULT 'pf-2026',
+            onboarding_concluido INTEGER DEFAULT 0,
+            streak_dias INTEGER DEFAULT 0,
+            ultimo_estudo_em TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -123,8 +141,111 @@ def init_db() -> None:
             FOREIGN KEY (user_id) REFERENCES usuarios(id),
             FOREIGN KEY (material_id) REFERENCES materiais(id)
         );
+
+        CREATE TABLE IF NOT EXISTS usuario_onboarding (
+            user_id INTEGER PRIMARY KEY,
+            momento_jornada TEXT DEFAULT 'estudando_edital',
+            concurso_alvo_id TEXT DEFAULT 'pf-2026',
+            areas_interesse_json TEXT DEFAULT '[]',
+            horas_dia REAL DEFAULT 4.0,
+            dias_semana_json TEXT DEFAULT '["Seg","Ter","Qua","Qui","Sex","Sáb"]',
+            nivel_base_json TEXT DEFAULT '{}',
+            estilo_estudo TEXT DEFAULT 'equilibrado',
+            concluido_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES usuarios(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS questoes_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            external_id TEXT UNIQUE,
+            banca TEXT NOT NULL,
+            orgao TEXT DEFAULT '',
+            concurso_id TEXT NOT NULL,
+            ano INTEGER DEFAULT 2024,
+            disciplina TEXT NOT NULL,
+            assunto TEXT DEFAULT '',
+            dificuldade TEXT NOT NULL DEFAULT 'intermediario',
+            tipo_questao TEXT NOT NULL DEFAULT 'certo_errado',
+            enunciado TEXT NOT NULL,
+            alternativas_json TEXT DEFAULT '[]',
+            gabarito TEXT NOT NULL,
+            comentario TEXT DEFAULT '',
+            is_prova_anterior INTEGER DEFAULT 0,
+            prova_titulo TEXT DEFAULT '',
+            cached_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS sessoes_estudo_questoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            concurso_id TEXT NOT NULL,
+            tipo_sessao TEXT NOT NULL,
+            titulo TEXT DEFAULT '',
+            dificuldade_filtro TEXT DEFAULT 'sorteado',
+            disciplina_filtro TEXT DEFAULT 'todas',
+            questoes_ids_json TEXT NOT NULL DEFAULT '[]',
+            total_questoes INTEGER NOT NULL DEFAULT 0,
+            respondidas INTEGER NOT NULL DEFAULT 0,
+            acertos INTEGER NOT NULL DEFAULT 0,
+            erros INTEGER NOT NULL DEFAULT 0,
+            branco INTEGER NOT NULL DEFAULT 0,
+            escore_liquido REAL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'em_andamento',
+            iniciado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            finalizado_em TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES usuarios(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS usuario_respostas_questoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sessao_id INTEGER NOT NULL,
+            user_id INTEGER,
+            questao_id INTEGER NOT NULL,
+            concurso_id TEXT NOT NULL,
+            disciplina TEXT NOT NULL,
+            banca TEXT NOT NULL,
+            dificuldade TEXT NOT NULL,
+            resposta_usuario TEXT DEFAULT '',
+            correta INTEGER NOT NULL DEFAULT 0,
+            em_branco INTEGER NOT NULL DEFAULT 0,
+            tempo_segundos INTEGER DEFAULT 45,
+            respondido_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (sessao_id) REFERENCES sessoes_estudo_questoes(id),
+            FOREIGN KEY (questao_id) REFERENCES questoes_cache(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS usuario_cronograma_blocos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            concurso_id TEXT NOT NULL,
+            semana_ref TEXT NOT NULL,
+            dia_semana TEXT NOT NULL,
+            ordem INTEGER DEFAULT 1,
+            disciplina TEXT NOT NULL,
+            tipo_bloco TEXT NOT NULL,
+            minutos_planejados INTEGER NOT NULL DEFAULT 90,
+            minutos_realizados INTEGER NOT NULL DEFAULT 0,
+            concluido INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (user_id) REFERENCES usuarios(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS suporte_chamados (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            nome TEXT NOT NULL,
+            email TEXT NOT NULL,
+            plano TEXT DEFAULT 'Gratuito',
+            concurso_alvo_id TEXT DEFAULT 'pf-2026',
+            categoria TEXT NOT NULL,
+            mensagem TEXT NOT NULL,
+            status TEXT DEFAULT 'aberto',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
         """
     )
+
+    _ensure_usuario_columns(cur)
+
     conn.commit()
     conn.close()
-
